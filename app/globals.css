@@ -2,7 +2,14 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #090909;
+  --grey-1: #dbe1e8;
+  --grey2: #e0e0e0;
+  --grey-3: #94a3b8;
+  --grey-4: #fafafa;
+  --text-1: #707070;
+  --green-1: #05ad5d;
+  --red-1: #bb0000;
 }
 
 @theme inline {
@@ -14,7 +21,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #090909;
     --foreground: #ededed;
   }
 }
@@ -23,4 +30,9 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.prompt-image {
+  background: url("/images/prompt.svg");
+  background-size: contain;
 }
