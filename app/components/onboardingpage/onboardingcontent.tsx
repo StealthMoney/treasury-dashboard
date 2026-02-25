@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { SelectField, TextField } from "../reusables/general_inputs";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface StepOneData {
@@ -60,109 +61,6 @@ function isValidUrl(url: string) {
   } catch {
     return false;
   }
-}
-
-function SelectField({
-  label,
-  id,
-  value,
-  onChange,
-  options,
-  placeholder,
-  error,
-  disabled,
-}: {
-  label: string;
-  id: string;
-  value: string;
-  onChange: (v: string) => void;
-  options: string[];
-  placeholder: string;
-  error?: string;
-  disabled?: boolean;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <label htmlFor={id} className="block text-sm font-medium text-(--text-1)">
-        {label}
-      </label>
-      <div
-        className={`relative border rounded-lg bg-(--grey-4) transition-all ${error ? "border-(--red-1)" : "border-(--grey-1) focus-within:border-(--grey-1)"} ${disabled ? "opacity-50" : ""}`}
-      >
-        <select
-          id={id}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          disabled={disabled}
-          className="w-full px-3 py-2.5 bg-transparent text-sm text-(--text-1) outline-none appearance-none cursor-pointer"
-        >
-          <option value="" disabled>
-            {placeholder}
-          </option>
-          {options.map((o) => (
-            <option key={o} value={o}>
-              {o}
-            </option>
-          ))}
-        </select>
-        <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-(--text-1)">
-          <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
-            <path
-              d="M1 1L6 6L11 1"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-          </svg>
-        </div>
-      </div>
-      {error && <p className="text-xs text-(--red-1)">{error}</p>}
-    </div>
-  );
-}
-
-function TextField({
-  label,
-  id,
-  placeholder,
-  value,
-  onChange,
-  error,
-  prefix,
-}: {
-  label: string;
-  id: string;
-  placeholder?: string;
-  value: string;
-  onChange: (v: string) => void;
-  error?: string;
-  prefix?: string;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <label htmlFor={id} className="block text-sm font-medium text-(--text-1)">
-        {label}
-      </label>
-      <div
-        className={`flex items-center border rounded-lg bg-(--grey-4) transition-all ${error ? "border-(--red-1) focus-within:border-(--red-1)" : "border-(--grey-1) focus-within:border-(--grey-1)"}`}
-      >
-        {prefix && (
-          <span className="pl-3 pr-2 text-(--text-1) text-[14px] select-none border bg-background border-(--grey-1) py-2.5">
-            {prefix}
-          </span>
-        )}
-        <input
-          id={id}
-          type="text"
-          placeholder={placeholder}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="flex-1 px-3 py-2.5 bg-transparent text-[14px] text-foreground placeholder-(--text-1) outline-none"
-        />
-      </div>
-      {error && <p className="text-xs text-(--red-1)">{error}</p>}
-    </div>
-  );
 }
 
 // ─── Step 1 ───────────────────────────────────────────────────────────────────
@@ -378,10 +276,10 @@ export default function OnboardingPage() {
           {/* Step indicator */}
           <div className="flex items-center gap-3 mb-8 pb-6 border-b border-(--grey-1)">
             <div className="flex items-center gap-1.5 whitespace-nowrap">
-              <span className="text-xs font-bold text-gray-900 tracking-widest">
+              <span className="text-xs font-bold text-foreground tracking-widest">
                 STEP {step}
               </span>
-              <span className="text-xs text-gray-400 tracking-widest">
+              <span className="text-xs text-(--text-1) tracking-widest">
                 /2 —
               </span>
               <span className="text-[16px] font-medium text-(--text-1) tracking-widest">

@@ -244,7 +244,7 @@ function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
             className="flex items-center gap-1.5 border border-(--grey-1) rounded-full py-1 px-1"
           >
             <div
-              className={`w-4 h-4 flex items-center border-2 justify-center rounded-full shrink-0 transition-all duration-200 ${criteriaMet[i] ? "bg-green-500 border-green-500" : "border-gray-300"}`}
+              className={`w-4 h-4 flex items-center border-2 justify-center rounded-full shrink-0 transition-all duration-200 ${criteriaMet[i] ? "bg-[#009D50] border-[#009D50]" : "border-(--grey-1)"}`}
             >
               {criteriaMet[i] && (
                 <AiOutlineCheck size={10} className="text-white" />
