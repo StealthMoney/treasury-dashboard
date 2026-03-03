@@ -22,7 +22,7 @@ export default function Sidebar({
     { logo: <PiHandCoins />, text: "Credit", href: "/credit" },
     { logo: <TbFileAnalytics />, text: "Report", href: "/report" },
     { logo: <CiSettings />, text: "Settings", href: "/settings" },
-    { logo: <RiUser3Line />, text: "Profile", href: "/profile" },
+    // { logo: <RiUser3Line />, text: "Profile", href: "/profile" },
   ];
 
   return (

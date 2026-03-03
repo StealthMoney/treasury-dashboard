@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { ProfileTab } from "../components/profile/profile";
-import { PasswordSettingTab } from "../components/profile/password";
-import { TeamTab } from "../components/profile/team";
-import { MultiSigTab } from "../components/profile/multisig";
-import { PreferenceTab } from "../components/profile/preference";
+import { ProfileTab } from "../components/settings/profile";
+import { PasswordSettingTab } from "../components/settings/password";
+import { TeamTab } from "../components/settings/team";
+import { MultiSigTab } from "../components/settings/multisig";
+import { PreferenceTab } from "../components/settings/preference";
 
 type TabType = "profile" | "password" | "team" | "multisig" | "preference";
 

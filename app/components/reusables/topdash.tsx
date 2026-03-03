@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 
 export default function Topdash({ onMenuClick }: { onMenuClick: () => void }) {
   const pathname = usePathname();
+  const title = pathname.replace(/\//g, "");
+  const formattedTitle = title.charAt(0).toUpperCase() + title.slice(1);
 
   return (
     <header className="fixed top-0 left-0 z-50 bg-background w-full h-20 border-b border-(--grey-1) flex">
@@ -24,7 +26,7 @@ export default function Topdash({ onMenuClick }: { onMenuClick: () => void }) {
       </div>
 
       <div className="flex-1 flex justify-between items-center px-6">
-        <h1>{pathname.replace(/\//g, "")}</h1>
+        <h1>{formattedTitle}</h1>
 
         <div className="flex items-center gap-3">
           <button className="rounded-full border w-8- h-8 border-(--grey-1) bg-white p-2">
