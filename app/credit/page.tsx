@@ -3,12 +3,17 @@
 import { StatData, StatUIConfig } from "../components/reusables/stats_section";
 import { StatsSection } from "../components/reusables/stats_section";
 import { Table } from "../components/reusables/table";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { StepConfig } from "../components/reusables/modal";
 import { StepModal } from "../components/reusables/modal";
-import Image from "next/image";
 import { CurrencyInput } from "../components/reusables/currencyInput";
 import Success_table from "../components/reusables/success_table";
+import {
+  FilePickerField,
+  SelectField,
+} from "../components/reusables/general_inputs";
+import Message_table from "../components/reusables/message_table";
+import OutstandingCredits from "../components/reusables/outstabding_credits";
 
 interface ActiveLoan {
   id: string;
@@ -31,103 +36,165 @@ interface CollateralAsset {
   freeCollateral: string;
 }
 
-const activeLoansMock: ActiveLoan[] = [
+// types
+interface CreditHistory {
+  id: string;
+  date: string;
+  amountBorrowed: string;
+  amountBorrowedCNGN: string;
+  interest: string;
+  interestCNGN: string;
+  dueDate: string;
+  daysLeft: string;
+  status: "Active" | "Inactive";
+}
+
+// mock data
+const creditHistoryMock: CreditHistory[] = [
   {
-    id: "#LN-021",
-    borrowed: "$10,000",
-    borrowedUSDT: "10,000 USDT",
-    collateral: "15,000 USDT",
-    ltv: "38%",
-    apr: "8.5%",
-    nextDue: "09-10-2026",
-    nextDueTime: "14:57 PM",
-    status: "Healthy",
+    id: "#LN-018",
+    date: "17-03-2026",
+    amountBorrowed: "₦ 100,000,000",
+    amountBorrowedCNGN: "100,000,000 cNGN",
+    interest: "₦ 1,000,000",
+    interestCNGN: "1,000,000 cNGN",
+    dueDate: "09-10-2026",
+    daysLeft: "69 days left",
+    status: "Active",
   },
   {
     id: "#LN-018",
-    borrowed: "$8,400",
-    borrowedUSDT: "8,000 USDT",
-    collateral: "15,000 USDT",
-    ltv: "38%",
-    apr: "8.5%",
-    nextDue: "09-10-2026",
-    nextDueTime: "14:57 PM",
-    status: "Healthy",
+    date: "17-03-2026",
+    amountBorrowed: "₦ 100,000,000",
+    amountBorrowedCNGN: "100,000,000 cNGN",
+    interest: "₦ 1,000,000",
+    interestCNGN: "1,000,000 cNGN",
+    dueDate: "09-10-2026",
+    daysLeft: "69 days left",
+    status: "Active",
   },
   {
     id: "#LN-018",
-    borrowed: "$8,400",
-    borrowedUSDT: "8,000 USDT",
-    collateral: "15,000 USDT",
-    ltv: "38%",
-    apr: "8.5%",
-    nextDue: "09-10-2026",
-    nextDueTime: "14:57 PM",
-    status: "Healthy",
+    date: "17-03-2026",
+    amountBorrowed: "₦ 100,000,000",
+    amountBorrowedCNGN: "100,000,000 cNGN",
+    interest: "₦ 1,000,000",
+    interestCNGN: "1,000,000 cNGN",
+    dueDate: "09-10-2026",
+    daysLeft: "69 days left",
+    status: "Active",
+  },
+  {
+    id: "#LN-018",
+    date: "17-03-2026",
+    amountBorrowed: "₦ 100,000,000",
+    amountBorrowedCNGN: "100,000,000 cNGN",
+    interest: "₦ 1,000,000",
+    interestCNGN: "1,000,000 cNGN",
+    dueDate: "09-10-2026",
+    daysLeft: "69 days left",
+    status: "Active",
   },
 ];
 
-const collateralAssetsMock: CollateralAsset[] = [
+function StatusBadge({ status }: { status: string }) {
+  const isActive = status.toLowerCase() === "active";
+  return (
+    <span
+      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+        ${
+          isActive
+            ? "bg-[#EAF5ED] text-[#05AD5D] border border-[#D6EBDB]"
+            : "bg-yellow-100 text-yellow-600"
+        }`}
+    >
+      {status}
+    </span>
+  );
+}
+
+// columns
+const creditHistoryColumns = [
   {
-    id: 1,
-    asset: "USDT",
-    totalLocked: "45,000 USDT",
-    value: "$45,000",
-    usedForLoans: "38,200 USDT",
-    freeCollateral: "6,800 USDT",
+    header: "Credit ID",
+    accessor: (row: CreditHistory) => (
+      <>
+        <p className="text-xs sm:text-sm font-semibold text-gray-900">
+          {row.id}
+        </p>
+        <p className="text-xs text-gray-500">{row.date}</p>
+      </>
+    ),
   },
   {
-    id: 2,
-    asset: "USDC",
-    totalLocked: "28,500 USDC",
-    value: "$28,500",
-    usedForLoans: "22,800 USDC",
-    freeCollateral: "5,700 USDC",
+    header: "Amount Borrowed",
+    accessor: (row: CreditHistory) => (
+      <>
+        <p className="text-xs sm:text-sm font-semibold text-gray-900">
+          {row.amountBorrowed}
+        </p>
+        <p className="text-xs text-gray-500">{row.amountBorrowedCNGN}</p>
+      </>
+    ),
   },
   {
-    id: 3,
-    asset: "ETH",
-    totalLocked: "5.5 ETH",
-    value: "$18,700",
-    usedForLoans: "4.2 ETH",
-    freeCollateral: "1.3 ETH",
+    header: "Interest",
+    accessor: (row: CreditHistory) => (
+      <>
+        <p className="text-xs sm:text-sm font-semibold text-gray-900">
+          {row.interest}
+        </p>
+        <p className="text-xs text-gray-500">{row.interestCNGN}</p>
+      </>
+    ),
   },
   {
-    id: 4,
-    asset: "BTC",
-    totalLocked: "0.85 BTC",
-    value: "$35,700",
-    usedForLoans: "0.64 BTC",
-    freeCollateral: "0.21 BTC",
+    header: "Due Date",
+    accessor: (row: CreditHistory) => (
+      <>
+        <p className="text-xs sm:text-sm font-semibold text-gray-900">
+          {row.dueDate}
+        </p>
+        <p className="text-xs text-gray-500">{row.daysLeft}</p>
+      </>
+    ),
+  },
+  {
+    header: "Status",
+    accessor: (row: CreditHistory) => <StatusBadge status={row.status} />,
+  },
+  {
+    header: "",
+    accessor: (_row: CreditHistory) => (
+      <button className="text-gray-400 hover:text-gray-600 px-1">
+        &#8942; {/* vertical ellipsis */}
+      </button>
+    ),
   },
 ];
 
 export const creditStatsData: StatData[] = [
   {
-    label: "Total Borrowed",
-    value: "$18,400",
+    label: "Active Loans",
+    value: "₦ 110,000,000.00",
+    footer: "≃ 100,000,000 cNGN",
   },
   {
-    label: "Total Collateral Value",
-    value: "$52,800",
+    label: "Due Date",
+    value: "24th May, 2026",
+    footer: "23 days left",
   },
   {
-    label: "Current LTV",
-    value: "34.8%",
-  },
-  {
-    label: "Health Status",
-    value: "Solid",
-  },
-  {
-    label: "Avg Interest Rate",
-    value: "9.2% APR",
+    label: "Loan Interest",
+    value: "10,000,000.00",
+    footer: "+10.00 %",
   },
 ];
 
 export const creditStatsUIConfig: StatUIConfig[] = [
   // Example: no button here, but you could add later
   { index: 2, footerClass: "text-(--green-1) font-semibold" },
+  { index: 0, showButton: true },
 ];
 
 export const activeLoansColumns = [
@@ -243,28 +310,90 @@ export default function CreditsPage() {
   const [borrowStep, setBorrowStep] = useState(0);
   const [isSuccess, setIsSuccess] = useState(false);
 
+  // Repay Modal State
+  const [isRepayOpen, setIsRepayOpen] = useState(false);
+  const [repayStep, setRepayStep] = useState(0);
+  const [repaySuccess, setRepaySuccess] = useState(false);
+  const [repayAmount, setRepayAmount] = useState("50000000");
+  const [repayCurrency, setRepayCurrency] = useState<"USD" | "NGN">("NGN");
+
+  // Extend Credit Date Modal State
+  const [isExtendOpen, setIsExtendOpen] = useState(false);
+  const [extendStep, setExtendStep] = useState(0);
+  const [extendSuccess, setExtendSuccess] = useState(false);
+  const [selectedExtension, setSelectedExtension] = useState<
+    "14" | "30" | "60"
+  >("14");
+
   // Borrow Modal State
   const [selectedCollateral, setSelectedCollateral] =
     useState("Yield Vault USDT");
   const [borrowAmount, setBorrowAmount] = useState("10000");
   const [borrowCurrency, setBorrowCurrency] = useState<"USD" | "NGN">("USD");
 
-  const collateralSources = [
-    {
-      id: "usdt",
-      name: "Yield Vault USDT",
-      amount: "$52,800",
-      icon: "/images/usdt.svg",
-    },
-    {
-      id: "usdc",
-      name: "Yield Vault USDC",
-      amount: "$100,800",
-      icon: "/images/usdc.svg",
-    },
-  ];
+  const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
+  const [bankStatementFile, setBankStatementFile] = useState<File | null>(null);
 
-  const borrowAPR = 9.4;
+  const [errors, setErrors] = useState<{
+    invoice?: string;
+    bankStatement?: string;
+    duration?: string;
+  }>({});
+
+  const [loanDuration, setLoanDuration] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+
+  const validateStep1 = () => {
+    const newErrors: typeof errors = {};
+
+    if (!invoiceFile) {
+      newErrors.invoice = "Invoice is required";
+    }
+
+    if (!bankStatementFile) {
+      newErrors.bankStatement = "Bank statement is required";
+    }
+
+    if (!loanDuration) {
+      newErrors.duration = "Loan duration is required";
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const uploadFiles = async () => {
+    try {
+      setIsUploading(true);
+
+      // simulate upload delay (replace with real API)
+      await new Promise((res) => setTimeout(res, 1500));
+
+      // example real upload:
+      // const formData = new FormData();
+      // formData.append("invoice", invoiceFile!);
+      // formData.append("bankStatement", bankStatementFile!);
+      // await fetch("/api/upload", { method: "POST", body: formData });
+
+      return true;
+    } catch (error) {
+      console.error(error);
+      return false;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  useEffect(() => {
+    setErrors((prev) => ({
+      ...prev,
+      bankStatement: "",
+      invoice: "",
+      duration: "",
+    }));
+  }, []);
+
   const lockCollateralAmount = (Number(borrowAmount) * 1.2).toFixed(0);
   const resultingLTV = (
     (Number(borrowAmount) /
@@ -279,38 +408,436 @@ export default function CreditsPage() {
     setIsSuccess(false);
   };
 
-  const borrowSteps: StepConfig[] = [
+  const handleRepayClick = () => {
+    setIsRepayOpen(true);
+    setRepayStep(0);
+    setRepaySuccess(false);
+  };
+
+  const handleRepayNext = () => {
+    if (repayStep < repaySteps.length - 1) {
+      setRepayStep(repayStep + 1);
+    }
+  };
+
+  const handleRepayPrevious = () => {
+    if (repayStep > 0) {
+      setRepayStep(repayStep - 1);
+    }
+  };
+
+  const handleRepaySubmit = () => {
+    const formData = {
+      amountRepaid: repayAmount,
+      currency: repayCurrency,
+    };
+    console.log("Repay Loan Submitted:", formData);
+    setRepaySuccess(true);
+  };
+
+  const handleExtendClick = () => {
+    setIsExtendOpen(true);
+    setExtendStep(0);
+    setExtendSuccess(false);
+  };
+
+  const handleExtendNext = () => {
+    if (extendStep < extendSteps.length - 1) {
+      setExtendStep(extendStep + 1);
+    }
+  };
+
+  const handleExtendPrevious = () => {
+    if (extendStep > 0) {
+      setExtendStep(extendStep - 1);
+    }
+  };
+
+  const handleExtendSubmit = () => {
+    const formData = {
+      extensionPeriod: selectedExtension,
+    };
+    console.log("Extend Credit Date Submitted:", formData);
+    setExtendSuccess(true);
+  };
+
+  // Extension fee mapping
+  const extensionFees: Record<
+    "14" | "30" | "60",
+    { fee: string; newDueDate: string; newTotal: string }
+  > = {
+    "14": {
+      fee: "300,000.00 NGN",
+      newDueDate: "27 Jun 2026",
+      newTotal: "100,100,000.00 NGN",
+    },
+    "30": {
+      fee: "700,000.00 NGN",
+      newDueDate: "27 Jun 2026",
+      newTotal: "100,500,000.00 NGN",
+    },
+    "60": {
+      fee: "1,000,000.00 NGN",
+      newDueDate: "01 July 2026",
+      newTotal: "6,500,000.00 NGN",
+    },
+  };
+
+  const extendSteps: StepConfig[] = [
     {
-      title: "COLLATERAL SOURCE",
+      title: "CHOOSE EXTENSION DATE",
       content: (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {collateralSources.map((source) => (
-            <button
-              key={source.id}
-              onClick={() => setSelectedCollateral(source.name)}
-              className={`p-4 rounded-lg border-2 transition text-center bg-background border-(--grey-1)`}
+        <div className="space-y-6">
+          <OutstandingCredits />
+
+          <div className="space-y-0 mt-8">
+            <div className="flex items-center justify-center gap-3 text-[16px] font-semibold text-foreground mb-6">
+              <div className="hidden lg:block w-1/4 border-b-2 border-b-(--grey-4)"></div>
+              <span className="text-(--text-1)">EXTEND REPAYMENT BY:</span>
+              <div className="hidden lg:block w-1/4 border-b-2 border-b-(--grey-4)"></div>
+            </div>
+
+            {/* 14 days option */}
+            <div
+              onClick={() => setSelectedExtension("14")}
+              className="flex items-start justify-between py-5 px-0 border-b border-(--grey-1) cursor-pointer"
             >
-              <div className="flex justify-start items-center mb-3 relative flex-col">
-                {selectedCollateral === source.name && (
-                  <div className="w-5 h-5 bg-foreground rounded-full flex items-center justify-center absolute right-0">
-                    <span className="text-background text-xs">✓</span>
-                  </div>
-                )}
-                <div className="w-8 h-8">
-                  <Image
-                    src={source.icon}
-                    width={100}
-                    height={100}
-                    alt="icon"
-                  />
-                </div>
-                <p className="text-[14px] text-(--text-1)">{source.name}</p>
-                <p className="text-[24px] font-semibold text-foreground">
-                  {source.amount}
+              <div className="flex-1 pr-4">
+                <p className="font-bold text-foreground text-[16px]">
+                  14 days → ₦300,000
+                </p>
+                <p className="text-[14px] text-(--text-1) mt-1">
+                  New due date:{" "}
+                  <span className="font-semibold text-foreground">
+                    27 Jun 2026.
+                  </span>{" "}
+                  An additional fee of{" "}
+                  <span className="font-semibold text-foreground">
+                    ₦300,000
+                  </span>{" "}
+                  will apply.
                 </p>
               </div>
-            </button>
-          ))}
+              <div
+                className="w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0"
+                style={{
+                  borderColor:
+                    selectedExtension === "14" ? "#1F2937" : "#D1D5DB",
+                  backgroundColor:
+                    selectedExtension === "14" ? "#1F2937" : "transparent",
+                }}
+              >
+                {selectedExtension === "14" && (
+                  <svg
+                    className="w-4 h-4 text-white"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                )}
+              </div>
+            </div>
+
+            {/* 30 days option */}
+            <div
+              onClick={() => setSelectedExtension("30")}
+              className="flex items-start justify-between py-5 px-0 border-b border-(--grey-1) cursor-pointer"
+            >
+              <div className="flex-1 pr-4">
+                <p className="font-bold text-foreground text-[16px]">
+                  30 days → ₦700,000
+                </p>
+                <p className="text-[14px] text-(--text-1) mt-1">
+                  New due date:{" "}
+                  <span className="font-semibold text-foreground">
+                    27 Jun 2026.
+                  </span>{" "}
+                  An additional fee of{" "}
+                  <span className="font-semibold text-foreground">
+                    ₦700,000
+                  </span>{" "}
+                  will apply.
+                </p>
+              </div>
+              <div
+                className="w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0"
+                style={{
+                  borderColor:
+                    selectedExtension === "30" ? "#1F2937" : "#D1D5DB",
+                  backgroundColor:
+                    selectedExtension === "30" ? "#1F2937" : "transparent",
+                }}
+              >
+                {selectedExtension === "30" && (
+                  <svg
+                    className="w-4 h-4 text-white"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                )}
+              </div>
+            </div>
+
+            {/* 60 days option */}
+            <div
+              onClick={() => setSelectedExtension("60")}
+              className="flex items-start justify-between py-5 px-0 border-b border-(--grey-1) cursor-pointer"
+            >
+              <div className="flex-1 pr-4">
+                <p className="font-bold text-foreground text-[16px]">
+                  60 days → ₦1,000,000
+                </p>
+                <p className="text-[14px] text-(--text-1) mt-1">
+                  New due date:{" "}
+                  <span className="font-semibold text-foreground">
+                    27 Jun 2026.
+                  </span>{" "}
+                  An additional fee of{" "}
+                  <span className="font-semibold text-foreground">
+                    ₦1,000,000
+                  </span>{" "}
+                  will apply.
+                </p>
+              </div>
+              <div
+                className="w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0"
+                style={{
+                  borderColor:
+                    selectedExtension === "60" ? "#1F2937" : "#D1D5DB",
+                  backgroundColor:
+                    selectedExtension === "60" ? "#1F2937" : "transparent",
+                }}
+              >
+                {selectedExtension === "60" && (
+                  <svg
+                    className="w-4 h-4 text-white"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      title: "SUMMARY",
+      content: (
+        <div className="space-y-12">
+          <div className="flex justify-between border-b border-(--grey-1)">
+            <span className="text-(--text-1) text-[14px]">Credit Amount:</span>
+            <span className="font-semibold text-foreground text-[14px]">
+              5,000,000.00 NGN
+            </span>
+          </div>
+          <div className="flex justify-between border-b border-(--grey-1)">
+            <span className="text-(--text-1) text-[14px]">
+              Extension Period:
+            </span>
+            <span className="font-semibold text-foreground text-[14px]">
+              {selectedExtension} days
+            </span>
+          </div>
+          <div className="flex justify-between border-b border-(--grey-1)">
+            <span className="text-(--text-1) text-[14px]">Extension Fee:</span>
+            <span className="font-semibold text-foreground text-[14px]">
+              {extensionFees[selectedExtension].fee}
+            </span>
+          </div>
+          <div className="flex justify-between border-b border-(--grey-1)">
+            <span className="text-(--text-1) text-[14px]">New Due Date:</span>
+            <span className="font-semibold text-foreground text-[14px]">
+              {extensionFees[selectedExtension].newDueDate}
+            </span>
+          </div>
+          <div className="flex justify-between border-b border-(--grey-1)">
+            <span className="text-(--text-1) text-[14px]">New Total:</span>
+            <span className="font-semibold text-foreground text-[14px]">
+              {extensionFees[selectedExtension].newTotal}
+            </span>
+          </div>
+
+          <Message_table
+            header="Please Note:"
+            columns={["Extension fees will be added to your total repayment"]}
+            showAsList={false}
+          />
+        </div>
+      ),
+    },
+  ];
+
+  const repaySteps: StepConfig[] = [
+    {
+      title: "REPAY CREDIT",
+      content: (
+        <div className="space-y-6">
+          <OutstandingCredits />
+
+          <div className="space-y-2">
+            <label className="text-[14px] font-medium text-foreground">
+              Enter Amount ({repayCurrency === "NGN" ? "₦" : "$"})
+            </label>
+            <CurrencyInput
+              value={repayAmount}
+              onChange={setRepayAmount}
+              onCurrencyChange={setRepayCurrency}
+              placeholder="Amount to repay"
+              description="Minimum amount to be paid:"
+              balance={500000}
+              showmax={false}
+              currency={repayCurrency}
+              // minamount={50000000}
+              label=""
+            />
+          </div>
+
+          <Message_table
+            header="Payment method:"
+            columns={["Bank Transfer", "Payments are securely processed"]}
+            showAsList={true}
+          />
+        </div>
+      ),
+    },
+    {
+      title: "MAKE PAYMENT",
+      content: (
+        <div className="space-y-12">
+          <div className="text-center pb-4">
+            <p className="text-(--text-1) text-[14px]">
+              Transfer{" "}
+              <span className="font-semibold text-foreground">
+                {repayCurrency === "NGN" ? "₦" : "$"}
+                {Number(repayAmount || 0).toLocaleString("en-NG", {
+                  minimumFractionDigits: 0,
+                })}
+              </span>{" "}
+              to{" "}
+              <span className="font-semibold text-foreground">
+                Stealth Treasury
+              </span>
+            </p>
+          </div>
+
+          <Success_table
+            header="Bank Details:"
+            messages={{
+              col1: "Bank Name",
+              message1: { text: "Paystack - Titan" },
+
+              col2: "Account Number",
+              message2: { text: "0522528820", copy: "0522528820" },
+
+              col3: "Amount",
+              message3: {
+                text: `${repayCurrency === "NGN" ? "₦" : "$"} ${Number(
+                  repayAmount || 0,
+                ).toLocaleString("en-NG", {
+                  minimumFractionDigits: 0,
+                })}`,
+                copy: repayAmount,
+              },
+            }}
+          />
+
+          <div className="bg-(--grey-4) p-8 rounded-2xl text-center">
+            <p className="text-(--text-1) text-[12px] mb-2">
+              When making your bank transfer, kindly use this as narration:
+            </p>
+            <p className="font-semibold text-foreground text-[14px]">
+              Monlwave_for_stealth_treasury
+            </p>
+          </div>
+
+          <div className="p-4 rounded-lg text-center">
+            <p className="text-(--text-1) text-[12px]">
+              This account is for this transaction only and expires in
+            </p>
+            <p className="font-bold text-foreground text-[18px] mt-1">30:00</p>
+          </div>
+        </div>
+      ),
+    },
+  ];
+
+  const borrowSteps: StepConfig[] = [
+    {
+      title: "UPLOAD DOCUMENTS",
+      content: (
+        <div className="space-y-6">
+          <FilePickerField
+            label={
+              <span className="text-foreground">
+                Invoice (
+                <span className="text-(--text-1)">Upcoming invoice</span>)
+              </span>
+            }
+            file={invoiceFile}
+            onFileChange={(file) => {
+              setInvoiceFile(file);
+              setErrors((prev) => ({ ...prev, invoice: undefined }));
+            }}
+            onFileRemove={() => setInvoiceFile(null)}
+            error={errors.invoice}
+          />
+
+          <FilePickerField
+            label={
+              <span className="text-foreground">
+                Corporate Bank Statement (
+                <span className="text-(--text-1)">Last 12 months</span>)
+              </span>
+            }
+            file={bankStatementFile}
+            onFileChange={(file) => {
+              setBankStatementFile(file);
+              setErrors((prev) => ({ ...prev, bankStatement: undefined }));
+            }}
+            onFileRemove={() => setBankStatementFile(null)}
+            error={errors.bankStatement}
+          />
+
+          <SelectField
+            label={<span className="text-foreground">Loan Duration</span>}
+            id="loan"
+            value={loanDuration}
+            onChange={(value) => {
+              setLoanDuration(value);
+              setErrors((prev) => ({ ...prev, duration: undefined }));
+            }}
+            options={[
+              { label: "30 days", value: "30" },
+              { label: "60 days", value: "60" },
+              { label: "90 days", value: "90" },
+            ]}
+            placeholder="Select duration"
+            error={errors.duration}
+          />
+
+          <Message_table
+            header="Note:"
+            columns={["Your data is secure", "Used only for credit assessment"]}
+            showAsList={true}
+          />
         </div>
       ),
     },
@@ -323,45 +850,13 @@ export default function CreditsPage() {
             onChange={setBorrowAmount}
             onCurrencyChange={setBorrowCurrency}
             placeholder="Amount to borrow"
-            description={`usdT balance:`}
+            description={`Eligible Credit:`}
             balance={52800}
-            showmax={true}
-            currency="USD"
+            showmax={false}
+            currency={borrowCurrency}
+            minamount={15000000}
+            label={`Enter Loan Amount (${borrowCurrency === "NGN" ? "₦" : "$"})`}
           />
-        </div>
-      ),
-    },
-    {
-      title: "TERMS & GOVERNANCE",
-      content: (
-        <div className="border border-(--grey-1) rounded-lg space-y-3">
-          <div className="p-4 bg-(--grey-1)">
-            <p className="font-semibold text-foreground text-[14px]">
-              Please Note:
-            </p>
-          </div>
-          <ul className="space-y-2 text-[14px] text-(--text-1) p-4">
-            <li className="flex gap-2">
-              <span>•</span>
-              <span>APR: {borrowAPR}%</span>
-            </li>
-            <li className="flex gap-2">
-              <span>•</span>
-              <span>Interest accrues daily</span>
-            </li>
-            <li className="flex gap-2">
-              <span>•</span>
-              <span>No fixed repayment date</span>
-            </li>
-            <li className="flex gap-2">
-              <span>•</span>
-              <span>Requires 2-of-5 multisig approvals</span>
-            </li>
-            <li className="flex gap-2">
-              <span>•</span>
-              <span>Funds sent to Operations wallet after approval</span>
-            </li>
-          </ul>
         </div>
       ),
     },
@@ -370,35 +865,39 @@ export default function CreditsPage() {
       content: (
         <div className="space-y-4">
           <div className="flex justify-between py-3 border-b border-(--grey-1)">
-            <span className="text-(--text-1) text-[14px]">
-              Amount Borrowed:
-            </span>
+            <span className="text-(--text-1) text-[14px]">Credit Amount:</span>
             <span className="font-semibold text-foreground text-[14px]">
-              ${borrowAmount} {borrowCurrency}
+              {borrowAmount} {borrowCurrency}
             </span>
           </div>
           <div className="flex justify-between py-3 border-b border-(--grey-1)">
-            <span className="text-(--text-1) text-[14px]">Collateral:</span>
+            <span className="text-(--text-1) text-[14px]">Duration:</span>
             <span className="font-semibold text-foreground text-[14px]">
-              {lockCollateralAmount} USDC from Yield Vault
+              {loanDuration} Days
             </span>
           </div>
           <div className="flex justify-between py-3 border-b border-(--grey-1)">
-            <span className="text-(--text-1) text-[14px]">Resulting LTV:</span>
+            <span className="text-(--text-1) text-[14px]">Due Date:</span>
             <span className="font-semibold text-foreground text-[14px]">
-              {resultingLTV}%
+              {"05-09-2026"}
             </span>
           </div>
           <div className="flex justify-between py-3 border-b border-(--grey-1)">
-            <span className="text-(--text-1) text-[14px]">APR:</span>
+            <span className="text-(--text-1) text-[14px]">Interests:</span>
             <span className="font-semibold text-foreground text-[14px]">
-              {effectiveAPR.toFixed(1)}%
+              {"500,000.00"} NGN
             </span>
           </div>
-          <div className="flex justify-between py-3">
-            <span className="text-(-text-1) text-[14px]">Approvals:</span>
+          <div className="flex justify-between py-3 border-b border-(--grey-1)">
+            <span className="text-(--text-1) text-[14px]">Bank Statement:</span>
             <span className="font-semibold text-foreground text-[14px]">
-              2 approvals
+              {"Healthy"}
+            </span>
+          </div>
+          <div className="flex justify-between py-3 border-b border-(--grey-1)">
+            <span className="text-(--text-1) text-[14px]">Invoice:</span>
+            <span className="font-semibold text-foreground text-[14px]">
+              {"Validated"}
             </span>
           </div>
         </div>
@@ -406,7 +905,22 @@ export default function CreditsPage() {
     },
   ];
 
-  const handleBorrowNext = () => {
+  const handleBorrowNext = async () => {
+    // only validate on step 0
+    if (borrowStep === 0) {
+      const isValid = validateStep1();
+      if (!isValid) return;
+
+      const uploaded = await uploadFiles();
+      if (!uploaded) {
+        setErrors((prev) => ({
+          ...prev,
+          invoice: "Upload failed. Try again.",
+        }));
+        return;
+      }
+    }
+
     if (borrowStep < borrowSteps.length - 1) {
       setBorrowStep(borrowStep + 1);
     }
@@ -426,8 +940,11 @@ export default function CreditsPage() {
       collateralLocked: lockCollateralAmount,
       resultingLTV,
       apr: effectiveAPR,
+      loanDuration,
+      invoiceFile,
+      bankStatementFile,
     };
-    console.log("[v0] Borrow Against Treasury Submitted:", formData);
+    console.log("Borrow Against Treasury Submitted:", formData);
     setIsSuccess(true);
   };
 
@@ -449,17 +966,17 @@ export default function CreditsPage() {
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-3">
-              <button className="px-4 sm:px-6 py-2 bg-background text-foreground text-sm font-medium border border-(--grey-1) rounded-lg cursor-pointer transition">
-                Repay loan
-              </button>
-              <button className="px-4 sm:px-6 py-2 bg-background text-foreground text-sm font-medium border border-(--grey-1) rounded-lg cursor-pointer transition">
-                Add collateral
+              <button
+                onClick={handleExtendClick}
+                className="px-4 sm:px-6 py-2 bg-background text-foreground text-sm font-medium border border-(--grey-1) rounded-lg cursor-pointer transition"
+              >
+                Extend Credit Date
               </button>
               <button
                 onClick={handlBorrowFund}
                 className="px-4 sm:px-6 py-2 bg-foreground text-background text-sm font-semibold rounded-lg cursor-pointer transition"
               >
-                Borrow against Treasury
+                Get Credit Line
               </button>
             </div>
           </div>
@@ -467,20 +984,14 @@ export default function CreditsPage() {
           <StatsSection
             stats={creditStatsData}
             uiConfig={creditStatsUIConfig}
-            buttonLabel="Optional Button"
-            onButtonClick={() => console.log("Button clicked")}
+            buttonLabel="Repay Credit"
+            onButtonClick={handleRepayClick}
           />
-          ;{/* Active Loans Table */}
+          {/* Active Loans Table */}
           <Table
-            data={activeLoansMock}
-            columns={activeLoansColumns}
-            extraHeader="Active Loans"
-          />
-          {/* Collateral Backing Loans Table */}
-          <Table
-            data={collateralAssetsMock}
-            columns={collateralAssetsColumns}
-            extraHeader="Colleteral Backing Loans"
+            data={creditHistoryMock}
+            columns={creditHistoryColumns}
+            extraHeader="Credit History"
           />
         </div>
 
@@ -495,10 +1006,83 @@ export default function CreditsPage() {
           onPreviousStep={handleBorrowPrevious}
           onSubmit={handleBorrowSubmit}
           isSuccess={isSuccess}
-          successTitle="Borrow request submitted"
-          successMessage={`Your request to borrow $${borrowAmount} ${borrowCurrency} against Yield Vault BTC has been submitted.\n${lockCollateralAmount} USDT will be locked as collateral once 2 of 5 multisig approvals are completed. Funds will be released to the Operations wallet after approval.`}
-          successtable={<Success_table />}
+          successTitle="Credit request submitted"
+          successMessage={`Your request for $${borrowAmount} ${borrowCurrency} is being reviewed. \n This usually takes 24-48 hours.`}
+          successtable={
+            <Message_table
+              useStatus
+              statusItems={[
+                { text: "Step 1: Submitted", status: "submitted" },
+                { text: "Step 2: Review", status: "inreview" },
+                { text: "Step 3: Approval", status: "pending" },
+              ]}
+              showAsList={true}
+            />
+          }
           successButtonLabel="Go to Credit"
+        />
+
+        <StepModal
+          isOpen={isRepayOpen}
+          onClose={() => setIsRepayOpen(false)}
+          title="Repay credit"
+          subtitle="Repay your outstanding credit"
+          steps={repaySteps}
+          currentStep={repayStep}
+          onNextStep={handleRepayNext}
+          onPreviousStep={handleRepayPrevious}
+          onSubmit={handleRepaySubmit}
+          isSuccess={repaySuccess}
+          repaySuccess={repaySuccess}
+          successTitle="Repayment successful"
+          successMessage=""
+          successButtonLabel="View Credit Details"
+          successtable={
+            <Success_table
+              header="Meta:"
+              messages={{
+                col1: "Transaction ID:",
+                message1: "TRX-839203",
+                col2: "Date:",
+                message2: "24th Mar, 2026.12:23 PM",
+                col3: "Method:",
+                message3: "Bank Transfer",
+                col4: " Outstanding Balance:",
+                message4: "0.00",
+              }}
+            />
+          }
+        />
+
+        <StepModal
+          isOpen={isExtendOpen}
+          onClose={() => setIsExtendOpen(false)}
+          title="Extend credit date"
+          subtitle="Extend your repayment date for a small fee"
+          steps={extendSteps}
+          currentStep={extendStep}
+          onNextStep={handleExtendNext}
+          onPreviousStep={handleExtendPrevious}
+          onSubmit={handleExtendSubmit}
+          isSuccess={extendSuccess}
+          successTitle="Extension successful"
+          successMessage="Your credit date extension was successful"
+          successButtonLabel="View Credit Details"
+          successtable={
+            <Success_table
+              header="New credit date:"
+              messages={{
+                col1: "Extension Period:",
+                message1: `${selectedExtension} days`,
+                col2: "New Due Date:",
+                message2: extensionFees[selectedExtension].newDueDate,
+                col3: "Extension Fee:",
+                message3: extensionFees[selectedExtension].fee,
+                col4: "New Total:",
+                message4: extensionFees[selectedExtension].newTotal,
+              }}
+            />
+          }
         />
       </div>
     </div>

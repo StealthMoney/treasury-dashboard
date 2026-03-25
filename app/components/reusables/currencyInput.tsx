@@ -1,7 +1,4 @@
 "use client";
-
-import React, { useState, useEffect } from "react";
-
 interface CurrencyInputProps {
   value: string;
   onChange: (value: string) => void;
@@ -10,6 +7,8 @@ interface CurrencyInputProps {
   placeholder?: string;
   label?: string;
   description: string;
+  minamount?: number;
+  assetName?: string;
   balance?: number;
   showmax: boolean;
 }
@@ -22,32 +21,30 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
   placeholder = "Amount to purchase",
   label,
   description = "you will receive:",
+  minamount,
+  assetName = false,
   balance,
   showmax = false,
 }) => {
-  const [receivedAmount, setReceivedAmount] = useState("0.00");
-
   // Mock exchange rates
   const exchangeRates = {
     NGN: 1456,
     USD: 1,
   };
 
-  useEffect(() => {
+  const receivedAmount = (() => {
     if (value && !isNaN(Number(value))) {
       const amount = Number(value);
       const rateUSDT = exchangeRates[currency];
-      const received = (amount / rateUSDT).toFixed(2);
-      setReceivedAmount(received);
-    } else {
-      setReceivedAmount("0.00");
+      return (amount / rateUSDT).toFixed(2);
     }
-  }, [value, currency]);
+    return "0.00";
+  })();
 
   return (
     <div className="space-y-4">
       {label && (
-        <label className="text-sm font-medium text-gray-700">{label}</label>
+        <label className="text-sm font-medium text-foreground">{label}</label>
       )}
       <div className="flex">
         <input
@@ -74,8 +71,16 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
             {balance?.toLocaleString("en-US", {
               minimumFractionDigits: 2,
             }) || receivedAmount}{" "}
-            USDT
           </span>
+          {assetName && <span className="ml-2">{assetName}</span>}
+          {minamount && (
+            <span className="font-semibold text-foreground">
+              -{" "}
+              {minamount?.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+              })}{" "}
+            </span>
+          )}
         </p>
 
         {showmax && (
