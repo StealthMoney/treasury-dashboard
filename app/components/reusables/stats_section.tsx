@@ -1,4 +1,4 @@
-"use client" 
+"use client";
 import { HiPlus } from "react-icons/hi";
 
 // ---- API / endpoint shape ----
@@ -26,6 +26,7 @@ export interface StatsSectionProps {
   uiConfig?: StatUIConfig[];
   buttonLabel?: string;
   onButtonClick?: () => void;
+  showPlus?: boolean;
 }
 
 export const StatsSection = ({
@@ -33,6 +34,7 @@ export const StatsSection = ({
   uiConfig = [],
   buttonLabel = "Fund Treasury",
   onButtonClick,
+  showPlus,
 }: StatsSectionProps) => {
   return (
     <div
@@ -72,7 +74,9 @@ export const StatsSection = ({
                   </h2>
                 )}
                 {stat.footer && (
-                  <p className={`text-[16px] ${ui?.footerClass ?? "text-(--grey-3)"}`}>
+                  <p
+                    className={`text-[16px] ${ui?.footerClass ?? "text-(--grey-3)"}`}
+                  >
                     {stat.footer}
                   </p>
                 )}
@@ -82,9 +86,9 @@ export const StatsSection = ({
                 <div className="mt-4">
                   <button
                     onClick={onButtonClick}
-                    className="flex items-center cursor-pointer gap-2 px-6 sm:px-8 py-2 sm:py-3 bg-foreground text-background text-[16px] rounded-full hover:bg-gray-800 transition whitespace-nowrap"
+                    className="flex items-center cursor-pointer gap-2 px-3 sm:px-8 py-2 sm:py-3 bg-foreground text-background text-[16px] rounded-full hover:bg-gray-800 transition whitespace-nowrap"
                   >
-                    <HiPlus className="w-4 h-4 sm:w-5 sm:h-5" />
+                    {showPlus && <HiPlus className="w-4 h-4 sm:w-5 sm:h-5" />}
                     <span>{buttonLabel}</span>
                   </button>
                 </div>

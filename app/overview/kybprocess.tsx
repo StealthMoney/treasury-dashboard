@@ -14,6 +14,7 @@ import {
 import { LuPencil } from "react-icons/lu";
 import Kyc_status_banner from "../components/reusables/kyc_status_banner";
 import { FaArrowLeft } from "react-icons/fa";
+import { FilePickerField } from "../components/reusables/general_inputs";
 
 interface OwnerInfo {
   id: string;
@@ -162,67 +163,7 @@ interface KYBScreensProps {
 }
 
 // Enhanced File Picker with Delete Functionality
-function FilePickerField({
-  label,
-  file,
-  onFileChange,
-  onFileRemove,
-  error,
-  required = false,
-}: {
-  label: string;
-  file: File | null;
-  onFileChange: (file: File | null) => void;
-  onFileRemove: () => void;
-  error?: string;
-  required?: boolean;
-}) {
-  const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const picked = e.target.files?.[0] ?? null;
-    onFileChange(picked);
-  };
-
-  return (
-    <div>
-      <p className="text-[14px] text-(--text-1) mb-2" aria-label={label}>
-        {label} {required && "*"}
-      </p>
-      <input
-        ref={inputRef}
-        type="file"
-        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-        className="hidden"
-        onChange={handleFileChange}
-      />
-      <div
-        onClick={() => inputRef.current?.click()}
-        className="border-2 border-dashed border-(--grey-1) rounded-lg p-4 text-center cursor-pointer bg-(--grey-4) transition hover:border-(--grey-2)"
-      >
-        <p className="text-(--text-1) text-[14px]">+ Choose file</p>
-      </div>
-      {file && (
-        <div className="flex items-center justify-between bg-(--grey-4) p-2 rounded-lg mt-2">
-          <p className="text-[12px] text-foreground truncate flex-1">
-            📎 {file.name}
-          </p>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onFileRemove();
-            }}
-            className="p-1 hover:bg-(--grey-3) rounded-full transition"
-            type="button"
-          >
-            <HiX className="w-4 h-4 text-(--red-1)" />
-          </button>
-        </div>
-      )}
-      {error && <p className="text-(--red-1) text-sm mt-1">{error}</p>}
-    </div>
-  );
-}
 
 // Multi-file picker with individual file removal
 function MultiFilePickerField({

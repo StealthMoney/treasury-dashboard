@@ -23,6 +23,7 @@ export interface StepModalProps {
   onPreviousStep: () => void;
   onSubmit?: () => void;
   isSuccess?: boolean;
+  repaySuccess?: boolean;
   successTitle?: string;
   successMessage?: string | ReactNode;
   successButtonLabel?: string;
@@ -44,6 +45,7 @@ export const StepModal: React.FC<StepModalProps> = ({
   successMessage,
   successButtonLabel,
   successtable,
+  repaySuccess,
 }) => {
   if (!isOpen) return null;
 
@@ -95,6 +97,19 @@ export const StepModal: React.FC<StepModalProps> = ({
                 <h3 className="text-[20px] font-bold text-foreground text-center mb-2">
                   {successTitle}
                 </h3>
+
+                {repaySuccess && (
+                  <div className="w-full flex flex-col items-center justify-center">
+                    <p className="text-(--text-1) text-[14px] text-center">
+                      Your credit payment of{" "}
+                      <span className="font-semibold text-foreground">
+                        ₦100,852,500.00
+                      </span>{" "}
+                      has been completed successfully
+                    </p>
+                  </div>
+                )}
+
                 <p className="text-[14px] text-(--text-1) text-center">
                   {successMessage}
                 </p>

@@ -1,7 +1,10 @@
 "use client";
 
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
-import { useState, ChangeEvent } from "react";
+import React, { useState, ChangeEvent, useRef } from "react";
+import { HiX } from "react-icons/hi";
+
+type SelectOption = string | { label: string; value: string };
 
 export function SelectField({
   label,
@@ -13,11 +16,11 @@ export function SelectField({
   error,
   disabled,
 }: {
-  label: string;
+  label: string | React.ReactNode;
   id: string;
   value: string;
   onChange: (v: string) => void;
-  options: string[];
+  options: SelectOption[];
   placeholder: string;
   error?: string;
   disabled?: boolean;
@@ -40,11 +43,17 @@ export function SelectField({
           <option value="" disabled>
             {placeholder}
           </option>
-          {options.map((o) => (
-            <option key={o} value={o}>
-              {o}
-            </option>
-          ))}
+          {options.map((o) =>
+            typeof o === "string" ? (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ) : (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ),
+          )}
         </select>
         <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-(--text-1)">
           <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
@@ -58,6 +67,71 @@ export function SelectField({
         </div>
       </div>
       {error && <p className="text-xs text-(--red-1)">{error}</p>}
+    </div>
+  );
+}
+
+export function FilePickerField({
+  label,
+  file,
+  onFileChange,
+  onFileRemove,
+  error,
+  required = false,
+}: {
+  label: string | React.ReactNode;
+  file: File | null;
+  onFileChange: (file: File | null) => void;
+  onFileRemove: () => void;
+  error?: string;
+  required?: boolean;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const picked = e.target.files?.[0] ?? null;
+    onFileChange(picked);
+  };
+
+  return (
+    <div>
+      <label
+        className="text-[14px] text-(--text-1) mb-2"
+        aria-label={typeof label === "string" ? label : undefined}
+      >
+        {label} {required && "*"}
+      </label>
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+      <div
+        onClick={() => inputRef.current?.click()}
+        className="border-2 border-dashed border-(--grey-1) rounded-lg p-4 text-center cursor-pointer bg-(--grey-4) transition hover:border-(--grey-2)"
+      >
+        <p className="text-(--text-1) text-[14px]">+ Choose file</p>
+      </div>
+      {file && (
+        <div className="flex items-center justify-between bg-(--grey-4) p-2 rounded-lg mt-2">
+          <p className="text-[12px] text-foreground truncate flex-1">
+            📎 {file.name}
+          </p>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onFileRemove();
+            }}
+            className="p-1 hover:bg-(--grey-3) rounded-full transition"
+            type="button"
+          >
+            <HiX className="w-4 h-4 text-(--red-1)" />
+          </button>
+        </div>
+      )}
+      {error && <p className="text-(--red-1) text-sm mt-1">{error}</p>}
     </div>
   );
 }

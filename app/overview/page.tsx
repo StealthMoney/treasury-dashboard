@@ -217,6 +217,7 @@ export default function Home() {
             placeholder="Amount to purchase"
             showmax={false}
             description="You will receive:"
+            assetName="USDT"
           />
 
           <div>
@@ -457,6 +458,7 @@ export default function Home() {
             uiConfig={statsUIConfig}
             buttonLabel="Fund Treasury"
             onButtonClick={() => handleFundTreasury()}
+            showPlus={true}
           />
         </div>
 
