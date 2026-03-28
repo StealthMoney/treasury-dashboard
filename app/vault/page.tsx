@@ -29,27 +29,27 @@ const allocationData: AllocationItem[] = [
   {
     id: 1,
     asset: "USDT",
-    amount: "12,567,890.89",
+    amount: "9,900.00",
     amountUnit: "USDT",
-    value: "$12,567,890.89",
-    allocation: "+$2,100",
+    value: "$9,900.00",
+    allocation: "+$500",
     allocationValue: "green",
-    pnl: "67.8%",
+    pnl: "2.8%",
   },
   {
     id: 2,
     asset: "USDC",
-    amount: "12,567,890.89",
+    amount: "7,700.00",
     amountUnit: "USDC",
-    value: "$12,567,890.89",
-    allocation: "+$2,100",
+    value: "$7,700.00",
+    allocation: "+$400",
     allocationValue: "green",
-    pnl: "67.8%",
+    pnl: "2.8%",
   },
 ];
 
 const vaultActivityItems = [
-  "Purchased: 24,6789.00 USDT",
+  "Purchased: 9,900.00 USDT",
   "USDT moved into vault",
   "Transfer approved to operation",
 ];
@@ -57,17 +57,17 @@ const vaultActivityItems = [
 export const vaultStatsData: StatData[] = [
   {
     label: "Total Vault Value",
-    value: "$34,689,89",
-    footer: "≈ $34,689.89",
+    value: "$6,392.90",
+    footer: "≈ $6,392.90",
   },
   {
     label: "Total PnL",
-    value: "+$3,658.89",
-    footer: "67.78%",
+    value: "+$300",
+    footer: "2.8%",
   },
   {
     label: "APY",
-    value: "6.8%",
+    value: "2.8%",
     footer: "Since — Jan 2026",
   },
 ];

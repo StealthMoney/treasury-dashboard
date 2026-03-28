@@ -4,7 +4,7 @@ import { HiPlus } from "react-icons/hi";
 // ---- API / endpoint shape ----
 export interface StatValueRow {
   main: string | number;
-  suffix?: string;
+  suffix?: "USDC" | "USDT";
 }
 
 export interface StatData {

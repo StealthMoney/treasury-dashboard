@@ -32,71 +32,49 @@ const mockTransactions: Transaction[] = [
     id: 1,
     date: "09-10-2025",
     time: "14:57 PM",
-    amount: "$12,567,890.89",
-    amountUSDT: "12,567,890.89 USDT",
+    amount: "$7,890.89",
+    amountUSDT: "7,890.89 USDT",
     walletAddress: "1Lbcfr7s67yhgs ****4ZnX71",
     type: "Multi-sig",
     vault: "Vault One",
-    vaultType: "Trezor",
+    vaultType: "",
     status: "Successful",
   },
   {
     id: 2,
     date: "09-10-2025",
     time: "14:57 PM",
-    amount: "$12,567,890.89",
-    amountUSDT: "12,567,890.89 USDT",
+    amount: "$4,490.00",
+    amountUSDT: "4,490.00 USDT",
     walletAddress: "1Lbcfr7s67yhgs ****4ZnX71",
     type: "Multi-sig",
     vault: "Vault One",
-    vaultType: "Trezor",
+    vaultType: "",
     status: "Successful",
   },
   {
     id: 3,
     date: "09-10-2025",
     time: "14:57 PM",
-    amount: "$12,567,890.89",
-    amountUSDT: "12,567,890.89 USDT",
+    amount: "$2,000.00",
+    amountUSDT: "2,000.00 USDT",
     walletAddress: "1Lbcfr7s67yhgs ****4ZnX71",
     type: "Multi-sig",
     vault: "Vault One",
-    vaultType: "Trezor",
+    vaultType: "",
     status: "Successful",
   },
   {
     id: 4,
     date: "09-10-2025",
     time: "14:57 PM",
-    amount: "$12,567,890.89",
-    amountUSDT: "12,567,890.89 USDT",
+    amount: "$10,000.00",
+    amountUSDT: "10,000.00 USDT",
     walletAddress: "1Lbcfr7s67yhgs ****4ZnX71",
     type: "Multi-sig",
     vault: "Vault One",
-    vaultType: "Trezor",
+    vaultType: "",
     status: "Successful",
-  },
-];
-
-// This simulates data coming from your endpoint
-export const statsData: StatData[] = [
-  {
-    label: "Total Balance",
-    valueRow: {
-      main: "12,678,876",
-      suffix: "USDT",
-    },
-    footer: "≈ $34,689.89",
-  },
-  {
-    label: "Total Invested",
-    value: "$24,689.98",
-    footer: "≈0.25980346 BTC",
-  },
-  {
-    label: "All time gain",
-    value: "+$2,678.89",
-    footer: "+20.67 %",
   },
 ];
 
@@ -356,7 +334,7 @@ export default function Home() {
             <div className="flex justify-between items-center py-2 border-t border-gray-200 pt-2">
               <span className="text-(--text-1) text-[14px]">Account Name:</span>
               <span className="font-semibold text-foreground text-[14px]">
-                Moneywave Treasury
+                Basket Wholesale Ltd Treasury
               </span>
             </div>
             <div className="flex justify-between items-center py-2 border-t border-gray-200 pt-2">
@@ -427,6 +405,28 @@ export default function Home() {
     setShowKybScreens(false);
   };
 
+  // This simulates data coming from your endpoint
+  const statsData: StatData[] = [
+    {
+      label: "Total Balance",
+      valueRow: {
+        main: "8,678",
+        suffix: stable,
+      },
+      footer: "≈ $4,689.89",
+    },
+    {
+      label: "Total Invested",
+      value: "$4,689.98",
+      footer: "≈0.25980346 BTC",
+    },
+    {
+      label: "All time gain",
+      value: "+$2,678.89",
+      footer: "20.67 %",
+    },
+  ];
+
   if (showKybScreens) {
     return (
       <KYBScreens onClose={handleKybClose} onComplete={handleKybComplete} />
@@ -440,7 +440,9 @@ export default function Home() {
         {/* Header */}
         <div className="mb-8">
           <p className="text-(--text-1) text-sm mb-1">Welcome,</p>
-          <h1 className="text-4xl font-bold text-foreground">Moneywave</h1>
+          <h1 className="text-4xl font-bold text-foreground">
+            Basket Wholesale Ltd
+          </h1>
         </div>
         {/* Tabs and Refresh */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">

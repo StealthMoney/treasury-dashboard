@@ -54,8 +54,19 @@ const creditHistoryMock: CreditHistory[] = [
   {
     id: "#LN-018",
     date: "17-03-2026",
-    amountBorrowed: "₦ 100,000,000",
-    amountBorrowedCNGN: "100,000,000 cNGN",
+    amountBorrowed: "₦ 2,000,000",
+    amountBorrowedCNGN: "2,000,000 cNGN",
+    interest: "₦ 800,000",
+    interestCNGN: "800,000 cNGN",
+    dueDate: "09-10-2026",
+    daysLeft: "69 days left",
+    status: "Active",
+  },
+  {
+    id: "#LN-018",
+    date: "17-03-2026",
+    amountBorrowed: "₦ 7,000,000",
+    amountBorrowedCNGN: "7,000,000 cNGN",
     interest: "₦ 1,000,000",
     interestCNGN: "1,000,000 cNGN",
     dueDate: "09-10-2026",
@@ -65,8 +76,8 @@ const creditHistoryMock: CreditHistory[] = [
   {
     id: "#LN-018",
     date: "17-03-2026",
-    amountBorrowed: "₦ 100,000,000",
-    amountBorrowedCNGN: "100,000,000 cNGN",
+    amountBorrowed: "₦ 5,000,000",
+    amountBorrowedCNGN: "5,000,000 cNGN",
     interest: "₦ 1,000,000",
     interestCNGN: "1,000,000 cNGN",
     dueDate: "09-10-2026",
@@ -76,21 +87,10 @@ const creditHistoryMock: CreditHistory[] = [
   {
     id: "#LN-018",
     date: "17-03-2026",
-    amountBorrowed: "₦ 100,000,000",
-    amountBorrowedCNGN: "100,000,000 cNGN",
-    interest: "₦ 1,000,000",
-    interestCNGN: "1,000,000 cNGN",
-    dueDate: "09-10-2026",
-    daysLeft: "69 days left",
-    status: "Active",
-  },
-  {
-    id: "#LN-018",
-    date: "17-03-2026",
-    amountBorrowed: "₦ 100,000,000",
-    amountBorrowedCNGN: "100,000,000 cNGN",
-    interest: "₦ 1,000,000",
-    interestCNGN: "1,000,000 cNGN",
+    amountBorrowed: "₦ 8,344,090",
+    amountBorrowedCNGN: "8,344,090 cNGN",
+    interest: "₦ 1,100,000",
+    interestCNGN: "1,100,000 cNGN",
     dueDate: "09-10-2026",
     daysLeft: "69 days left",
     status: "Active",
@@ -176,8 +176,8 @@ const creditHistoryColumns = [
 export const creditStatsData: StatData[] = [
   {
     label: "Active Loans",
-    value: "₦ 110,000,000.00",
-    footer: "≃ 100,000,000 cNGN",
+    value: "₦ 9,068,000.00",
+    footer: "≃ 9,068,000.00 cNGN",
   },
   {
     label: "Due Date",
@@ -186,8 +186,8 @@ export const creditStatsData: StatData[] = [
   },
   {
     label: "Loan Interest",
-    value: "10,000,000.00",
-    footer: "+10.00 %",
+    value: "1,210,000.00",
+    footer: "+5.00 %",
   },
 ];
 
@@ -960,7 +960,7 @@ export default function CreditsPage() {
                 Credit Overview
               </h1>
               <p className="text-(--text-1) text-[16px] mt-1">
-                Manage your credit here
+                Secure line of credit with your unpaid invoice
               </p>
             </div>
 
