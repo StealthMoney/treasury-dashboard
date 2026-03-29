@@ -3,6 +3,7 @@ import React from "react";
 import Sidebar from "./sidebar";
 import Topdash from "./topdash";
 import { useState } from "react";
+import { SessionProvider } from "next-auth/react";
 
 export default function Layoutclient({
   children,
@@ -26,7 +27,7 @@ export default function Layoutclient({
     transition-all
     md:ml-[20%]"
           >
-            {children}
+            <SessionProvider>{children}</SessionProvider>
           </main>
         </div>
       </body>

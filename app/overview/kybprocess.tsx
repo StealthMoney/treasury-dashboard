@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import {  HiPlus, HiX } from "react-icons/hi";
+import { HiPlus, HiX } from "react-icons/hi";
 import { KYBStepWrapper } from "../components/reusables/kybstepwraper";
 import {
   baseButtonBlack,
@@ -164,7 +164,6 @@ interface KYBScreensProps {
 
 // Enhanced File Picker with Delete Functionality
 
-
 // Multi-file picker with individual file removal
 function MultiFilePickerField({
   label,
@@ -199,6 +198,7 @@ function MultiFilePickerField({
         {label} *
       </p>
       <input
+        title="file-picker"
         ref={inputRef}
         type="file"
         accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
@@ -223,6 +223,7 @@ function MultiFilePickerField({
                 📎 {file.name}
               </p>
               <button
+                title="upload"
                 onClick={(e) => {
                   e.stopPropagation();
                   removeFile(file.name);
@@ -619,6 +620,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="w-full">
                   <select
+                    title="staff-size"
                     value={formData.staffSize}
                     onChange={(e) =>
                       updateFormData({ staffSize: e.target.value })
@@ -648,6 +650,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
                       className={splitLeft}
                     />
                     <select
+                      title="annual-sales-volume"
                       value={formData.annualSalesVolumeCurrency}
                       onChange={(e) =>
                         updateFormData({
@@ -672,6 +675,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="w-full">
                   <select
+                    title="industry"
                     value={formData.industry}
                     onChange={(e) =>
                       updateFormData({ industry: e.target.value })
@@ -691,6 +695,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 
                 <div className="w-full">
                   <select
+                    title="business type"
                     value={formData.businessType}
                     onChange={(e) =>
                       updateFormData({ businessType: e.target.value })
@@ -796,6 +801,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
                     className={splitLeft}
                   />
                   <select
+                    title="phone number"
                     value={formData.phoneNumberCountry}
                     onChange={(e) =>
                       updateFormData({ phoneNumberCountry: e.target.value })
@@ -886,6 +892,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex flex-col">
                 <select
+                  title="office country"
                   value={formData.officeCountry}
                   onChange={(e) =>
                     updateFormData({ officeCountry: e.target.value })
@@ -906,6 +913,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 
               <div className="flex flex-col">
                 <select
+                  title="office state"
                   value={formData.officeState}
                   onChange={(e) =>
                     updateFormData({ officeState: e.target.value })
@@ -926,6 +934,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex flex-col">
                 <select
+                  title="office city"
                   value={formData.officeCity}
                   onChange={(e) =>
                     updateFormData({ officeCity: e.target.value })
@@ -1048,6 +1057,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="flex flex-col">
                         <input
+                          title="first name"
                           value={owner.firstName}
                           onChange={(e) =>
                             updateOwner(owner.id, { firstName: e.target.value })
@@ -1063,6 +1073,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 
                       <div className="flex flex-col">
                         <input
+                          title="last name"
                           value={owner.lastName}
                           onChange={(e) =>
                             updateOwner(owner.id, { lastName: e.target.value })
@@ -1080,6 +1091,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="flex flex-col">
                         <select
+                          title="dob"
                           value={owner.dayOfBirth}
                           onChange={(e) =>
                             updateOwner(owner.id, {
@@ -1104,6 +1116,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 
                       <div className="flex flex-col">
                         <select
+                          title="mob"
                           value={owner.monthOfBirth}
                           onChange={(e) =>
                             updateOwner(owner.id, {
@@ -1128,6 +1141,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 
                       <div className="flex flex-col">
                         <select
+                          title="yob"
                           value={owner.yearOfBirth}
                           onChange={(e) =>
                             updateOwner(owner.id, {
@@ -1157,6 +1171,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="flex flex-col">
                         <select
+                          title="owner document"
                           value={owner.idDoc1}
                           onChange={(e) =>
                             updateOwner(owner.id, { idDoc1: e.target.value })
@@ -1219,6 +1234,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="flex flex-col">
                         <select
+                          title="state"
                           value={owner.homeState}
                           onChange={(e) =>
                             updateOwner(owner.id, { homeState: e.target.value })
@@ -1238,6 +1254,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 
                       <div className="flex flex-col">
                         <select
+                          title="city"
                           value={owner.homeCity}
                           onChange={(e) =>
                             updateOwner(owner.id, { homeCity: e.target.value })
@@ -1261,6 +1278,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="flex flex-col">
                         <select
+                          title="postal code"
                           value={owner.homePostalCode}
                           onChange={(e) =>
                             updateOwner(owner.id, {
@@ -1282,6 +1300,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 
                       <div className="flex flex-col">
                         <input
+                          title="street"
                           value={owner.homeStreet}
                           onChange={(e) =>
                             updateOwner(owner.id, {
@@ -1536,6 +1555,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
             </p>
 
             <select
+              title="bank name"
               value={formData.bankName}
               onChange={(e) => updateFormData({ bankName: e.target.value })}
               className={`${baseSelect} w-full`}
@@ -1662,6 +1682,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
                     Contracting Entity
                   </label>
                   <input
+                    title="entity"
                     type="text"
                     value={formData.contractingEntity}
                     onChange={(e) =>
@@ -1679,6 +1700,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
                     Email Address
                   </label>
                   <input
+                    title="email"
                     type="text"
                     value={formData.entityEmail}
                     onChange={(e) =>
@@ -1701,6 +1723,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
                     Company Address
                   </label>
                   <input
+                    title="address"
                     type="text"
                     value={formData.companyAddress}
                     onChange={(e) =>
@@ -1718,6 +1741,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
                     Company Website
                   </label>
                   <input
+                    title="website"
                     type="text"
                     value={formData.companyWebsite}
                     onChange={(e) =>
@@ -1768,6 +1792,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
                       className={splitLeft}
                     />
                     <select
+                      title="phone"
                       value={formData.phoneNumberCountry7}
                       onChange={(e) =>
                         updateFormData({ phoneNumberCountry7: e.target.value })
@@ -1787,6 +1812,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
               </div>
 
               <select
+                title="job title"
                 value={formData.jobTitle}
                 onChange={(e) => updateFormData({ jobTitle: e.target.value })}
                 className={`${baseSelect} w-full`}

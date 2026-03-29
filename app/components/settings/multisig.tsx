@@ -155,7 +155,10 @@ export function MultiSigTab() {
                     </span>
                   </td>
                   <td className="py-4 px-4">
-                    <button className="p-2 hover:bg-muted rounded-lg transition-colors">
+                    <button
+                      title="more"
+                      className="p-2 hover:bg-muted rounded-lg transition-colors"
+                    >
                       <AiOutlineMore
                         size={18}
                         className="text-muted-foreground"
@@ -182,7 +185,10 @@ export function MultiSigTab() {
                     {approver.email}
                   </p>
                 </div>
-                <button className="p-2 hover:bg-muted rounded-lg transition-colors">
+                <button
+                  title="more"
+                  className="p-2 hover:bg-muted rounded-lg transition-colors"
+                >
                   <AiOutlineMore size={18} className="text-muted-foreground" />
                 </button>
               </div>

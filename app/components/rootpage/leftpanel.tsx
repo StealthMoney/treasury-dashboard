@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   AiOutlineEye,
   AiOutlineEyeInvisible,
   AiOutlineCheck,
 } from "react-icons/ai";
 import Image from "next/image";
+import { Spinner } from "../reusables/spinner";
+import { signIn } from "next-auth/react";
 
 // ─── Password criteria ───────────────────────────────────────────────────────
 const PASSWORD_CRITERIA = [
@@ -162,7 +164,20 @@ function InputField({
 }
 
 // ─── Sign Up Form ─────────────────────────────────────────────────────────────
-function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
+function SignUpForm({
+  onSuccess,
+  loading,
+  error,
+}: {
+  onSuccess: (data: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+  }) => void;
+  loading: boolean;
+  error: string;
+}) {
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -188,9 +203,9 @@ function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
-    if (validate()) onSuccess();
+    if (validate()) onSuccess(form);
   };
 
   const criteriaMet = PASSWORD_CRITERIA.map((c) => c.test(form.password));
@@ -236,6 +251,10 @@ function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
         onToggle={() => setShowPw(!showPw)}
       />
 
+      {error !== "" && (
+        <span className="text-xs text-(--red-1) mt-1">{error}</span>
+      )}
+
       {/* Password criteria */}
       <div className="grid grid-cols-3 gap-2 pt-1">
         {PASSWORD_CRITERIA.map((c, i) => (
@@ -261,10 +280,11 @@ function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
 
       <div className="pt-2">
         <button
+          disabled={loading}
           type="submit"
-          className="w-full bg-gray-900 hover:bg-gray-800 active:bg-black text-white font-medium py-3 rounded-xl transition-colors text-sm"
+          className="w-full flex gap-x-2 justify-center items-center cursor-pointer bg-gray-900 hover:bg-gray-800 active:bg-black text-white font-medium py-3 rounded-xl transition-colors text-sm"
         >
-          Create Account
+          Create Account {loading && <Spinner />}
         </button>
       </div>
       <p className="text-center text-xs text-gray-500">
@@ -281,7 +301,15 @@ function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
 }
 
 // ─── Sign In Form ─────────────────────────────────────────────────────────────
-function SignInForm({ onSuccess }: { onSuccess: () => void }) {
+function SignInForm({
+  onSuccess,
+  loading,
+  error,
+}: {
+  onSuccess: (data: { email: string; password: string }) => void;
+  loading: boolean;
+  error: string;
+}) {
   const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPw, setShowPw] = useState(false);
@@ -298,9 +326,9 @@ function SignInForm({ onSuccess }: { onSuccess: () => void }) {
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
-    if (validate()) onSuccess();
+    if (validate()) onSuccess(form);
   };
 
   return (
@@ -325,6 +353,9 @@ function SignInForm({ onSuccess }: { onSuccess: () => void }) {
         showPassword={showPw}
         onToggle={() => setShowPw(!showPw)}
       />
+      {error !== "" && (
+        <span className="text-xs text-(--red-1) mt-1">{error}</span>
+      )}
       <p className="text-center text-[16px] text-(--text-1)">
         Forgot your password?{" "}
         <a
@@ -336,10 +367,11 @@ function SignInForm({ onSuccess }: { onSuccess: () => void }) {
       </p>
       <div className="lg:mt-32">
         <button
+          disabled={loading}
           type="submit"
-          className="w-full bg-foreground hover:cursor-pointer active:bg-foreground text-background font-medium py-3 rounded-xl transition-colors text-sm"
+          className="w-full flex gap-x-2 justify-center items-center bg-foreground hover:cursor-pointer active:bg-foreground text-background font-medium py-3 rounded-xl transition-colors text-sm"
         >
-          Sign In
+          Sign In {loading && <Spinner />}
         </button>
       </div>
     </form>
@@ -350,6 +382,67 @@ function SignInForm({ onSuccess }: { onSuccess: () => void }) {
 export default function AuthPage() {
   const router = useRouter();
   const [tab, setTab] = useState<"signup" | "signin">("signup");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState("");
+
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") ?? "/credit";
+
+  const handleRegister = async (data: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+  }) => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await res.json();
+      if (!res.ok) {
+        setError(result.message || "Something went wrong");
+      }
+
+      // success → popup message instead
+      router.push("/credit");
+    } catch (err) {
+      setLoading(false);
+      console.error(err);
+    } finally {
+      setLoading(false);
+      setError("");
+    }
+  };
+
+  const handleLogin = async (data: { email: string; password: string }) => {
+    try {
+      setLoading(true);
+      const res = await signIn("credentials", {
+        email: data.email,
+        password: data.password,
+        redirect: false,
+        callbackUrl,
+      });
+
+      if (res && !res.ok) {
+        setError(String(res.error));
+      }
+
+      router.push("/credit");
+    } catch (err) {
+      setLoading(false);
+      console.error(err);
+    } finally {
+      setLoading(false);
+      setError("");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#FBFBFB] flex flex-col">
@@ -388,7 +481,11 @@ export default function AuthPage() {
                     Let&apos;s start with basic information.
                   </p>
                 </div>
-                <SignUpForm onSuccess={() => router.push("/onboarding")} />
+                <SignUpForm
+                  onSuccess={handleRegister}
+                  loading={loading}
+                  error={error}
+                />
               </>
             ) : (
               <>
@@ -400,7 +497,11 @@ export default function AuthPage() {
                     Enter your email and password to pick up where you stopped.
                   </p>
                 </div>
-                <SignInForm onSuccess={() => router.push("/overview")} />
+                <SignInForm
+                  onSuccess={handleLogin}
+                  loading={loading}
+                  error={error}
+                />
               </>
             )}
           </div>

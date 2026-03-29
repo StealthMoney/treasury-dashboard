@@ -1,0 +1,124 @@
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
+import CredentialsProvider from "next-auth/providers/credentials";
+import { NextAuthOptions, Session } from "next-auth";
+import { JWT } from "next-auth/jwt";
+import { jwtDecode } from "jwt-decode";
+
+import endpoints from "@/app/config/endpoints";
+import { DecodedJwt } from "@/app/types/jwt";
+
+// ─── Augment NextAuth types ────────────────────────────────────────────────────
+declare module "next-auth" {
+  interface User {
+    id_token?: string;
+  }
+
+  interface Session {
+    accessToken?: string;
+    user: {
+      email?: string | null;
+      name?: string | null;
+      image?: string | null;
+      role?: string;
+    };
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id_token?: string;
+  }
+}
+// ──────────────────────────────────────────────────────────────────────────────
+
+export const authOptions: NextAuthOptions = {
+  providers: [
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        email: {
+          label: "Email",
+          type: "text",
+          placeholder: "extheo@stealth.money",
+        },
+        password: {
+          label: "Password",
+          type: "password",
+          placeholder: "********",
+        },
+      },
+      async authorize(credentials) {
+        const authEndpoint = endpoints().auth.login;
+        const res = await fetch(authEndpoint, {
+          method: "POST",
+          body: JSON.stringify({
+            email: credentials?.email,
+            password: credentials?.password,
+          }),
+          headers: { "Content-Type": "application/json" },
+        });
+
+        console.log("AUTH STATUS:", res.status);
+        console.log("AUTH OK:", res.ok);
+
+        const user = await res.json();
+        console.log("AUTH BODY:", JSON.stringify(user));
+        return {
+          ...user,
+          id: user.id_token,
+        };
+        return null;
+      },
+    }),
+  ],
+  pages: {
+    signIn: "/",
+    signOut: "/",
+  },
+  session: {
+    strategy: "jwt",
+  },
+  callbacks: {
+    async signIn({ user }) {
+      return Boolean(user?.id_token);
+    },
+
+    async jwt({ token, user }) {
+      if (user?.id_token) {
+        token.id_token = user.id_token;
+      }
+      return token;
+    },
+
+    async session({ session, token }: { session: Session; token: JWT }) {
+      session.accessToken = undefined;
+
+      console.log(session, " is here");
+
+      if (token.id_token) {
+        const decoded: DecodedJwt = jwtDecode(token.id_token);
+        session.accessToken = token.id_token;
+        session.expires = new Date(decoded.exp * 1000).toISOString();
+        console.log(decoded, "is decoded");
+
+        if (decoded.sub.includes("@")) {
+          token.email = decoded.sub;
+          session.user.email = decoded.sub;
+        } else {
+          token.name = decoded.sub;
+          session.user.name = decoded.sub;
+        }
+
+        session.user.role = decoded.auth;
+      }
+
+      return session;
+    },
+  },
+  events: {
+    signOut: async ({ token }) => {
+      token.id_token = undefined;
+    },
+  },
+};

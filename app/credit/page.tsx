@@ -14,6 +14,9 @@ import {
 } from "../components/reusables/general_inputs";
 import Message_table from "../components/reusables/message_table";
 import OutstandingCredits from "../components/reusables/outstabding_credits";
+import { useSession } from "next-auth/react";
+import KybBanner from "../components/reusables/kybinfo_banner";
+import { KYBScreens } from "../overview/kybprocess";
 
 interface ActiveLoan {
   id: string;
@@ -306,6 +309,9 @@ export const collateralAssetsColumns = [
 ];
 
 export default function CreditsPage() {
+  const { data: session, status } = useSession();
+  console.log(session, "is session data");
+
   const [isBorrowOpen, setIsBorrowOpen] = useState(false);
   const [borrowStep, setBorrowStep] = useState(0);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -342,6 +348,12 @@ export default function CreditsPage() {
 
   const [loanDuration, setLoanDuration] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+
+  const [isKybVerified, setIsKybVerified] = useState(false);
+  const [showKybScreens, setShowKybScreens] = useState(false);
+  const [kybStatus, setKybStatus] = useState<
+    "unverified" | "inreview" | "failed"
+  >("unverified");
 
   const validateStep1 = () => {
     const newErrors: typeof errors = {};
@@ -459,6 +471,20 @@ export default function CreditsPage() {
     };
     console.log("Extend Credit Date Submitted:", formData);
     setExtendSuccess(true);
+  };
+
+  const handleUpgradeAccount = () => {
+    setShowKybScreens(true);
+  };
+
+  const handleKybClose = () => {
+    setShowKybScreens(false);
+  };
+
+  const handleKybComplete = () => {
+    setIsKybVerified(true);
+    setShowKybScreens(false);
+    setKybStatus("inreview");
   };
 
   // Extension fee mapping
@@ -948,6 +974,12 @@ export default function CreditsPage() {
     setIsSuccess(true);
   };
 
+  if (showKybScreens) {
+    return (
+      <KYBScreens onClose={handleKybClose} onComplete={handleKybComplete} />
+    );
+  }
+
   return (
     <div className="min-h-screen w-full px-6 bg-background">
       <div className="w-full overflow-x-auto md:max-w-[80%]">
@@ -980,6 +1012,13 @@ export default function CreditsPage() {
               </button>
             </div>
           </div>
+
+          {!isKybVerified && (
+            <KybBanner
+              kybStatus={kybStatus} // "unverified" | "inreview" | "failed"
+              onAction={handleUpgradeAccount}
+            />
+          )}
           {/* Stats Cards */}
           <StatsSection
             stats={creditStatsData}
@@ -989,9 +1028,11 @@ export default function CreditsPage() {
           />
           {/* Active Loans Table */}
           <Table
-            data={creditHistoryMock}
+            data={[]}
             columns={creditHistoryColumns}
             extraHeader="Credit History"
+            kybStatus={"verified"}
+            tableButtonClick={handlBorrowFund}
           />
         </div>
 

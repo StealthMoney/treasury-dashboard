@@ -11,8 +11,6 @@ import { StatData } from "../components/reusables/stats_section";
 import { Table } from "../components/reusables/table";
 import { CurrencyInput } from "../components/reusables/currencyInput";
 import { StepModal, type StepConfig } from "../components/reusables/modal";
-import Image from "next/image";
-import { KYBScreens } from "./kybprocess";
 
 interface Transaction {
   id: number;
@@ -149,7 +147,7 @@ const columns = [
     header: "Status",
     accessor: (row: Transaction) => (
       <div className="flex items-center gap-2">
-        <HiCheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-(--green-1) flex-shrink-0" />
+        <HiCheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-(--green-1) shrink-0" />
         <span className="text-xs sm:text-sm text-gray-700">{row.status}</span>
       </div>
     ),
@@ -176,8 +174,6 @@ export default function Home() {
   const [isFundTreasuryOpen, setIsFundTreasuryOpen] = useState(false);
   const [fundTreasuryStep, setFundTreasuryStep] = useState(0);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [isKybVerified, setIsKybVerified] = useState(false);
-  const [showKybScreens, setShowKybScreens] = useState(false);
 
   // Fund Treasury Form State
   const [amount, setAmount] = useState("");
@@ -227,6 +223,7 @@ export default function Home() {
               className="text-sm font-medium block mb-2"
             ></label>
             <select
+              title="destination"
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
               className="w-full px-4 py-3 border border-(--grey-1) text-(--text-1) rounded-lg focus:outline-none focus:ring-2 bg-(--grey-4) cursor-pointer"
@@ -414,24 +411,27 @@ export default function Home() {
     setIsSuccess(false);
   };
 
-  const handleUpgradeAccount = () => {
-    setShowKybScreens(true);
-  };
-
-  const handleKybClose = () => {
-    setShowKybScreens(false);
-  };
-
-  const handleKybComplete = () => {
-    setIsKybVerified(true);
-    setShowKybScreens(false);
-  };
-
-  if (showKybScreens) {
-    return (
-      <KYBScreens onClose={handleKybClose} onComplete={handleKybComplete} />
-    );
-  }
+  // This simulates data coming from your endpoint
+  const statsData: StatData[] = [
+    {
+      label: "Total Balance",
+      valueRow: {
+        main: "8,678",
+        suffix: stable,
+      },
+      footer: "≈ $4,689.89",
+    },
+    {
+      label: "Total Invested",
+      value: "$4,689.98",
+      footer: "≈0.25980346 BTC",
+    },
+    {
+      label: "All time gain",
+      value: "+$2,678.89",
+      footer: "20.67 %",
+    },
+  ];
 
   return (
     <div className="min-h-screen w-full lg:px-6 bg-background">
@@ -462,37 +462,6 @@ export default function Home() {
           />
         </div>
 
-        {!isKybVerified && (
-          <div className="w-full rounded-2xl md:max-w-[80%] mb-8 border bg-[#FFF6F0] border-[#FFC299] px-6 flex md:flex-row flex-col justify-between items-center">
-            <div className="md:max-w-[40%] w-full space-y-1">
-              <h1 className="text-foreground font-semibold text-[20px]">
-                Upgrade Your Account
-              </h1>
-              <p className="text-[#602600] text-[14px]">
-                Upgrade your account by verifying your business (KYB) to unlock
-                all platform features.
-              </p>
-
-              <button
-                onClick={handleUpgradeAccount}
-                className="bg-foreground text-background px-2 py-2 rounded-lg mt-1"
-              >
-                Upgrade your account
-              </button>
-            </div>
-
-            <div className="md:flex hidden">
-              <Image
-                src="/images/prompt.svg"
-                alt="Prompt"
-                className="w-full"
-                width={100}
-                height={100}
-              />
-            </div>
-          </div>
-        )}
-
         <div className="w-full overflow-x-auto md:max-w-[80%]">
           <Table
             data={mockTransactions}
@@ -503,6 +472,7 @@ export default function Home() {
               itemsPerPage,
               onPageChange: setCurrentPage,
             }}
+            kybStatus="unverified"
           />
         </div>
         <StepModal

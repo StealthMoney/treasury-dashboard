@@ -69,7 +69,7 @@ export const StatsSection = ({
                     )}
                   </div>
                 ) : (
-                  <h2 className="text-[24px] font-bold text-foreground mb-2">
+                  <h2 className="text-[24px] font-bold text-foreground mb-2 text-nowrap">
                     {stat.value}
                   </h2>
                 )}

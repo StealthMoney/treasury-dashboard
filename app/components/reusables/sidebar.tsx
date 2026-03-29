@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { RiCoinsFill, RiHome3Line, RiUser3Line } from "react-icons/ri";
 import { PiHandCoins } from "react-icons/pi";
 import { TbFileAnalytics } from "react-icons/tb";
 import { CiSettings, CiLogout } from "react-icons/ci";
@@ -17,8 +16,6 @@ export default function Sidebar({
   const pathname = usePathname();
 
   const navLinks = [
-    { logo: <RiHome3Line />, text: "Overview", href: "/overview" },
-    { logo: <RiCoinsFill />, text: "Yield Vault", href: "/vault" },
     { logo: <PiHandCoins />, text: "Credit", href: "/credit" },
     { logo: <TbFileAnalytics />, text: "Report", href: "/report" },
     { logo: <CiSettings />, text: "Settings", href: "/settings" },
