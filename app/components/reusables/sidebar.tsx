@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { PiHandCoins } from "react-icons/pi";
 import { TbFileAnalytics } from "react-icons/tb";
 import { CiSettings, CiLogout } from "react-icons/ci";
+import { RiUser3Line } from "react-icons/ri";
 
 export default function Sidebar({
   open,
@@ -18,8 +19,8 @@ export default function Sidebar({
   const navLinks = [
     { logo: <PiHandCoins />, text: "Credit", href: "/credit" },
     { logo: <TbFileAnalytics />, text: "Report", href: "/report" },
+    { logo: <RiUser3Line />, text: "Profile", href: "/profile" },
     { logo: <CiSettings />, text: "Settings", href: "/settings" },
-    // { logo: <RiUser3Line />, text: "Profile", href: "/profile" },
   ];
 
   return (

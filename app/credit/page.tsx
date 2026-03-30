@@ -180,7 +180,7 @@ export const creditStatsData: StatData[] = [
   {
     label: "Active Loans",
     value: "₦ 110,000,000.00",
-    footer: "≃ 100,000,000 cNGN",
+    footer: "30th March, 2026",
   },
   {
     label: "Due Date",

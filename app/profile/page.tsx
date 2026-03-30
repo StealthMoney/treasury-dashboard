@@ -1,34 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { ProfileTab } from "../components/settings/profile";
-import { PasswordSettingTab } from "../components/settings/password";
-import { TeamTab } from "../components/settings/team";
-import { BankAccountDetailTab } from "../components/settings/bank_details";
-import { PreferenceTab } from "../components/settings/preference";
+import { ProfileTab } from "./profile";
+import { PasswordSettingTab } from "./password";
 
-type TabType = "profile" | "team" | "bankdetails" | "preference";
+type TabType = "profile" | "password";
 
-export default function ProfileManagement() {
+export default function Profile() {
   const [activeTab, setActiveTab] = useState<TabType>("profile");
 
   const tabs: Array<{ id: TabType; label: string }> = [
-    { id: "profile", label: "Business Profile" },
-    { id: "team", label: "Team" },
-    { id: "bankdetails", label: "Bank Details" },
-    { id: "preference", label: "Preference" },
+    { id: "profile", label: "Admin Profile" },
+    { id: "password", label: "Password Setting" },
   ];
 
   const renderTabContent = () => {
     switch (activeTab) {
       case "profile":
         return <ProfileTab />;
-      case "team":
-        return <TeamTab />;
-      case "bankdetails":
-        return <BankAccountDetailTab />;
-      case "preference":
-        return <PreferenceTab />;
+      case "password":
+        return <PasswordSettingTab />;
       default:
         return <ProfileTab />;
     }

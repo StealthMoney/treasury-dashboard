@@ -75,9 +75,9 @@ export const StatsSection = ({
                 )}
                 {stat.footer && (
                   <p
-                    className={`text-[16px] ${ui?.footerClass ?? "text-(--grey-3)"}`}
+                    className={`text-[16px] text-nowrap ${ui?.footerClass ?? "text-(--grey-3)"}`}
                   >
-                    {stat.footer}
+                    Start Date: {stat.footer}
                   </p>
                 )}
               </div>

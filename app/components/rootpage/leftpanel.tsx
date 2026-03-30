@@ -396,17 +396,25 @@ export default function AuthPage() {
   }) => {
     try {
       setLoading(true);
+
+      const payload = {
+        ...data,
+        login: data.email,
+      };
+
       const res = await fetch("/api/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
 
       const result = await res.json();
       if (!res.ok) {
         setError(result.message || "Something went wrong");
+        console.log(res);
+        return;
       }
 
       // success → popup message instead
@@ -432,6 +440,8 @@ export default function AuthPage() {
 
       if (res && !res.ok) {
         setError(String(res.error));
+        console.log(res, res.error);
+        return;
       }
 
       router.push("/credit");
