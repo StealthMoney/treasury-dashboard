@@ -1,3 +1,4 @@
+import ProvideWrapper from "./components/reusables/provider_wrapper";
 import "./globals.css";
 
 export default function RootLayout({
@@ -7,7 +8,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="antialiased overflow-x-hidden">{children}</body>
+      <body className="antialiased overflow-x-hidden">
+        <ProvideWrapper>{children}</ProvideWrapper>
+      </body>
     </html>
   );
 }

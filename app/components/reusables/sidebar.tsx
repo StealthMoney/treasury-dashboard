@@ -6,6 +6,10 @@ import { PiHandCoins } from "react-icons/pi";
 import { TbFileAnalytics } from "react-icons/tb";
 import { CiSettings, CiLogout } from "react-icons/ci";
 import { RiUser3Line } from "react-icons/ri";
+import { signOut } from "next-auth/react";
+import { useState } from "react";
+import { Spinner } from "./spinner";
+import { FeedbackModal } from "./feedback_modal";
 
 export default function Sidebar({
   open,
@@ -14,6 +18,9 @@ export default function Sidebar({
   open: boolean;
   onClose: () => void;
 }) {
+  const [loading, setLoading] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
   const pathname = usePathname();
 
   const navLinks = [
@@ -23,8 +30,35 @@ export default function Sidebar({
     { logo: <CiSettings />, text: "Settings", href: "/settings" },
   ];
 
+  const handleLogout = async () => {
+    setLoading(true);
+    await signOut();
+    setLoading(false);
+  };
+
   return (
     <>
+      <FeedbackModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        title="Confirm Logout"
+        description="Are you sure you want to log out of your account?"
+        buttonCount={2}
+        buttons={[
+          {
+            label: "Cancel",
+            variant: "outline",
+            onClick: () => setShowLogoutModal(false),
+          },
+          {
+            label: "Logout",
+            variant: "primary",
+            onClick: handleLogout,
+            loading: loading,
+          },
+        ]}
+      />
+
       {/* Overlay */}
       {open && (
         <div
@@ -74,6 +108,7 @@ export default function Sidebar({
         </div>
 
         <button
+          onClick={() => setShowLogoutModal(true)}
           className="
             mb-6 flex items-center gap-2
             rounded-md py-2 px-2
@@ -81,7 +116,7 @@ export default function Sidebar({
             text-(--red-1) cursor-pointer
           "
         >
-          <CiLogout /> Logout
+          <CiLogout /> Logout {loading && <Spinner />}
         </button>
       </aside>
     </>

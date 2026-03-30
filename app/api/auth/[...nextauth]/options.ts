@@ -37,8 +37,8 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        email: {
-          label: "Email",
+        username: {
+          label: "username",
           type: "text",
           placeholder: "extheo@stealth.money",
         },
@@ -53,7 +53,7 @@ export const authOptions: NextAuthOptions = {
         const res = await fetch(authEndpoint, {
           method: "POST",
           body: JSON.stringify({
-            email: credentials?.email,
+            username: credentials?.username,
             password: credentials?.password,
           }),
           headers: { "Content-Type": "application/json" },

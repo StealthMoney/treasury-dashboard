@@ -10,8 +10,8 @@ import {
 import Image from "next/image";
 import { Spinner } from "../reusables/spinner";
 import { signIn } from "next-auth/react";
+import { FeedbackModal } from "../reusables/feedback_modal";
 
-// ─── Password criteria ───────────────────────────────────────────────────────
 const PASSWORD_CRITERIA = [
   {
     key: "length",
@@ -163,11 +163,9 @@ function InputField({
   );
 }
 
-// ─── Sign Up Form ─────────────────────────────────────────────────────────────
 function SignUpForm({
   onSuccess,
   loading,
-  error,
 }: {
   onSuccess: (data: {
     firstName: string;
@@ -176,7 +174,6 @@ function SignUpForm({
     password: string;
   }) => void;
   loading: boolean;
-  error: string;
 }) {
   const [form, setForm] = useState({
     firstName: "",
@@ -251,10 +248,6 @@ function SignUpForm({
         onToggle={() => setShowPw(!showPw)}
       />
 
-      {error !== "" && (
-        <span className="text-xs text-(--red-1) mt-1">{error}</span>
-      )}
-
       {/* Password criteria */}
       <div className="grid grid-cols-3 gap-2 pt-1">
         {PASSWORD_CRITERIA.map((c, i) => (
@@ -300,15 +293,12 @@ function SignUpForm({
   );
 }
 
-// ─── Sign In Form ─────────────────────────────────────────────────────────────
 function SignInForm({
   onSuccess,
   loading,
-  error,
 }: {
   onSuccess: (data: { email: string; password: string }) => void;
   loading: boolean;
-  error: string;
 }) {
   const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -353,9 +343,7 @@ function SignInForm({
         showPassword={showPw}
         onToggle={() => setShowPw(!showPw)}
       />
-      {error !== "" && (
-        <span className="text-xs text-(--red-1) mt-1">{error}</span>
-      )}
+
       <p className="text-center text-[16px] text-(--text-1)">
         Forgot your password?{" "}
         <a
@@ -378,12 +366,22 @@ function SignInForm({
   );
 }
 
-// ─── Main Auth Page ───────────────────────────────────────────────────────────
 export default function AuthPage() {
   const router = useRouter();
   const [tab, setTab] = useState<"signup" | "signin">("signup");
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState("");
+
+  const [modal, setModal] = useState<{
+    open: boolean;
+    type: "success" | "error";
+    title: string;
+    description: string;
+  }>({
+    open: false,
+    type: "success",
+    title: "",
+    description: "",
+  });
 
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/credit";
@@ -412,19 +410,28 @@ export default function AuthPage() {
 
       const result = await res.json();
       if (!res.ok) {
-        setError(result.message || "Something went wrong");
+        setModal({
+          open: true,
+          type: "error",
+          title: "Registration Failed",
+          description: result.message || "Something went wrong",
+        });
         console.log(res);
         return;
       }
 
-      // success → popup message instead
-      router.push("/credit");
+      setModal({
+        open: true,
+        type: "success",
+        title: "Check Your mail",
+        description:
+          "Your account has been created successfully. We’ve sent an activation email to your inbox. Please check your email to activate your account.",
+      });
     } catch (err) {
       setLoading(false);
       console.error(err);
     } finally {
       setLoading(false);
-      setError("");
     }
   };
 
@@ -432,14 +439,19 @@ export default function AuthPage() {
     try {
       setLoading(true);
       const res = await signIn("credentials", {
-        email: data.email,
+        username: data.email,
         password: data.password,
         redirect: false,
         callbackUrl,
       });
 
       if (res && !res.ok) {
-        setError(String(res.error));
+        setModal({
+          open: true,
+          type: "error",
+          title: "Login Failed",
+          description: "Invalid credentials",
+        });
         console.log(res, res.error);
         return;
       }
@@ -447,15 +459,47 @@ export default function AuthPage() {
       router.push("/credit");
     } catch (err) {
       setLoading(false);
+      setModal({
+        open: true,
+        type: "error",
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+      });
       console.error(err);
     } finally {
       setLoading(false);
-      setError("");
     }
   };
 
   return (
     <div className="min-h-screen bg-[#FBFBFB] flex flex-col">
+      <FeedbackModal
+        isOpen={modal.open}
+        onClose={() => setModal((m) => ({ ...m, open: false }))}
+        icon={
+          <Image
+            src={
+              modal.type === "success"
+                ? "/images/mail.svg"
+                : "/images/failed.svg"
+            }
+            className="w-24 h-24"
+            width={50}
+            height={50}
+            alt="icon"
+          />
+        }
+        title={modal.title}
+        description={modal.description}
+        buttonCount={1}
+        buttons={[
+          {
+            label: "Close",
+            variant: "primary",
+            onClick: () => setModal((m) => ({ ...m, open: false })),
+          },
+        ]}
+      />
       {/* Top nav */}
       <div className="flex justify-center py-4">
         <div className="flex bg-[#F5F5F5] rounded-full p-1">
@@ -491,11 +535,7 @@ export default function AuthPage() {
                     Let&apos;s start with basic information.
                   </p>
                 </div>
-                <SignUpForm
-                  onSuccess={handleRegister}
-                  loading={loading}
-                  error={error}
-                />
+                <SignUpForm onSuccess={handleRegister} loading={loading} />
               </>
             ) : (
               <>
@@ -507,11 +547,7 @@ export default function AuthPage() {
                     Enter your email and password to pick up where you stopped.
                   </p>
                 </div>
-                <SignInForm
-                  onSuccess={handleLogin}
-                  loading={loading}
-                  error={error}
-                />
+                <SignInForm onSuccess={handleLogin} loading={loading} />
               </>
             )}
           </div>

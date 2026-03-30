@@ -1,10 +1,11 @@
 "use client";
-
 import { useSearchParams } from "next/navigation";
-import Link from "next/link";
 import React, { Suspense } from "react";
 import { activate } from "@/app/server/activate";
 import { Spinner } from "@/app/components/reusables/spinner";
+import { FeedbackModal } from "@/app/components/reusables/feedback_modal";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 interface Data {
   status: number;
@@ -14,6 +15,7 @@ interface Data {
 const ActivationContent = () => {
   const searchParams = useSearchParams();
   const key = searchParams.get("key");
+  const router = useRouter();
 
   const [loading, setLoading] = React.useState(true);
   const [data, setData] = React.useState<Data | null>(null);
@@ -32,6 +34,7 @@ const ActivationContent = () => {
       const res = await activate(key);
       setData(res);
     } catch (err) {
+      console.error("Something went wrong", err);
       setData({
         status: 500,
         message: "Something went wrong.",
@@ -53,49 +56,54 @@ const ActivationContent = () => {
     );
   }
 
-  console.log(data, "is data");
+  const isSuccess = data?.status === 200;
 
-  if (data && data.status !== 200) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 text-center shadow-sm">
-          <h2 className="text-xl font-semibold mb-2">Activation Failed</h2>
-          <p className="text-sm text-muted-foreground mb-6">
-            {data.message || "We couldn’t activate your account."}
-          </p>
-
-          <Link
-            href="/"
-            className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-black text-white font-medium hover:bg-black/90 transition"
-          >
-            Go Home
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  if (data && data.status === 200) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 text-center shadow-sm">
-          <h2 className="text-xl font-semibold mb-2">Account Activated 🎉</h2>
-          <p className="text-sm text-muted-foreground mb-6">
-            Your account has been successfully activated.
-          </p>
-
-          <Link
-            href="/account/login"
-            className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-black text-white font-medium hover:bg-black/90 transition"
-          >
-            Continue to Login
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  return null;
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <FeedbackModal
+        isOpen={true}
+        onClose={() => router.push("/")}
+        icon={
+          <Image
+            src={isSuccess ? "/images/success.svg" : "/images/failed.svg"}
+            className="w-24 h-24"
+            width={50}
+            height={50}
+            alt="icon"
+          />
+        }
+        title={isSuccess ? "Activation Successful" : "Activation Failed"}
+        description={
+          isSuccess
+            ? "Your account has been successfully activated."
+            : data?.message || "We couldn’t activate your account."
+        }
+        buttonCount={isSuccess ? 1 : 2}
+        buttons={
+          isSuccess
+            ? [
+                {
+                  label: "Continue to Login",
+                  variant: "primary",
+                  onClick: () => router.push("/"),
+                },
+              ]
+            : [
+                {
+                  label: "Go Home",
+                  variant: "outline",
+                  onClick: () => router.push("/"),
+                },
+                {
+                  label: "Retry Activation",
+                  variant: "primary",
+                  onClick: () => window.location.reload(),
+                },
+              ]
+        }
+      />
+    </div>
+  );
 };
 
 const LoadingFallback = () => (
