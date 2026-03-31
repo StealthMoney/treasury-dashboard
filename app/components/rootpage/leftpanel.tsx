@@ -32,7 +32,6 @@ function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-// ─── Left panel (shared) ─────────────────────────────────────────────────────
 function LeftPanel() {
   return (
     <div className="hidden md:flex flex-col w-1/2 bg-white">
@@ -96,7 +95,6 @@ function LeftPanel() {
   );
 }
 
-// ─── Input component ──────────────────────────────────────────────────────────
 interface InputFieldProps {
   label: string;
   id: string;
@@ -368,7 +366,7 @@ function SignInForm({
 
 export default function AuthPage() {
   const router = useRouter();
-  const [tab, setTab] = useState<"signup" | "signin">("signup");
+  const [tab, setTab] = useState<"signup" | "signin">("signin");
   const [loading, setLoading] = useState<boolean>(false);
 
   const [modal, setModal] = useState<{

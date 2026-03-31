@@ -15,6 +15,7 @@ const endpoints = (params?: string | number) => {
     register: `${baseUrl}/register`,
     profile: `${baseUrl}/profile/info`,
     activate: `${baseUrl}/activate?key=${params}`,
+    navMenu: `${baseUrl}/profile`,
   };
 
   const auth = {
@@ -30,6 +31,7 @@ const endpoints = (params?: string | number) => {
 
   const account = {
     "edit-profile": `${baseUrl}/account`,
+    "upgrade-account": `${baseUrl}/businesses`
   };
 
   return {

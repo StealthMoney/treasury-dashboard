@@ -11,15 +11,18 @@ import {
   splitLeft,
   splitRight,
 } from "../components/reusables/classes";
-import { LuPencil } from "react-icons/lu";
 import Kyc_status_banner from "../components/reusables/kyc_status_banner";
 import { FaArrowLeft } from "react-icons/fa";
 import { FilePickerField } from "../components/reusables/general_inputs";
+import { uploadKybDoc } from "../server/upgrade_account";
+import { Spinner } from "../components/reusables/spinner";
 
 interface OwnerInfo {
   id: string;
   firstName: string;
   lastName: string;
+  email: string;
+  phoneNumber: string;
   dayOfBirth: string;
   monthOfBirth: string;
   yearOfBirth: string;
@@ -70,7 +73,6 @@ interface KYBFormData {
   registrationStatus: File | null;
   mouDoc: File | null;
   boardRegisterDoc: File | null;
-  einDoc: File | null;
   proofOfAddressDoc: File | null;
   DueDiligenceDoc: File | null;
   amlDoc: File | null;
@@ -80,17 +82,6 @@ interface KYBFormData {
   bankName: string;
   accountNumber: string;
   accountName: string;
-
-  // Step 7
-  contractingEntity: string;
-  entityEmail: string;
-  companyAddress: string;
-  companyWebsite: string;
-  fullName: string;
-  phoneNumber7: string;
-  phoneNumberCountry7: string;
-  jobTitle: string;
-  acceptAgreement: boolean;
 }
 
 const initialFormData: KYBFormData = {
@@ -120,6 +111,8 @@ const initialFormData: KYBFormData = {
       id: crypto.randomUUID?.() || Date.now().toString(),
       firstName: "",
       lastName: "",
+      email: "",
+      phoneNumber: "",
       dayOfBirth: "",
       monthOfBirth: "",
       yearOfBirth: "",
@@ -138,7 +131,6 @@ const initialFormData: KYBFormData = {
   registrationStatus: null,
   mouDoc: null,
   boardRegisterDoc: null,
-  einDoc: null,
   proofOfAddressDoc: null,
   DueDiligenceDoc: null,
   amlDoc: null,
@@ -146,23 +138,12 @@ const initialFormData: KYBFormData = {
   bankName: "",
   accountNumber: "",
   accountName: "",
-  contractingEntity: "Monilewave Enterprise",
-  entityEmail: "monilewave@gmail.com",
-  companyAddress: "Narayi Highcost, Narayi",
-  companyWebsite: "www.moniewave.com",
-  fullName: "",
-  phoneNumber7: "",
-  phoneNumberCountry7: "NGN",
-  jobTitle: "",
-  acceptAgreement: false,
 };
 
 interface KYBScreensProps {
   onClose: () => void;
   onComplete: () => void;
 }
-
-// Enhanced File Picker with Delete Functionality
 
 // Multi-file picker with individual file removal
 function MultiFilePickerField({
@@ -260,6 +241,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<KYBFormData>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
 
   const updateFormData = useCallback((updates: Partial<KYBFormData>) => {
     setFormData((prev) => ({ ...prev, ...updates }));
@@ -296,6 +278,8 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
       id: crypto.randomUUID?.() || Date.now().toString(),
       firstName: "",
       lastName: "",
+      email: "",
+      phoneNumber: "",
       dayOfBirth: "",
       monthOfBirth: "",
       yearOfBirth: "",
@@ -404,6 +388,11 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
             newErrors[`owner_${owner.id}_firstName`] = "First Name is required";
           if (!owner.lastName)
             newErrors[`owner_${owner.id}_lastName`] = "Last Name is required";
+          if (!owner.email)
+            newErrors[`owner_${owner.id}_email`] = "email is required";
+          if (!owner.phoneNumber)
+            newErrors[`owner_${owner.id}_phoneNumber`] =
+              "phoneNumber is required";
           if (!owner.dayOfBirth)
             newErrors[`owner_${owner.id}_dayOfBirth`] =
               "Day of Birth is required";
@@ -451,7 +440,6 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
         if (!formData.boardRegisterDoc)
           newErrors.boardRegisterDoc =
             "Register of Board of Directors is required";
-        if (!formData.einDoc) newErrors.einDoc = "EIN document is required";
         if (!formData.proofOfAddressDoc)
           newErrors.proofOfAddressDoc = "Proof of Address is required";
         if (!formData.amlDoc)
@@ -472,25 +460,6 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
             "Enter a valid 10-digit account number (e.g. 0123456789)";
         if (!formData.accountName)
           newErrors.accountName = "Account Name is required";
-        break;
-
-      case 7:
-        if (!formData.fullName) newErrors.fullName = "Full Name is required";
-        if (!formData.phoneNumber7)
-          newErrors.phoneNumber7 = "Phone Number is required";
-        else if (!isValidPhone(formData.phoneNumber7))
-          newErrors.phoneNumber7 = "Include country code (e.g. +2348012345678)";
-        if (!formData.jobTitle) newErrors.jobTitle = "Job Title is required";
-        if (!formData.acceptAgreement)
-          newErrors.acceptAgreement = "You must accept the agreement";
-        if (!formData.entityEmail) newErrors.entityEmail = "Email is required";
-        else if (!isValidEmail(formData.entityEmail))
-          newErrors.entityEmail =
-            "Enter a valid email (e.g. monilewave@gmail.com)";
-        if (!formData.companyWebsite)
-          newErrors.companyWebsite = "Company website is required";
-        else if (!isValidWebsite(formData.companyWebsite))
-          newErrors.companyWebsite = "Enter a valid URL (e.g. www.company.com)";
         break;
 
       default:
@@ -517,12 +486,181 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
     onClose();
   };
 
-  const handleSubmit = () => {
-    if (validateStep(currentStep)) {
-      console.log("KYB Form Submitted:", formData);
-      setCurrentStep(1);
-      setFormData(initialFormData);
-      onComplete();
+  const fileToBase64 = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve((reader.result as string).split(",")[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+  const mapDocType = (value: string): string => {
+    switch (value) {
+      case "Passport":
+        return "PASSPORT";
+      case "Driver License":
+        return "DRIVER_LICENSE";
+      case "National ID":
+        return "NATIONAL_ID";
+      case "Proof of Address":
+        return "PROOF_OF_ADDRESS";
+      case "Bank Statement":
+        return "BANK_STATEMENT";
+      case "Invoice":
+        return "INVOICE";
+      default:
+        return "OTHER";
+    }
+  };
+
+  type DocPayload = {
+    fileBase64: string;
+    fileName: string;
+    contentType: string;
+    identificationNumber: string;
+    otherDocumentDescription?: string;
+    documentType: string;
+  };
+
+  const toDoc = async (file: File, typeValue: string, idNumber = "") => {
+    const documentType = mapDocType(typeValue);
+
+    const base: DocPayload = {
+      fileBase64: await fileToBase64(file),
+      fileName: file.name,
+      contentType: file.type,
+      identificationNumber: idNumber,
+      documentType,
+    };
+
+    // ONLY include this for OTHER
+    if (documentType === "OTHER") {
+      base.otherDocumentDescription = file.name;
+    }
+
+    return base;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateStep(currentStep)) return;
+
+    try {
+      setLoading(true);
+
+      const companyDocuments = await Promise.all(
+        [
+          formData.incorporationDoc &&
+            toDoc(formData.incorporationDoc, "OTHER"),
+
+          formData.taxFilingDoc && toDoc(formData.taxFilingDoc, "INVOICE"),
+
+          formData.registrationStatus &&
+            toDoc(formData.registrationStatus, "OTHER"),
+
+          formData.mouDoc && toDoc(formData.mouDoc, "OTHER"),
+
+          formData.boardRegisterDoc &&
+            toDoc(formData.boardRegisterDoc, "OTHER"),
+
+          formData.proofOfAddressDoc &&
+            toDoc(formData.proofOfAddressDoc, "PROOF_OF_ADDRESS"),
+
+          formData.DueDiligenceDoc && toDoc(formData.DueDiligenceDoc, "OTHER"),
+
+          formData.amlDoc && toDoc(formData.amlDoc, "OTHER"),
+
+          ...formData.supportingDoc.map((file) => toDoc(file, "OTHER")),
+        ].filter(Boolean) as Promise<DocPayload>[],
+      );
+
+      const businessDirectors = await Promise.all(
+        formData.owners.map(async (owner) => {
+          const dob = `${owner.yearOfBirth}-${String(
+            owner.monthOfBirth,
+          ).padStart(2, "0")}-${String(owner.dayOfBirth).padStart(2, "0")}`;
+
+          return {
+            firstName: owner.firstName,
+            lastName: owner.lastName,
+            email: owner.email,
+            phoneNumber: owner.phoneNumber,
+            dob,
+            addressLine1: owner.homeStreet,
+            addressLine2: owner.homeState,
+            city: owner.homeCity,
+            state: owner.homeState,
+            country: formData.officeCountry || "Nigeria",
+            postalCode: owner.homePostalCode,
+
+            ...(owner.idUpload &&
+              owner.idDoc1 && {
+                passportDocument: await toDoc(
+                  owner.idUpload,
+                  owner.idDoc1,
+                  owner.idNumber1,
+                ),
+              }),
+
+            ...(owner.homeProofUpload && {
+              proofOfAddressDocument: await toDoc(
+                owner.homeProofUpload,
+                "Proof of Address",
+              ),
+            }),
+
+            role: "DIRECTOR",
+            ownershipPercentage: 0,
+            isPep: false,
+          };
+        }),
+      );
+
+      const payload = {
+        businessName: formData.companyName,
+        businessDescription: formData.businessDescription,
+        staffSize: formData.staffSize,
+        industry: formData.industry,
+        annualRevenue: Number(formData.annualSalesVolume) || 0,
+        annualRevenueCurrency: formData.annualSalesVolumeCurrency,
+        website: formData.website,
+        linkedIn: formData.linkedin,
+        twitter: formData.twitter,
+        instagram: formData.instagram,
+        phoneNumber: formData.phoneNumber,
+        email: formData.businessEmail,
+        disputeEmail: formData.disputeEmail,
+        supportEmail: formData.supportEmail,
+        businessType: formData.businessType,
+        addressLine1: formData.officeStreet,
+        addressLine2: "N/A",
+        city: formData.officeCity,
+        state: formData.officeState,
+        country: formData.officeCountry,
+        postalCode: formData.officePostalCode,
+        businessDirectors,
+        companyDocuments,
+        bankDetail: {
+          bankName: formData.bankName,
+          accountNumber: formData.accountNumber,
+          accountName: formData.accountName,
+        },
+      };
+
+      console.log(payload, "FINAL PAYLOAD");
+
+      const result = await uploadKybDoc(JSON.stringify(payload));
+
+      console.log(result, "SUCCESS");
+
+      if (result.success) {
+        setCurrentStep(1);
+        setFormData(initialFormData);
+        onComplete();
+      }
+    } catch (err) {
+      console.error("KYB submission failed:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1058,6 +1196,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
                       <div className="flex flex-col">
                         <input
                           title="first name"
+                          placeholder="firstname"
                           value={owner.firstName}
                           onChange={(e) =>
                             updateOwner(owner.id, { firstName: e.target.value })
@@ -1074,6 +1213,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
                       <div className="flex flex-col">
                         <input
                           title="last name"
+                          placeholder="lastname"
                           value={owner.lastName}
                           onChange={(e) =>
                             updateOwner(owner.id, { lastName: e.target.value })
@@ -1083,6 +1223,43 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
                         {errors[`owner_${owner.id}_lastName`] && (
                           <p className="text-(--red-1) text-sm">
                             {errors[`owner_${owner.id}_lastName`]}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex flex-col">
+                        <input
+                          title="email"
+                          value={owner.email}
+                          placeholder="email"
+                          onChange={(e) =>
+                            updateOwner(owner.id, { email: e.target.value })
+                          }
+                          className={baseInput}
+                        />
+                        {errors[`owner_${owner.id}_email`] && (
+                          <p className="text-(--red-1) text-sm">
+                            {errors[`owner_${owner.id}_email`]}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col">
+                        <input
+                          title="phone number"
+                          placeholder="phone number"
+                          value={owner.phoneNumber}
+                          onChange={(e) =>
+                            updateOwner(owner.id, {
+                              phoneNumber: e.target.value,
+                            })
+                          }
+                          className={baseInput}
+                        />
+                        {errors[`owner_${owner.id}_phoneNumber`] && (
+                          <p className="text-(--red-1) text-sm">
+                            {errors[`owner_${owner.id}_phoneNumber`]}
                           </p>
                         )}
                       </div>
@@ -1301,6 +1478,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
                       <div className="flex flex-col">
                         <input
                           title="street"
+                          placeholder="Street Address"
                           value={owner.homeStreet}
                           onChange={(e) =>
                             updateOwner(owner.id, {
@@ -1441,14 +1619,6 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
                   error={errors.boardRegisterDoc}
                   required
                 />
-                <FilePickerField
-                  label="EIN (US companies only)"
-                  file={formData.einDoc}
-                  onFileChange={(file) => updateFormData({ einDoc: file })}
-                  onFileRemove={() => updateFormData({ einDoc: null })}
-                  error={errors.einDoc}
-                  required
-                />
               </div>
             </div>
 
@@ -1544,7 +1714,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
                   Go Back
                 </button>
                 <button onClick={handleNext} className={baseButtonBlack}>
-                  Proceed to Service Agreement
+                  Proceed to Submit
                 </button>
               </div>
             }
@@ -1613,8 +1783,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
           <KYBStepWrapper
             title={
               <p className="font-semibold text-gray-900">
-                Service of Agreement –{" "}
-                <span className="text-(--red-1)">Please Read and Confirm</span>
+                Notice
               </p>
             }
             footer={
@@ -1622,232 +1791,14 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
                 <button onClick={handlePrevious} className={baseButtonWhite}>
                   Go Back
                 </button>
-                <button
-                  onClick={handleSubmit}
-                  disabled={!formData.acceptAgreement}
-                  className={baseButtonBlack}
-                >
-                  Accept
+                <button onClick={handleSubmit} className={baseButtonBlack}>
+                  Submit {loading && <Spinner />}
                 </button>
               </div>
             }
           >
             <div className="space-y-4">
-              <Kyc_status_banner status="success" />
-              <div className="space-y-1">
-                <h3 className="font-semibold text-foreground">
-                  Merchant Service Agreement
-                </h3>
-                <p className="text-(--text-1) text-sm">
-                  Kindly read through and accept the merchant service agreement
-                </p>
-              </div>
-
-              <div className="relative flex items-center justify-center my-6">
-                <div className="absolute inset-x-0 top-1/2 border-t border-(--grey-1)" />
-                <span className="relative bg-background px-4 text-foreground uppercase text-[16px] font-medium">
-                  SERVICE AGREEMENT
-                </span>
-              </div>
-
-              <div className="p-4 rounded-lg text-sm text-(--text-1) space-y-3">
-                <p>
-                  Monilewave (&quot;we&quot;, &quot;us&quot; or &quot;our&quot;)
-                  is a payment solution provider that facilitates online payment
-                  through its payment platform.
-                </p>
-                <p>
-                  We do not endorse or assume liability for products or services
-                  paid for using our service.
-                </p>
-                <p>
-                  You agree to indemnify and hold harmless Mavapay and its
-                  affiliates.
-                </p>
-                <p>
-                  Electronic communications satisfy legal writing requirements.
-                </p>
-              </div>
-
-              <div className="relative flex items-center justify-center my-6">
-                <div className="absolute inset-x-0 top-1/2 border-t border-(--grey-1)" />
-                <span className="relative bg-background px-4 text-foreground uppercase text-[16px] font-medium">
-                  ACCEPT AGREEMENT
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex flex-col relative">
-                  <label className="text-[14px] font-medium text-foreground mb-2">
-                    Contracting Entity
-                  </label>
-                  <input
-                    title="entity"
-                    type="text"
-                    value={formData.contractingEntity}
-                    onChange={(e) =>
-                      updateFormData({ contractingEntity: e.target.value })
-                    }
-                    className={baseInput}
-                  />
-                  <span className="absolute top-[60%] right-4 cursor-pointer">
-                    <LuPencil className="text-foreground" />
-                  </span>
-                </div>
-
-                <div className="flex flex-col relative">
-                  <label className="text-[14px] font-medium text-foreground mb-2">
-                    Email Address
-                  </label>
-                  <input
-                    title="email"
-                    type="text"
-                    value={formData.entityEmail}
-                    onChange={(e) =>
-                      updateFormData({ entityEmail: e.target.value })
-                    }
-                    className={baseInput}
-                  />
-                  <span className="absolute top-[60%] right-4 cursor-pointer">
-                    <LuPencil className="text-foreground" />
-                  </span>
-                  {errors.entityEmail && (
-                    <p className="text-(--red-1) text-sm">
-                      {errors.entityEmail}
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex flex-col relative">
-                  <label className="text-[14px] font-medium text-foreground mb-2">
-                    Company Address
-                  </label>
-                  <input
-                    title="address"
-                    type="text"
-                    value={formData.companyAddress}
-                    onChange={(e) =>
-                      updateFormData({ companyAddress: e.target.value })
-                    }
-                    className={baseInput}
-                  />
-                  <span className="absolute top-[60%] right-4 cursor-pointer">
-                    <LuPencil className="text-foreground" />
-                  </span>
-                </div>
-
-                <div className="flex flex-col relative">
-                  <label className="text-[14px] font-medium text-foreground mb-2">
-                    Company Website
-                  </label>
-                  <input
-                    title="website"
-                    type="text"
-                    value={formData.companyWebsite}
-                    onChange={(e) =>
-                      updateFormData({ companyWebsite: e.target.value })
-                    }
-                    className={baseInput}
-                  />
-                  <span className="absolute top-[60%] right-4 cursor-pointer">
-                    <LuPencil className="text-foreground" />
-                  </span>
-                  {errors.companyWebsite && (
-                    <p className="text-(--red-1) text-sm">
-                      {errors.companyWebsite}
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex flex-col">
-                  <label
-                    className="text-[14px] font-medium text-foreground mb-2"
-                    hidden
-                  ></label>
-                  <input
-                    type="text"
-                    value={formData.fullName}
-                    placeholder="Full Name"
-                    onChange={(e) =>
-                      updateFormData({ fullName: e.target.value })
-                    }
-                    className={baseInput}
-                  />
-                  {errors.fullName && (
-                    <p className="text-(--red-1) text-sm">{errors.fullName}</p>
-                  )}
-                </div>
-
-                <div className="w-full">
-                  <div className="flex">
-                    <label htmlFor="phone" hidden></label>
-                    <input
-                      id="phone"
-                      type="tel"
-                      value={formData.phoneNumber7}
-                      placeholder="Phone Number (e.g. +2348012345678)"
-                      onChange={(e) =>
-                        updateFormData({ phoneNumber7: e.target.value })
-                      }
-                      className={splitLeft}
-                    />
-                    <select
-                      title="phone"
-                      value={formData.phoneNumberCountry7}
-                      onChange={(e) =>
-                        updateFormData({ phoneNumberCountry7: e.target.value })
-                      }
-                      className={splitRight}
-                    >
-                      <option value="NGN">NGN</option>
-                      <option value="USD">USD</option>
-                    </select>
-                  </div>
-                  {errors.phoneNumber7 && (
-                    <p className="text-(--red-1) text-sm">
-                      {errors.phoneNumber7}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <select
-                title="job title"
-                value={formData.jobTitle}
-                onChange={(e) => updateFormData({ jobTitle: e.target.value })}
-                className={`${baseSelect} w-full`}
-              >
-                <option value="">Job Title*</option>
-                <option value="CEO">CEO</option>
-                <option value="Manager">Manager</option>
-                <option value="Director">Director</option>
-                <option value="Owner">Owner</option>
-              </select>
-              {errors.jobTitle && (
-                <p className="text-(--red-1) text-sm -mt-4">
-                  {errors.jobTitle}
-                </p>
-              )}
-
-              <div className="flex items-center gap-3">
-                <input
-                  id="accept"
-                  type="checkbox"
-                  checked={formData.acceptAgreement}
-                  onChange={(e) =>
-                    updateFormData({ acceptAgreement: e.target.checked })
-                  }
-                  className="w-4 h-4 border border-gray-300 rounded cursor-pointer"
-                />
-                <label htmlFor="accept" className="text-sm text-gray-700">
-                  I accept the Merchant Service Agreement
-                </label>
-              </div>
-              {errors.acceptAgreement && (
-                <p className="text-(--red-1) text-sm">
-                  {errors.acceptAgreement}
-                </p>
-              )}
+              <Kyc_status_banner status="pending" />
             </div>
           </KYBStepWrapper>
         )}

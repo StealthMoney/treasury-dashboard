@@ -7,9 +7,12 @@ import { TbFileAnalytics } from "react-icons/tb";
 import { CiSettings, CiLogout } from "react-icons/ci";
 import { RiUser3Line } from "react-icons/ri";
 import { signOut } from "next-auth/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Spinner } from "./spinner";
 import { FeedbackModal } from "./feedback_modal";
+import { filterLinks } from "@/app/functions/helpers/available_links";
+import { useProfile } from "@/app/contexts/user_provider";
+import { NavLink } from "@/app/types/general";
 
 export default function Sidebar({
   open,
@@ -21,6 +24,8 @@ export default function Sidebar({
   const [loading, setLoading] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
+  const { user, loading: userInfoLoading } = useProfile();
+
   const pathname = usePathname();
 
   const navLinks = [
@@ -30,8 +35,11 @@ export default function Sidebar({
     { logo: <CiSettings />, text: "Settings", href: "/settings" },
   ];
 
+  const filteredLinks = filterLinks(user, navLinks);
+
   const handleLogout = async () => {
     setLoading(true);
+    localStorage.clear();
     await signOut();
     setLoading(false);
   };
@@ -81,7 +89,7 @@ export default function Sidebar({
         `}
       >
         <div className="mt-5 flex flex-col gap-2">
-          {navLinks.map((item) => {
+          {filteredLinks.map((item) => {
             const isActive = pathname === item.href;
 
             return (

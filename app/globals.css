@@ -36,3 +36,19 @@ body {
   background: url("/images/prompt.svg");
   background-size: contain;
 }
+
+@keyframes line-slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-line-slide {
+  animation: line-slide 1.2s ease-in-out infinite;
+}

@@ -2,10 +2,11 @@
 import { useSearchParams } from "next/navigation";
 import React, { Suspense } from "react";
 import { activate } from "@/app/server/activate";
-import { Spinner } from "@/app/components/reusables/spinner";
+
 import { FeedbackModal } from "@/app/components/reusables/feedback_modal";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { LineLoader } from "@/app/components/reusables/line_loader";
 
 interface Data {
   status: number;
@@ -51,7 +52,7 @@ const ActivationContent = () => {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <Spinner />
+        <LineLoader className="scale-125" />
       </div>
     );
   }
@@ -108,7 +109,7 @@ const ActivationContent = () => {
 
 const LoadingFallback = () => (
   <div className="flex min-h-screen items-center justify-center bg-background">
-    <Spinner />
+    <LineLoader className="scale-125" />
   </div>
 );
 

@@ -23,7 +23,7 @@ export default function Kyc_status_banner({ status = "pending" }: Props) {
             isSuccess ? "text-[#43B929]" : "text-[#F97216]"
           }`}
         >
-          {isSuccess ? "Account upgrade successful" : "Account upgrade pending"}
+          {isSuccess ? "Account upgrade successful" : "Account upgrade"}
         </h1>
 
         <small
@@ -33,7 +33,7 @@ export default function Kyc_status_banner({ status = "pending" }: Props) {
         >
           {isSuccess
             ? "Your business activation request has been approved. You’re good to go 🎉"
-            : "We are currently reviewing your business activation request! Please expect feedback at your admin's email address within the next 7 days."}
+            : "We will review your document and get back to you shortly after submission, Sit tight!"}
         </small>
       </div>
 

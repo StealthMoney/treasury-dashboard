@@ -102,6 +102,7 @@ export function FilePickerField({
         {label} {required && "*"}
       </label>
       <input
+        title="upload file"
         ref={inputRef}
         type="file"
         accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
@@ -120,6 +121,7 @@ export function FilePickerField({
             📎 {file.name}
           </p>
           <button
+            title="remove file"
             onClick={(e) => {
               e.stopPropagation();
               onFileRemove();

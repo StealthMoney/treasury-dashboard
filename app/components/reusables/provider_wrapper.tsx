@@ -1,6 +1,7 @@
 "use client";
 import { SessionProvider } from "next-auth/react";
 import AuthGuard from "./authguard";
+import { ProfileProvider } from "@/app/contexts/user_provider";
 
 export default function ProvideWrapper({
   children,
@@ -9,7 +10,9 @@ export default function ProvideWrapper({
 }) {
   return (
     <SessionProvider>
-      <AuthGuard>{children}</AuthGuard>
+      <AuthGuard>
+        <ProfileProvider>{children}</ProfileProvider>
+      </AuthGuard>
     </SessionProvider>
   );
 }
