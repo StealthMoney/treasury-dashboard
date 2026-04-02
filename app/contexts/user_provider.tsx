@@ -22,15 +22,35 @@ const ProfileContext = createContext<ProfileContextType>({
 });
 
 const CACHE_KEY = "profile_cache";
-const CACHE_DURATION = 40 * 60 * 1000; // 40 mins
+const CACHE_DURATION = 40 * 60 * 1000;
+
+function getValidCache(): AppuserProps | null {
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (!cached) return null;
+
+    const parsed = JSON.parse(cached);
+    if (Date.now() - parsed.timestamp > CACHE_DURATION) {
+      localStorage.removeItem(CACHE_KEY);
+      return null;
+    }
+
+    return parsed.data;
+  } catch {
+    localStorage.removeItem(CACHE_KEY);
+    return null;
+  }
+}
 
 export const ProfileProvider = ({
   children,
 }: {
   children: React.ReactNode;
 }) => {
-  const [user, setUser] = useState<AppuserProps | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<AppuserProps | null>(() => getValidCache());
+  const [loading, setLoading] = useState<boolean>(
+    () => getValidCache() === null,
+  );
   const [error, setError] = useState<string | null>(null);
 
   const fetchProfile = async () => {
@@ -42,13 +62,9 @@ export const ProfileProvider = ({
 
       if (res.success) {
         setUser(res.data);
-
         localStorage.setItem(
           CACHE_KEY,
-          JSON.stringify({
-            data: res.data,
-            timestamp: Date.now(),
-          }),
+          JSON.stringify({ data: res.data, timestamp: Date.now() }),
         );
       } else {
         setError(res.error || "Couldn't get your data");
@@ -62,32 +78,40 @@ export const ProfileProvider = ({
   };
 
   useEffect(() => {
-    const cached = localStorage.getItem(CACHE_KEY);
+    if (user) return;
 
-    if (cached) {
+    let cancelled = false;
+
+    (async () => {
       try {
-        const parsed = JSON.parse(cached);
-        const isExpired = Date.now() - parsed.timestamp > CACHE_DURATION;
-        console.log(isExpired, "expired");
-        
+        const res = await getProfile();
+        if (cancelled) return;
 
-        if (!isExpired) {
-          setUser(parsed.data);
-          setLoading(false);
-          return;
+        if (res.success) {
+          setUser(res.data);
+          localStorage.setItem(
+            CACHE_KEY,
+            JSON.stringify({ data: res.data, timestamp: Date.now() }),
+          );
+        } else {
+          setError(res.error || "Couldn't get your data");
         }
-      } catch {
-        localStorage.removeItem(CACHE_KEY);
+      } catch (err) {
+        if (!cancelled) {
+          console.error(err);
+          setError("Something went wrong");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    }
+    })();
 
-    fetchProfile();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
-  const retry = () => {
-    fetchProfile();
-  };
-
+  const retry = () => fetchProfile();
   const logout = async () => {
     localStorage.removeItem(CACHE_KEY);
     await signOut();

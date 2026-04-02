@@ -450,6 +450,7 @@ export default function Page() {
           </div>
           {/* Stats Cards */}
           <StatsSection
+            actionDisabled={false}
             stats={vaultStatsData}
             uiConfig={vaultStatsUIConfig}
             buttonLabel="Fund Vault"

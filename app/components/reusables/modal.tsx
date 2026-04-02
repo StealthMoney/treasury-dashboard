@@ -3,6 +3,7 @@
 import React, { ReactNode } from "react";
 import { HiXMark } from "react-icons/hi2";
 import Image from "next/image";
+import { Spinner } from "./spinner";
 
 export interface StepConfig {
   title: string;
@@ -23,6 +24,7 @@ export interface StepModalProps {
   onPreviousStep: () => void;
   onSubmit?: () => void;
   isSuccess?: boolean;
+  loading?: boolean;
   repaySuccess?: boolean;
   successTitle?: string;
   successMessage?: string | ReactNode;
@@ -41,6 +43,7 @@ export const StepModal: React.FC<StepModalProps> = ({
   onPreviousStep,
   onSubmit,
   isSuccess,
+  loading,
   successTitle,
   successMessage,
   successButtonLabel,
@@ -146,7 +149,7 @@ export const StepModal: React.FC<StepModalProps> = ({
               Go Back
             </button>
           )}
-          <button
+          <button disabled={loading}
             onClick={
               isSuccess
                 ? onClose
@@ -154,7 +157,7 @@ export const StepModal: React.FC<StepModalProps> = ({
                   ? onSubmit || onNextStep
                   : onNextStep
             }
-            className={`flex-1 px-4 py-3 rounded-lg transition cursor-pointer ${
+            className={`flex-1 gap-x-3 flex justify-center items-center px-4 py-3 rounded-lg transition cursor-pointer ${
               isSuccess
                 ? "bg-foreground text-background hover:bg-foreground/85"
                 : "bg-gray-400 text-white hover:bg-gray-500"
@@ -165,6 +168,8 @@ export const StepModal: React.FC<StepModalProps> = ({
               : isLastStep
                 ? "Submit"
                 : "Continue"}
+
+            {loading && <Spinner />}
           </button>
         </div>
       </div>

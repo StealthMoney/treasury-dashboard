@@ -454,6 +454,7 @@ export default function Home() {
         {/* Stats Cards */}
         <div className="w-full overflow-x-auto md:max-w-[80%]">
           <StatsSection
+            actionDisabled={false}
             stats={statsData}
             uiConfig={statsUIConfig}
             buttonLabel="Fund Treasury"

@@ -16,6 +16,7 @@ import { FaArrowLeft } from "react-icons/fa";
 import { FilePickerField } from "../components/reusables/general_inputs";
 import { uploadKybDoc } from "../server/upgrade_account";
 import { Spinner } from "../components/reusables/spinner";
+import { fileToBase64 } from "../functions/helpers/base64";
 
 interface OwnerInfo {
   id: string;
@@ -486,14 +487,6 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
     onClose();
   };
 
-  const fileToBase64 = (file: File): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve((reader.result as string).split(",")[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-
   const mapDocType = (value: string): string => {
     switch (value) {
       case "Passport":
@@ -655,6 +648,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
       if (result.success) {
         setCurrentStep(1);
         setFormData(initialFormData);
+        localStorage.removeItem("profile_cache")
         onComplete();
       }
     } catch (err) {
@@ -798,7 +792,6 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
                       className={splitRight}
                     >
                       <option value="NGN">NGN</option>
-                      <option value="USD">USD</option>
                     </select>
                   </div>
                   {(errors.annualSalesVolume ||
@@ -936,19 +929,8 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
                     onChange={(e) =>
                       updateFormData({ phoneNumber: e.target.value })
                     }
-                    className={splitLeft}
+                    className={baseInput}
                   />
-                  <select
-                    title="phone number"
-                    value={formData.phoneNumberCountry}
-                    onChange={(e) =>
-                      updateFormData({ phoneNumberCountry: e.target.value })
-                    }
-                    className={splitRight}
-                  >
-                    <option value="NGN">NGN</option>
-                    <option value="USD">USD</option>
-                  </select>
                 </div>
                 {errors.phoneNumber && (
                   <p className="text-(--red-1) text-sm">{errors.phoneNumber}</p>
@@ -1781,11 +1763,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
         {/* Step 7: Service of Agreement */}
         {currentStep === 7 && (
           <KYBStepWrapper
-            title={
-              <p className="font-semibold text-gray-900">
-                Notice
-              </p>
-            }
+            title={<p className="font-semibold text-gray-900">Notice</p>}
             footer={
               <div className="flex md:flex-row flex-col gap-4">
                 <button onClick={handlePrevious} className={baseButtonWhite}>

@@ -22,6 +22,7 @@ export interface StatUIConfig {
 }
 
 export interface StatsSectionProps {
+  actionDisabled: boolean;
   stats: StatData[];
   uiConfig?: StatUIConfig[];
   buttonLabel?: string;
@@ -30,6 +31,7 @@ export interface StatsSectionProps {
 }
 
 export const StatsSection = ({
+  actionDisabled,
   stats,
   uiConfig = [],
   buttonLabel = "Fund Treasury",
@@ -85,6 +87,7 @@ export const StatsSection = ({
               {ui?.showButton && (
                 <div className="mt-4">
                   <button
+                    disabled={actionDisabled}
                     onClick={onButtonClick}
                     className="flex items-center cursor-pointer gap-2 px-3 sm:px-8 py-2 sm:py-3 bg-foreground text-background text-[16px] rounded-full hover:bg-gray-800 transition whitespace-nowrap"
                   >

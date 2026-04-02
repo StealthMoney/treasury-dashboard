@@ -17,6 +17,16 @@ import OutstandingCredits from "../components/reusables/outstabding_credits";
 import { useSession } from "next-auth/react";
 import KybBanner from "../components/reusables/kybinfo_banner";
 import { KYBScreens } from "../overview/kybprocess";
+import { useProfile } from "../contexts/user_provider";
+import { fileToBase64 } from "../functions/helpers/base64";
+import {
+  getCreditHistory,
+  getCreditTypes,
+  requestNewCredit,
+} from "../server/credits";
+import { FeedbackModal } from "../components/reusables/feedback_modal";
+import { LoanApplication } from "../types/general";
+import { useCreditStats } from "../hooks";
 
 interface ActiveLoan {
   id: string;
@@ -39,67 +49,6 @@ interface CollateralAsset {
   freeCollateral: string;
 }
 
-// types
-interface CreditHistory {
-  id: string;
-  date: string;
-  amountBorrowed: string;
-  amountBorrowedCNGN: string;
-  interest: string;
-  interestCNGN: string;
-  dueDate: string;
-  daysLeft: string;
-  status: "Active" | "Inactive";
-}
-
-// mock data
-const creditHistoryMock: CreditHistory[] = [
-  {
-    id: "#LN-018",
-    date: "17-03-2026",
-    amountBorrowed: "₦ 100,000,000",
-    amountBorrowedCNGN: "100,000,000 cNGN",
-    interest: "₦ 1,000,000",
-    interestCNGN: "1,000,000 cNGN",
-    dueDate: "09-10-2026",
-    daysLeft: "69 days left",
-    status: "Active",
-  },
-  {
-    id: "#LN-018",
-    date: "17-03-2026",
-    amountBorrowed: "₦ 100,000,000",
-    amountBorrowedCNGN: "100,000,000 cNGN",
-    interest: "₦ 1,000,000",
-    interestCNGN: "1,000,000 cNGN",
-    dueDate: "09-10-2026",
-    daysLeft: "69 days left",
-    status: "Active",
-  },
-  {
-    id: "#LN-018",
-    date: "17-03-2026",
-    amountBorrowed: "₦ 100,000,000",
-    amountBorrowedCNGN: "100,000,000 cNGN",
-    interest: "₦ 1,000,000",
-    interestCNGN: "1,000,000 cNGN",
-    dueDate: "09-10-2026",
-    daysLeft: "69 days left",
-    status: "Active",
-  },
-  {
-    id: "#LN-018",
-    date: "17-03-2026",
-    amountBorrowed: "₦ 100,000,000",
-    amountBorrowedCNGN: "100,000,000 cNGN",
-    interest: "₦ 1,000,000",
-    interestCNGN: "1,000,000 cNGN",
-    dueDate: "09-10-2026",
-    daysLeft: "69 days left",
-    status: "Active",
-  },
-];
-
 function StatusBadge({ status }: { status: string }) {
   const isActive = status.toLowerCase() === "active";
   return (
@@ -120,78 +69,66 @@ function StatusBadge({ status }: { status: string }) {
 const creditHistoryColumns = [
   {
     header: "Credit ID",
-    accessor: (row: CreditHistory) => (
+    accessor: (row: LoanApplication) => (
       <>
         <p className="text-xs sm:text-sm font-semibold text-gray-900">
-          {row.id}
+          {row.loanTypeId}
         </p>
-        <p className="text-xs text-gray-500">{row.date}</p>
+        <p className="text-xs text-gray-500">{row.loanStartDate}</p>
       </>
     ),
   },
   {
     header: "Amount Borrowed",
-    accessor: (row: CreditHistory) => (
+    accessor: (row: LoanApplication) => (
       <>
         <p className="text-xs sm:text-sm font-semibold text-gray-900">
-          {row.amountBorrowed}
+          {row.loanAmount}
         </p>
-        <p className="text-xs text-gray-500">{row.amountBorrowedCNGN}</p>
+        <p className="text-xs text-gray-500">{row.currency}</p>
       </>
     ),
   },
   {
     header: "Interest",
-    accessor: (row: CreditHistory) => (
+    accessor: (row: LoanApplication) => (
       <>
         <p className="text-xs sm:text-sm font-semibold text-gray-900">
           {row.interest}
         </p>
-        <p className="text-xs text-gray-500">{row.interestCNGN}</p>
+        <p className="text-xs text-gray-500">{row.currency}</p>
       </>
     ),
   },
   {
     header: "Due Date",
-    accessor: (row: CreditHistory) => (
+    accessor: (row: LoanApplication) => (
       <>
         <p className="text-xs sm:text-sm font-semibold text-gray-900">
-          {row.dueDate}
+          {row.loanDueDate}
         </p>
-        <p className="text-xs text-gray-500">{row.daysLeft}</p>
+        <p className="text-xs text-gray-500">
+          {Math.ceil(
+            (new Date(row.loanDueDate).getTime() -
+              new Date(row.loanStartDate).getTime()) /
+              (1000 * 60 * 60 * 24),
+          )}
+        </p>
       </>
     ),
   },
   {
     header: "Status",
-    accessor: (row: CreditHistory) => <StatusBadge status={row.status} />,
+    accessor: (row: LoanApplication) => <StatusBadge status={row.loanStatus} />,
   },
-  {
-    header: "",
-    accessor: (_row: CreditHistory) => (
-      <button className="text-gray-400 hover:text-gray-600 px-1">
-        &#8942; {/* vertical ellipsis */}
-      </button>
-    ),
-  },
-];
-
-export const creditStatsData: StatData[] = [
-  {
-    label: "Active Loans",
-    value: "₦ 110,000,000.00",
-    footer: "30th March, 2026",
-  },
-  {
-    label: "Due Date",
-    value: "24th May, 2026",
-    footer: "23 days left",
-  },
-  {
-    label: "Loan Interest",
-    value: "10,000,000.00",
-    footer: "+10.00 %",
-  },
+  // {
+  //   header: "",
+  //   accessor: (_row: CreditHistory) => (
+  //     <button className="text-gray-400 hover:text-gray-600 px-1">
+  //       &#8942; {/* vertical ellipsis */}
+  //     </button>
+  //   ),
+  // },
 ];
 
 export const creditStatsUIConfig: StatUIConfig[] = [
@@ -311,10 +248,15 @@ export const collateralAssetsColumns = [
 export default function CreditsPage() {
   const { data: session, status } = useSession();
   console.log(session, "is session data");
+  const { user } = useProfile();
 
   const [isBorrowOpen, setIsBorrowOpen] = useState(false);
   const [borrowStep, setBorrowStep] = useState(0);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [canPerformActions, setCanperformActions] = useState(false);
+  const [borrowFundError, setBorrowFundError] = useState(false);
+  const [borrowFundErrorMessage, setBorrowFundErrorMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   // Repay Modal State
   const [isRepayOpen, setIsRepayOpen] = useState(false);
@@ -331,14 +273,18 @@ export default function CreditsPage() {
     "14" | "30" | "60"
   >("14");
 
-  // Borrow Modal State
-  const [selectedCollateral, setSelectedCollateral] =
-    useState("Yield Vault USDT");
   const [borrowAmount, setBorrowAmount] = useState("10000");
-  const [borrowCurrency, setBorrowCurrency] = useState<"USD" | "NGN">("USD");
+  const [borrowCurrency, setBorrowCurrency] = useState<"USD" | "NGN">("NGN");
 
   const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
   const [bankStatementFile, setBankStatementFile] = useState<File | null>(null);
+  const [loanTypeId, setLoanTypeId] = useState<number | null>(null);
+  const [loadDurationInDays, setLoanDurationInDays] = useState<number[]>([]);
+  const [creditHistoryData, setCreditHistoryData] = useState<LoanApplication[]>(
+    [],
+  );
+
+  const creditStatsData = useCreditStats(creditHistoryData);
 
   const [errors, setErrors] = useState<{
     invoice?: string;
@@ -405,14 +351,6 @@ export default function CreditsPage() {
       duration: "",
     }));
   }, []);
-
-  const lockCollateralAmount = (Number(borrowAmount) * 1.2).toFixed(0);
-  const resultingLTV = (
-    (Number(borrowAmount) /
-      (Number(borrowAmount) + Number(lockCollateralAmount))) *
-    100
-  ).toFixed(0);
-  const effectiveAPR = 4.0;
 
   const handlBorrowFund = () => {
     setIsBorrowOpen(true);
@@ -482,9 +420,51 @@ export default function CreditsPage() {
   };
 
   const handleKybComplete = () => {
-    setIsKybVerified(true);
+    setIsKybVerified(user?.kybCompleted || false);
     setShowKybScreens(false);
     setKybStatus("inreview");
+  };
+
+  useEffect(() => {
+    setIsKybVerified(user?.kybCompleted || false);
+    setCanperformActions((user?.kybCompleted && user.businessAdmin) || false);
+  }, [user]);
+
+  useEffect(() => {
+    const fetchCreditTypes = async () => {
+      try {
+        const request = await getCreditTypes();
+
+        if (request.success) {
+          setLoanTypeId(request.data[0].id);
+          setLoanDurationInDays(
+            request.data.map((item) => item.durationInDays),
+          );
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    const fetchCreditHistory = async () => {
+      try {
+        const request = await getCreditHistory();
+
+        if (request.success) {
+          setCreditHistoryData(request.data);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchCreditTypes();
+    fetchCreditHistory();
+  }, []);
+
+  const handleModalClose = () => {
+    setBorrowFundError(false);
+    setBorrowFundErrorMessage("");
   };
 
   // Extension fee mapping
@@ -850,11 +830,10 @@ export default function CreditsPage() {
               setLoanDuration(value);
               setErrors((prev) => ({ ...prev, duration: undefined }));
             }}
-            options={[
-              { label: "30 days", value: "30" },
-              { label: "60 days", value: "60" },
-              { label: "90 days", value: "90" },
-            ]}
+            options={loadDurationInDays.map((item) => ({
+              label: item.toString(),
+              value: item.toString(),
+            }))}
             placeholder="Select duration"
             error={errors.duration}
           />
@@ -914,18 +893,6 @@ export default function CreditsPage() {
               {"500,000.00"} NGN
             </span>
           </div>
-          <div className="flex justify-between py-3 border-b border-(--grey-1)">
-            <span className="text-(--text-1) text-[14px]">Bank Statement:</span>
-            <span className="font-semibold text-foreground text-[14px]">
-              {"Healthy"}
-            </span>
-          </div>
-          <div className="flex justify-between py-3 border-b border-(--grey-1)">
-            <span className="text-(--text-1) text-[14px]">Invoice:</span>
-            <span className="font-semibold text-foreground text-[14px]">
-              {"Validated"}
-            </span>
-          </div>
         </div>
       ),
     },
@@ -958,21 +925,70 @@ export default function CreditsPage() {
     }
   };
 
-  const handleBorrowSubmit = () => {
-    const formData = {
-      collateral: selectedCollateral,
-      amountBorrowed: borrowAmount,
-      currency: borrowCurrency,
-      collateralLocked: lockCollateralAmount,
-      resultingLTV,
-      apr: effectiveAPR,
-      loanDuration,
-      invoiceFile,
-      bankStatementFile,
+  const handleBorrowSubmit = async () => {
+    let invoiceBase64 = "";
+    let bankBase64 = "";
+
+    if (invoiceFile) {
+      invoiceBase64 = await fileToBase64(invoiceFile);
+    }
+
+    if (bankStatementFile) {
+      bankBase64 = await fileToBase64(bankStatementFile);
+    }
+
+    const payload = {
+      loanTypeId: Number(loanTypeId),
+
+      invoice: {
+        base64: invoiceBase64 || "",
+        contentType: invoiceFile?.type || "",
+        fileName: invoiceFile?.name || "",
+      },
+
+      bankStatement: {
+        base64: bankBase64 || "",
+        contentType: bankStatementFile?.type || "",
+        fileName: bankStatementFile?.name || "",
+      },
+
+      loanAmount: Number(borrowAmount),
+      loanCurrency: borrowCurrency,
+      loanDurationInDays: Number(loanDuration),
     };
-    console.log("Borrow Against Treasury Submitted:", formData);
-    setIsSuccess(true);
+
+    try {
+      console.log("Final Payload:", payload);
+
+      setLoading(true);
+      const stringifiedPayload = JSON.stringify(payload);
+
+      const creditReq = await requestNewCredit(stringifiedPayload);
+
+      if (creditReq.success) {
+        setBorrowFundError(false);
+        setIsSuccess(true);
+        return;
+      } else {
+        setBorrowFundError(true);
+        setBorrowFundErrorMessage(
+          creditReq.error || "Could not process your request",
+        );
+        return;
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const shouldShowModal = borrowFundError;
+
+  const tableData = creditHistoryData.map((item, index) => ({
+    ...item,
+    id: index,
+  }));
 
   if (showKybScreens) {
     return (
@@ -981,151 +997,174 @@ export default function CreditsPage() {
   }
 
   return (
-    <div className="min-h-screen w-full px-6 bg-background">
-      <div className="w-full overflow-x-auto md:max-w-[80%]">
-        {/* Main content */}
-        <div className="px-4 sm:px-6 lg:px-6 py-8 mx-auto">
-          {/* Header */}
-          <div className="mb-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-            <div>
-              <h1 className="text-[20px] font-bold text-foreground">
-                Credit Overview
-              </h1>
-              <p className="text-(--text-1) text-[16px] mt-1">
-                Manage your credit here
-              </p>
+    <>
+      <div className="min-h-screen w-full px-6 bg-background">
+        <div className="w-full overflow-x-auto md:max-w-[80%]">
+          {/* Main content */}
+          <div className="px-4 sm:px-6 lg:px-6 py-8 mx-auto">
+            {/* Header */}
+            <div className="mb-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+              <div>
+                <h1 className="text-[20px] font-bold text-foreground">
+                  Credit Overview
+                </h1>
+                <p className="text-(--text-1) text-[16px] mt-1">
+                  Manage your credit here
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  disabled={!canPerformActions}
+                  onClick={handleExtendClick}
+                  className="px-4 sm:px-6 py-2 bg-background text-foreground text-sm font-medium border border-(--grey-1) rounded-lg cursor-pointer transition"
+                >
+                  Extend Credit Date
+                </button>
+                <button
+                  // disabled={!canPerformActions}
+                  onClick={handlBorrowFund}
+                  className="px-4 sm:px-6 py-2 bg-foreground text-background text-sm font-semibold rounded-lg cursor-pointer transition"
+                >
+                  Get Credit Line
+                </button>
+              </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={handleExtendClick}
-                className="px-4 sm:px-6 py-2 bg-background text-foreground text-sm font-medium border border-(--grey-1) rounded-lg cursor-pointer transition"
-              >
-                Extend Credit Date
-              </button>
-              <button
-                onClick={handlBorrowFund}
-                className="px-4 sm:px-6 py-2 bg-foreground text-background text-sm font-semibold rounded-lg cursor-pointer transition"
-              >
-                Get Credit Line
-              </button>
-            </div>
+            {!isKybVerified && (
+              <KybBanner
+                kybStatus={kybStatus} // "unverified" | "inreview" | "failed"
+                onAction={handleUpgradeAccount}
+              />
+            )}
+            {/* Stats Cards */}
+            {creditHistoryData.length > 0 && (
+              <StatsSection
+                actionDisabled={!canPerformActions}
+                stats={creditStatsData}
+                uiConfig={creditStatsUIConfig}
+                buttonLabel="Repay Credit"
+                onButtonClick={handleRepayClick}
+              />
+            )}
+            {/* Active Loans Table */}
+            <Table
+              data={tableData}
+              columns={creditHistoryColumns}
+              extraHeader="Credit History"
+              kybStatus={"verified"}
+              tableButtonClick={handlBorrowFund}
+            />
           </div>
 
-          {!isKybVerified && (
-            <KybBanner
-              kybStatus={kybStatus} // "unverified" | "inreview" | "failed"
-              onAction={handleUpgradeAccount}
-            />
-          )}
-          {/* Stats Cards */}
-          <StatsSection
-            stats={creditStatsData}
-            uiConfig={creditStatsUIConfig}
-            buttonLabel="Repay Credit"
-            onButtonClick={handleRepayClick}
+          <StepModal
+            isOpen={isBorrowOpen}
+            onClose={() => setIsBorrowOpen(false)}
+            title="Borrow Against Treasury"
+            subtitle="Borrow stable liquidity without selling your vault assets."
+            steps={borrowSteps}
+            currentStep={borrowStep}
+            onNextStep={handleBorrowNext}
+            onPreviousStep={handleBorrowPrevious}
+            onSubmit={handleBorrowSubmit}
+            isSuccess={isSuccess}
+            loading={loading}
+            successTitle="Credit request submitted"
+            successMessage={`Your request for $${borrowAmount} ${borrowCurrency} is being reviewed. \n This usually takes 24-48 hours.`}
+            successtable={
+              <Message_table
+                useStatus
+                statusItems={[
+                  { text: "Step 1: Submitted", status: "submitted" },
+                  { text: "Step 2: Review", status: "inreview" },
+                  { text: "Step 3: Approval", status: "pending" },
+                ]}
+                showAsList={true}
+              />
+            }
+            successButtonLabel="Go to Credit"
           />
-          {/* Active Loans Table */}
-          <Table
-            data={[]}
-            columns={creditHistoryColumns}
-            extraHeader="Credit History"
-            kybStatus={"verified"}
-            tableButtonClick={handlBorrowFund}
+
+          <StepModal
+            isOpen={isRepayOpen}
+            onClose={() => setIsRepayOpen(false)}
+            title="Repay credit"
+            subtitle="Repay your outstanding credit"
+            steps={repaySteps}
+            currentStep={repayStep}
+            onNextStep={handleRepayNext}
+            onPreviousStep={handleRepayPrevious}
+            onSubmit={handleRepaySubmit}
+            isSuccess={repaySuccess}
+            repaySuccess={repaySuccess}
+            successTitle="Repayment successful"
+            successMessage=""
+            successButtonLabel="View Credit Details"
+            successtable={
+              <Success_table
+                header="Meta:"
+                messages={{
+                  col1: "Transaction ID:",
+                  message1: "TRX-839203",
+                  col2: "Date:",
+                  message2: "24th Mar, 2026.12:23 PM",
+                  col3: "Method:",
+                  message3: "Bank Transfer",
+                  col4: " Outstanding Balance:",
+                  message4: "0.00",
+                }}
+              />
+            }
+          />
+
+          <StepModal
+            isOpen={isExtendOpen}
+            onClose={() => setIsExtendOpen(false)}
+            title="Extend credit date"
+            subtitle="Extend your repayment date for a small fee"
+            steps={extendSteps}
+            currentStep={extendStep}
+            onNextStep={handleExtendNext}
+            onPreviousStep={handleExtendPrevious}
+            onSubmit={handleExtendSubmit}
+            isSuccess={extendSuccess}
+            successTitle="Extension successful"
+            successMessage="Your credit date extension was successful"
+            successButtonLabel="View Credit Details"
+            successtable={
+              <Success_table
+                header="New credit date:"
+                messages={{
+                  col1: "Extension Period:",
+                  message1: `${selectedExtension} days`,
+                  col2: "New Due Date:",
+                  message2: extensionFees[selectedExtension].newDueDate,
+                  col3: "Extension Fee:",
+                  message3: extensionFees[selectedExtension].fee,
+                  col4: "New Total:",
+                  message4: extensionFees[selectedExtension].newTotal,
+                }}
+              />
+            }
           />
         </div>
-
-        <StepModal
-          isOpen={isBorrowOpen}
-          onClose={() => setIsBorrowOpen(false)}
-          title="Borrow Against Treasury"
-          subtitle="Borrow stable liquidity without selling your vault assets."
-          steps={borrowSteps}
-          currentStep={borrowStep}
-          onNextStep={handleBorrowNext}
-          onPreviousStep={handleBorrowPrevious}
-          onSubmit={handleBorrowSubmit}
-          isSuccess={isSuccess}
-          successTitle="Credit request submitted"
-          successMessage={`Your request for $${borrowAmount} ${borrowCurrency} is being reviewed. \n This usually takes 24-48 hours.`}
-          successtable={
-            <Message_table
-              useStatus
-              statusItems={[
-                { text: "Step 1: Submitted", status: "submitted" },
-                { text: "Step 2: Review", status: "inreview" },
-                { text: "Step 3: Approval", status: "pending" },
-              ]}
-              showAsList={true}
-            />
-          }
-          successButtonLabel="Go to Credit"
-        />
-
-        <StepModal
-          isOpen={isRepayOpen}
-          onClose={() => setIsRepayOpen(false)}
-          title="Repay credit"
-          subtitle="Repay your outstanding credit"
-          steps={repaySteps}
-          currentStep={repayStep}
-          onNextStep={handleRepayNext}
-          onPreviousStep={handleRepayPrevious}
-          onSubmit={handleRepaySubmit}
-          isSuccess={repaySuccess}
-          repaySuccess={repaySuccess}
-          successTitle="Repayment successful"
-          successMessage=""
-          successButtonLabel="View Credit Details"
-          successtable={
-            <Success_table
-              header="Meta:"
-              messages={{
-                col1: "Transaction ID:",
-                message1: "TRX-839203",
-                col2: "Date:",
-                message2: "24th Mar, 2026.12:23 PM",
-                col3: "Method:",
-                message3: "Bank Transfer",
-                col4: " Outstanding Balance:",
-                message4: "0.00",
-              }}
-            />
-          }
-        />
-
-        <StepModal
-          isOpen={isExtendOpen}
-          onClose={() => setIsExtendOpen(false)}
-          title="Extend credit date"
-          subtitle="Extend your repayment date for a small fee"
-          steps={extendSteps}
-          currentStep={extendStep}
-          onNextStep={handleExtendNext}
-          onPreviousStep={handleExtendPrevious}
-          onSubmit={handleExtendSubmit}
-          isSuccess={extendSuccess}
-          successTitle="Extension successful"
-          successMessage="Your credit date extension was successful"
-          successButtonLabel="View Credit Details"
-          successtable={
-            <Success_table
-              header="New credit date:"
-              messages={{
-                col1: "Extension Period:",
-                message1: `${selectedExtension} days`,
-                col2: "New Due Date:",
-                message2: extensionFees[selectedExtension].newDueDate,
-                col3: "Extension Fee:",
-                message3: extensionFees[selectedExtension].fee,
-                col4: "New Total:",
-                message4: extensionFees[selectedExtension].newTotal,
-              }}
-            />
-          }
-        />
       </div>
-    </div>
+
+      <FeedbackModal
+        isOpen={shouldShowModal}
+        onClose={() => {}}
+        title="Something went wrong"
+        description={borrowFundError ? borrowFundErrorMessage : ""}
+        buttonCount={1}
+        buttons={[
+          {
+            label: "Close",
+            variant: "primary",
+            onClick: handleModalClose,
+          },
+        ]}
+      />
+    </>
   );
 }

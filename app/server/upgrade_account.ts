@@ -5,7 +5,9 @@ import { AppuserProps } from "../types/app_user";
 import { Result } from "../types/general";
 import endpoints from "../config/endpoints";
 
-export const uploadKybDoc = async (body: string): Promise<Result<AppuserProps>> => {
+export const uploadKybDoc = async (
+  body: string,
+): Promise<Result<AppuserProps>> => {
   try {
     const session = await getAuthHeaders();
 
@@ -29,11 +31,14 @@ export const uploadKybDoc = async (body: string): Promise<Result<AppuserProps>> 
       return { success: false, error: "Failed to upload documents" };
     }
 
-    const profile = await res.json();
+    const response = await res.json();
 
-    return { success: true, data: profile as AppuserProps };
+    return { success: true, data: response?.message || "Request successful" };
   } catch (err) {
     console.error("Something went wrong", err);
-    return { success: false, error: err instanceof Error ? err.message : "An unknown error occurred" };
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "An unknown error occurred",
+    };
   }
 };

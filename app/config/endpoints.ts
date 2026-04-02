@@ -25,13 +25,14 @@ const endpoints = (params?: string | number) => {
   };
 
   const credit = {
-    requestnewcredit: `${baseUrl}/creditline`,
-    getcredithistory: `${baseUrl}/creditlines`,
+    requestnewcredit: `${baseUrl}/credit-lines`,
+    getcredithistory: `${baseUrl}/credit-lines`,
+    "credit-type": `${baseUrl}/credit-line-types`,
   };
 
   const account = {
     "edit-profile": `${baseUrl}/account`,
-    "upgrade-account": `${baseUrl}/businesses`
+    "upgrade-account": `${baseUrl}/businesses`,
   };
 
   return {

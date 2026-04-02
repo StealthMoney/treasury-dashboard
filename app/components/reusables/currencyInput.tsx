@@ -41,6 +41,23 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
     return "0.00";
   })();
 
+  const formatDisplay = (raw: string) => {
+    const digits = raw.replace(/\D/g, "");
+    if (!digits) return "";
+    return Number(digits).toLocaleString("en-US");
+  };
+
+  const stripCommas = (formatted: string) => formatted.replace(/,/g, "");
+
+  const displayValue = formatDisplay(value);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = stripCommas(e.target.value);
+    if (raw && !/^\d+$/.test(raw)) return;
+
+    onChange(raw);
+  };
+
   return (
     <div className="space-y-4">
       {label && (
@@ -48,9 +65,10 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
       )}
       <div className="flex">
         <input
-          type="number"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
+          type="text"
+          inputMode="numeric"
+          value={displayValue}
+          onChange={handleChange}
           placeholder={placeholder}
           className="flex-1 px-4 py-3 border bg-(--grey-4) text-(--text-1) border-(--grey-1) rounded-bl-lg rounded-tl-lg focus:outline-none"
         />
@@ -60,7 +78,7 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
           className="px-4 py-3 border border-(--grey-1) rounded-br-lg rounded-tr-lg bg-background focus:outline-none cursor-pointer font-medium"
         >
           <option value="NGN">NGN</option>
-          <option value="USD">USD</option>
+          {/* <option value="USD">USD</option> */}
         </select>
       </div>
 
