@@ -1,19 +1,9 @@
 import { AiOutlineCheck } from "react-icons/ai";
-
-type Status = "submitted" | "inreview" | "pending";
-
-interface StatusItem {
-  text: string;
-  status: Status;
-}
+import { StatusItem } from "@/app/types/general";
 
 interface Table {
   header?: string;
-
-  // default mode
   columns?: string[];
-
-  // status mode
   useStatus?: boolean;
   statusItems?: StatusItem[];
   showAsList: boolean;
@@ -33,7 +23,6 @@ export default function Message_table({
       </div>
 
       <div className="px-4 py-3">
-        {/* ✅ DEFAULT MODE (your current UI untouched) */}
         {!useStatus && (
           <ul className="space-y-3 text-[14px] text-(--text-1) list-disc pl-5 marker:text-(--text-1)">
             {columns.map((col, index) =>
@@ -42,42 +31,48 @@ export default function Message_table({
           </ul>
         )}
 
-        {/* ✅ STATUS MODE */}
         {useStatus && (
           <div className="space-y-3">
             {statusItems.map((item, index) => {
-              const isSubmitted = item.status === "submitted";
-              const isInReview = item.status === "inreview";
+              const isCompleted = item.status === "completed";
+              const isCurrent = item.status === "current";
+              const isFailed = item.status === "failed";
 
               return (
                 <div key={index} className="flex items-center gap-3">
                   {/* indicator */}
                   <div
-                    className={`w-4 h-4 rounded flex items-center justify-center
+                    className={`w-4 h-4 rounded flex items-center justify-center shrink-0
                       ${
-                        isSubmitted
+                        isCompleted
                           ? "bg-green-500 border-green-500"
-                          : isInReview
+                          : isCurrent
                             ? "border border-dashed border-(--text-1)"
-                            : "border border-(--grey-1)"
+                            : isFailed
+                              ? "bg-red-500 border-red-500"
+                              : "border border-(--grey-1)"
                       }
                     `}
                   >
-                    {isSubmitted && (
+                    {isCompleted && (
                       <AiOutlineCheck className="w-3 h-3 text-white" />
+                    )}
+                    {isFailed && (
+                      <span className="text-white text-[10px] font-bold leading-none">
+                        ✕
+                      </span>
                     )}
                   </div>
 
                   {/* text */}
                   <p
                     className={`text-[14px] ${
-                      isSubmitted ? "line-through" : ""
-                    }`}
+                      isCompleted ? "line-through text-(--text-1)" : ""
+                    } ${isFailed ? "text-red-500" : ""}`}
                   >
                     {item.text}
-
-                    {isInReview && (
-                      <span className="font-semibold ml-1">(In review)</span>
+                    {item.suffix && (
+                      <span className="font-semibold ml-1">{item.suffix}</span>
                     )}
                   </p>
                 </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { StatData, StatUIConfig } from "../components/reusables/stats_section";
+import { StatUIConfig } from "../components/reusables/stats_section";
 import { StatsSection } from "../components/reusables/stats_section";
 import { Table } from "../components/reusables/table";
 import { useEffect, useState } from "react";
@@ -14,19 +14,22 @@ import {
 } from "../components/reusables/general_inputs";
 import Message_table from "../components/reusables/message_table";
 import OutstandingCredits from "../components/reusables/outstabding_credits";
-import { useSession } from "next-auth/react";
 import KybBanner from "../components/reusables/kybinfo_banner";
 import { KYBScreens } from "../overview/kybprocess";
 import { useProfile } from "../contexts/user_provider";
 import { fileToBase64 } from "../functions/helpers/base64";
-import {
-  getCreditHistory,
-  getCreditTypes,
-  requestNewCredit,
-} from "../server/credits";
+import { requestNewCredit } from "../server/credits";
 import { FeedbackModal } from "../components/reusables/feedback_modal";
-import { LoanApplication } from "../types/general";
+import {
+  LoanApplication,
+  LoanApplicationUI,
+  LoanStatus,
+  LoanType,
+} from "../types/general";
 import { useCreditStats } from "../hooks";
+import { buildLoanUI } from "../functions/helpers/statusmapper";
+import { useCreditHistory, useCreditTypes } from "../hooks/use_credit_history";
+import PageSkeleton from "../components/reusables/page_skeleton";
 
 interface ActiveLoan {
   id: string;
@@ -49,15 +52,28 @@ interface CollateralAsset {
   freeCollateral: string;
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const isActive = status.toLowerCase() === "active";
+function StatusBadge({ status }: { status: LoanStatus }) {
+  const isActive =
+    status.toLowerCase() === "approved" ||
+    status.toLocaleLowerCase() === "disbursed" ||
+    status.toLowerCase() === "repaid";
+
+  const isPending =
+    status.toLocaleLowerCase() === "review" ||
+    status.toLowerCase() === "overdue";
+
+  const isFailed = status.toLowerCase() === "rejected";
   return (
     <span
       className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
         ${
           isActive
             ? "bg-[#EAF5ED] text-[#05AD5D] border border-[#D6EBDB]"
-            : "bg-yellow-100 text-yellow-600"
+            : isPending
+              ? "bg-yellow-100 text-yellow-600"
+              : isFailed
+                ? "bg-red-100 text-red-100"
+                : ""
         }`}
     >
       {status}
@@ -74,7 +90,7 @@ const creditHistoryColumns = [
         <p className="text-xs sm:text-sm font-semibold text-gray-900">
           {row.loanTypeId}
         </p>
-        <p className="text-xs text-gray-500">{row.loanStartDate}</p>
+        <p className="text-xs text-gray-500">{row.loanStartDate || null}</p>
       </>
     ),
   },
@@ -112,7 +128,7 @@ const creditHistoryColumns = [
             (new Date(row.loanDueDate).getTime() -
               new Date(row.loanStartDate).getTime()) /
               (1000 * 60 * 60 * 24),
-          )}
+          ) || "N/A"}
         </p>
       </>
     ),
@@ -246,8 +262,6 @@ export const collateralAssetsColumns = [
 ];
 
 export default function CreditsPage() {
-  const { data: session, status } = useSession();
-  console.log(session, "is session data");
   const { user } = useProfile();
 
   const [isBorrowOpen, setIsBorrowOpen] = useState(false);
@@ -257,6 +271,7 @@ export default function CreditsPage() {
   const [borrowFundError, setBorrowFundError] = useState(false);
   const [borrowFundErrorMessage, setBorrowFundErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [interestRate, setInterestRate] = useState<number | null>(null);
 
   // Repay Modal State
   const [isRepayOpen, setIsRepayOpen] = useState(false);
@@ -293,13 +308,31 @@ export default function CreditsPage() {
   }>({});
 
   const [loanDuration, setLoanDuration] = useState("");
-  const [isUploading, setIsUploading] = useState(false);
 
   const [isKybVerified, setIsKybVerified] = useState(false);
   const [showKybScreens, setShowKybScreens] = useState(false);
   const [kybStatus, setKybStatus] = useState<
     "unverified" | "inreview" | "failed"
   >("unverified");
+
+  const { data, refetch, isLoading: creditHistoryLoading } = useCreditHistory();
+  const { data: creditTypes, isLoading: creditTypesLoading } = useCreditTypes();
+
+  const pageFetchLoading = creditHistoryLoading || creditTypesLoading;
+
+  const { header, image, statusItems, message } = buildLoanUI(
+    creditHistoryData as LoanApplicationUI[],
+  );
+
+  const loanStatus = creditHistoryData?.[0]?.loanStatus;
+
+  const titleMap: Record<string, string> = {
+    REVIEW: "Your loan is being reviewed",
+    REPAID: "This loan is fully settled, you can request another",
+    REJECTED: "Your previous loan request was rejected",
+  };
+
+  const title = titleMap[loanStatus] ?? "";
 
   const validateStep1 = () => {
     const newErrors: typeof errors = {};
@@ -321,28 +354,6 @@ export default function CreditsPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const uploadFiles = async () => {
-    try {
-      setIsUploading(true);
-
-      // simulate upload delay (replace with real API)
-      await new Promise((res) => setTimeout(res, 1500));
-
-      // example real upload:
-      // const formData = new FormData();
-      // formData.append("invoice", invoiceFile!);
-      // formData.append("bankStatement", bankStatementFile!);
-      // await fetch("/api/upload", { method: "POST", body: formData });
-
-      return true;
-    } catch (error) {
-      console.error(error);
-      return false;
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
   useEffect(() => {
     setErrors((prev) => ({
       ...prev,
@@ -353,9 +364,19 @@ export default function CreditsPage() {
   }, []);
 
   const handlBorrowFund = () => {
-    setIsBorrowOpen(true);
-    setBorrowStep(0);
-    setIsSuccess(false);
+    if (
+      loanStatus !== "REPAID" &&
+      (loanStatus === "REVIEW" ||
+        loanStatus === "APPROVED" ||
+        loanStatus === "DISBURSED")
+    ) {
+      setIsBorrowOpen(true);
+      setIsSuccess(true);
+    } else {
+      setIsBorrowOpen(true);
+      setBorrowStep(0);
+      setIsSuccess(false);
+    }
   };
 
   const handleRepayClick = () => {
@@ -431,36 +452,31 @@ export default function CreditsPage() {
   }, [user]);
 
   useEffect(() => {
-    const fetchCreditTypes = async () => {
-      try {
-        const request = await getCreditTypes();
+    if (creditTypes) {
+      setLoanDurationInDays(
+        creditTypes.map((item: LoanType) => item.durationInDays),
+      );
+    }
+  }, [creditTypes]);
 
-        if (request.success) {
-          setLoanTypeId(request.data[0].id);
-          setLoanDurationInDays(
-            request.data.map((item) => item.durationInDays),
-          );
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
+  useEffect(() => {
+    if (loanDuration === "" || !creditTypes) return;
 
-    const fetchCreditHistory = async () => {
-      try {
-        const request = await getCreditHistory();
+    const found = creditTypes.find(
+      (item: LoanType) => item.durationInDays.toString() === loanDuration,
+    );
 
-        if (request.success) {
-          setCreditHistoryData(request.data);
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
+    if (found) {
+      setLoanTypeId(found.id);
+      setInterestRate(found.interestRate);
+    }
+  }, [loanDuration, creditTypes]);
 
-    fetchCreditTypes();
-    fetchCreditHistory();
-  }, []);
+  useEffect(() => {
+    if (data) {
+      setCreditHistoryData(data);
+    }
+  }, [data]);
 
   const handleModalClose = () => {
     setBorrowFundError(false);
@@ -855,11 +871,9 @@ export default function CreditsPage() {
             onChange={setBorrowAmount}
             onCurrencyChange={setBorrowCurrency}
             placeholder="Amount to borrow"
-            description={`Eligible Credit:`}
-            balance={52800}
             showmax={false}
             currency={borrowCurrency}
-            minamount={15000000}
+            message={"You can only borrow up to half of your invoice"}
             label={`Enter Loan Amount (${borrowCurrency === "NGN" ? "₦" : "$"})`}
           />
         </div>
@@ -893,7 +907,7 @@ export default function CreditsPage() {
           <div className="flex justify-between py-3 border-b border-(--grey-1)">
             <span className="text-(--text-1) text-[14px]">Interests:</span>
             <span className="font-semibold text-foreground text-[14px]">
-              {"500,000.00"} NGN
+              {((interestRate ?? 0) / 100) * (Number(borrowAmount) ?? 0)} NGN
             </span>
           </div>
         </div>
@@ -906,15 +920,6 @@ export default function CreditsPage() {
     if (borrowStep === 0) {
       const isValid = validateStep1();
       if (!isValid) return;
-
-      const uploaded = await uploadFiles();
-      if (!uploaded) {
-        setErrors((prev) => ({
-          ...prev,
-          invoice: "Upload failed. Try again.",
-        }));
-        return;
-      }
     }
 
     if (borrowStep < borrowSteps.length - 1) {
@@ -961,8 +966,6 @@ export default function CreditsPage() {
     };
 
     try {
-      console.log("Final Payload:", payload);
-
       setLoading(true);
       const stringifiedPayload = JSON.stringify(payload);
 
@@ -971,6 +974,7 @@ export default function CreditsPage() {
       if (creditReq.success) {
         setBorrowFundError(false);
         setIsSuccess(true);
+        refetch();
         return;
       } else {
         setBorrowFundError(true);
@@ -999,7 +1003,13 @@ export default function CreditsPage() {
     );
   }
 
-  return (
+  return pageFetchLoading ? (
+    <div className="min-h-screen w-full px-6 bg-background">
+      <div className="w-full overflow-x-auto md:max-w-[80%]">
+        <PageSkeleton />
+      </div>
+    </div>
+  ) : (
     <>
       <div className="min-h-screen w-full px-6 bg-background">
         <div className="w-full overflow-x-auto md:max-w-[80%]">
@@ -1018,15 +1028,19 @@ export default function CreditsPage() {
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3">
+                {!true && (
+                  <button
+                    disabled={!canPerformActions}
+                    onClick={handleExtendClick}
+                    className="px-4 sm:px-6 py-2 bg-background text-foreground text-sm font-medium border border-(--grey-1) rounded-lg cursor-pointer transition"
+                  >
+                    Extend Credit Date
+                  </button>
+                )}
                 <button
-                  disabled={!canPerformActions}
-                  onClick={handleExtendClick}
-                  className="px-4 sm:px-6 py-2 bg-background text-foreground text-sm font-medium border border-(--grey-1) rounded-lg cursor-pointer transition"
-                >
-                  Extend Credit Date
-                </button>
-                <button
-                  // disabled={!canPerformActions}
+                  title={title}
+                  // !canPerformActions || loanStatus === "OVERDUE"
+                  disabled={loanStatus === "OVERDUE"}
                   onClick={handlBorrowFund}
                   className="px-4 sm:px-6 py-2 bg-foreground text-background text-sm font-semibold rounded-lg cursor-pointer transition"
                 >
@@ -1073,16 +1087,13 @@ export default function CreditsPage() {
             onSubmit={handleBorrowSubmit}
             isSuccess={isSuccess}
             loading={loading}
-            successTitle="Credit request submitted"
-            successMessage={`Your request for $${borrowAmount} ${borrowCurrency} is being reviewed. \n This usually takes 24-48 hours.`}
+            imagePath={image}
+            successTitle={header}
+            successMessage={message}
             successtable={
               <Message_table
-                useStatus
-                statusItems={[
-                  { text: "Step 1: Submitted", status: "submitted" },
-                  { text: "Step 2: Review", status: "inreview" },
-                  { text: "Step 3: Approval", status: "pending" },
-                ]}
+                useStatus={true}
+                statusItems={statusItems}
                 showAsList={true}
               />
             }

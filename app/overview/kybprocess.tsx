@@ -35,6 +35,7 @@ interface OwnerInfo {
   homePostalCode: string;
   homeStreet: string;
   homeProofUpload: File | null;
+  bvn: string;
 }
 
 interface KYBFormData {
@@ -46,6 +47,7 @@ interface KYBFormData {
   annualSalesVolumeCurrency: string;
   industry: string;
   businessType: string;
+  cacNumber: string;
 
   // Step 2
   businessEmail: string;
@@ -93,6 +95,7 @@ const initialFormData: KYBFormData = {
   annualSalesVolumeCurrency: "NGN",
   industry: "",
   businessType: "",
+  cacNumber: "",
   businessEmail: "",
   supportEmail: "",
   disputeEmail: "",
@@ -125,6 +128,7 @@ const initialFormData: KYBFormData = {
       homePostalCode: "",
       homeStreet: "",
       homeProofUpload: null,
+      bvn: "",
     },
   ],
   incorporationDoc: null,
@@ -292,6 +296,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
       homePostalCode: "",
       homeStreet: "",
       homeProofUpload: null,
+      bvn: "",
     };
     setFormData((prev) => ({
       ...prev,
@@ -326,6 +331,10 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
         if (!formData.industry) newErrors.industry = "Industry is required";
         if (!formData.businessType)
           newErrors.businessType = "Business Type is required";
+        if (!formData.cacNumber) newErrors.cacNumber = "CAC number is required";
+        else if (!/^rc\d+$/i.test(formData.cacNumber))
+          newErrors.cacNumber =
+            "CAC number must start with RC (e.g. RC1234567)";
         break;
 
       case 2:
@@ -390,10 +399,24 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
           if (!owner.lastName)
             newErrors[`owner_${owner.id}_lastName`] = "Last Name is required";
           if (!owner.email)
-            newErrors[`owner_${owner.id}_email`] = "email is required";
+            newErrors[`owner_${owner.id}_email`] = "Email is required";
+          else if (!isValidEmail(owner.email))
+            newErrors[`owner_${owner.id}_email`] =
+              "Enter a valid email (e.g. info@company.com)";
+
           if (!owner.phoneNumber)
             newErrors[`owner_${owner.id}_phoneNumber`] =
-              "phoneNumber is required";
+              "Phone Number is required";
+          else if (!/^\+\d{7,15}$/.test(owner.phoneNumber))
+            newErrors[`owner_${owner.id}_phoneNumber`] =
+              "Include country code (e.g. +2348012345678)";
+
+          if (!owner.bvn)
+            newErrors[`owner_${owner.id}_bvn`] = "BVN is required";
+          else if (isNaN(Number(owner.bvn)) || owner.bvn.length !== 11)
+            newErrors[`owner_${owner.id}_bvn`] =
+              "Enter a valid 11-digit BVN (e.g. 12345678901)";
+
           if (!owner.dayOfBirth)
             newErrors[`owner_${owner.id}_dayOfBirth`] =
               "Day of Birth is required";
@@ -648,7 +671,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
       if (result.success) {
         setCurrentStep(1);
         setFormData(initialFormData);
-        localStorage.removeItem("profile_cache")
+        localStorage.removeItem("profile_cache");
         onComplete();
       }
     } catch (err) {
@@ -845,6 +868,23 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
                     <p className="text-(--red-1) text-sm">
                       {errors.businessType}
                     </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="w-full">
+                  <input
+                    type="text"
+                    placeholder="CAC Number*"
+                    value={formData.cacNumber}
+                    onChange={(e) =>
+                      updateFormData({ cacNumber: e.target.value })
+                    }
+                    className={baseInput}
+                  />
+                  {errors.cacNumber && (
+                    <p className="text-(--red-1) text-sm">{errors.cacNumber}</p>
                   )}
                 </div>
               </div>
@@ -1242,6 +1282,25 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
                         {errors[`owner_${owner.id}_phoneNumber`] && (
                           <p className="text-(--red-1) text-sm">
                             {errors[`owner_${owner.id}_phoneNumber`]}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="flex flex-col">
+                        <input
+                          title="bvn"
+                          value={owner.bvn}
+                          placeholder="bvn"
+                          onChange={(e) =>
+                            updateOwner(owner.id, { bvn: e.target.value })
+                          }
+                          className={baseInput}
+                        />
+                        {errors[`owner_${owner.id}_bvn`] && (
+                          <p className="text-(--red-1) text-sm">
+                            {errors[`owner_${owner.id}_bvn`]}
                           </p>
                         )}
                       </div>

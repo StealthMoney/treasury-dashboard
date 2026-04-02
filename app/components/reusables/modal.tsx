@@ -24,6 +24,7 @@ export interface StepModalProps {
   onPreviousStep: () => void;
   onSubmit?: () => void;
   isSuccess?: boolean;
+  imagePath?: string;
   loading?: boolean;
   repaySuccess?: boolean;
   successTitle?: string;
@@ -43,6 +44,7 @@ export const StepModal: React.FC<StepModalProps> = ({
   onPreviousStep,
   onSubmit,
   isSuccess,
+  imagePath,
   loading,
   successTitle,
   successMessage,
@@ -90,7 +92,7 @@ export const StepModal: React.FC<StepModalProps> = ({
             <>
               <div className="flex flex-col items-center justify-center py-8">
                 <Image
-                  src={"/images/success.svg"}
+                  src={imagePath || "/images/success.svg"}
                   width={100}
                   height={100}
                   alt="success"
@@ -143,13 +145,14 @@ export const StepModal: React.FC<StepModalProps> = ({
           {!isSuccess && (
             <button
               onClick={onPreviousStep}
-              disabled={currentStep === 0}
-              className="flex-1 px-4 py-3 text-gray-900 font-semibold border border-(--grey-1) rounded-lg hover:bg-(--grey-1) transition disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={currentStep === 0 || loading}
+              className="flex-1 px-4 py-3 text-gray-900 font-semibold border border-(--grey-1) rounded-lg hover:bg-(--grey-4) transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Go Back
             </button>
           )}
-          <button disabled={loading}
+          <button
+            disabled={loading}
             onClick={
               isSuccess
                 ? onClose
@@ -157,11 +160,7 @@ export const StepModal: React.FC<StepModalProps> = ({
                   ? onSubmit || onNextStep
                   : onNextStep
             }
-            className={`flex-1 gap-x-3 flex justify-center items-center px-4 py-3 rounded-lg transition cursor-pointer ${
-              isSuccess
-                ? "bg-foreground text-background hover:bg-foreground/85"
-                : "bg-gray-400 text-white hover:bg-gray-500"
-            }`}
+            className={`flex-1 gap-x-3 flex justify-center items-center px-4 py-3 rounded-lg transition cursor-pointer bg-foreground text-background hover:bg-foreground/85`}
           >
             {isSuccess
               ? successButtonLabel || "Close"

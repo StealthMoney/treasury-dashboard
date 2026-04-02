@@ -23,16 +23,49 @@ export interface LoanType {
   updatedAt: string;
 }
 
-export type LoanStatus = "REVIEW" | "APPROVED" | "REJECTED" | "PENDING";
+export type LoanStatus =
+  | "REVIEW"
+  | "APPROVED"
+  | "REJECTED"
+  | "DISBURSED"
+  | "REPAID"
+  | "OVERDUE";
 
 export interface LoanApplication {
-  loanTypeId: number; 
+  loanTypeId: number;
   loanStatus: LoanStatus;
   durationInDays: number;
   loanAmount: number;
   currency: string;
-  loanStartDate: string; 
-  loanDueDate: string;  
+  loanStartDate: string;
+  loanDueDate: string;
   reference: string;
   interest: number;
+}
+
+export type LoanStatusUI = "REVIEW" | "APPROVED" | "REJECTED" | "DISBURSED";
+export interface LoanApplicationUI {
+  loanTypeId: number;
+  loanStatus: LoanStatusUI;
+  durationInDays: number;
+  loanAmount: number;
+  currency: string;
+  loanStartDate: string;
+  loanDueDate: string;
+  reference: string;
+  interest: number;
+}
+
+export type StepStatus =
+  | "completed"
+  | "current"
+  | "pending"
+  | "failed"
+  | "submitted"
+  | "inreview";
+
+export interface StatusItem {
+  text: string;
+  status: StepStatus;
+  suffix?: string;
 }

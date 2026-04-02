@@ -5,14 +5,24 @@ import { formatDateWithSuffix } from "../functions/helpers/formatted_date";
 
 export const useCreditStats = (creditHistoryData: LoanApplication[]) => {
   return useMemo(() => {
-    if (creditHistoryData.length === 0) return [];
+    if (!creditHistoryData || creditHistoryData.length === 0) return [];
 
     const firstLoan = creditHistoryData[0];
 
-    const startDate = new Date(firstLoan.loanStartDate);
-    const dueDate = new Date(firstLoan.loanDueDate);
-    const diffInMs = dueDate.getTime() - startDate.getTime();
-    const daysLeft = Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
+    const dueDate = firstLoan.loanDueDate
+      ? new Date(firstLoan.loanDueDate)
+      : null;
+
+    const startDate = firstLoan.loanStartDate
+      ? new Date(firstLoan.loanStartDate)
+      : null;
+
+    let daysLeft: number | string = "N/A";
+
+    if (dueDate && startDate) {
+      const diffInMs = dueDate.getTime() - startDate.getTime();
+      daysLeft = Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
+    }
 
     return [
       {
@@ -21,12 +31,17 @@ export const useCreditStats = (creditHistoryData: LoanApplication[]) => {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         })}`,
-        footer: formatDateWithSuffix(firstLoan.loanStartDate),
+        footer: firstLoan.loanStartDate
+          ? formatDateWithSuffix(firstLoan.loanStartDate)
+          : "N/A",
       },
       {
         label: "Due Date",
-        value: formatDateWithSuffix(firstLoan.loanDueDate),
-        footer: `${daysLeft} days left`,
+        value: firstLoan.loanDueDate
+          ? formatDateWithSuffix(firstLoan.loanDueDate)
+          : "N/A",
+        footer:
+          typeof daysLeft === "number" ? `${daysLeft} days left` : daysLeft,
       },
       {
         label: "Loan Interest",
@@ -34,7 +49,7 @@ export const useCreditStats = (creditHistoryData: LoanApplication[]) => {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         })}`,
-        footer: "+10.00 %", // hardcoded for now
+        footer: "+10.00 %",
       },
     ] as StatData[];
   }, [creditHistoryData]);

@@ -6,8 +6,8 @@ interface CurrencyInputProps {
   onCurrencyChange: (currency: "NGN" | "USD") => void;
   placeholder?: string;
   label?: string;
-  description: string;
-  minamount?: number;
+  description?: string;
+  message?: string;
   assetName?: string;
   balance?: number;
   showmax: boolean;
@@ -20,27 +20,12 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
   onCurrencyChange,
   placeholder = "Amount to purchase",
   label,
-  description = "you will receive:",
-  minamount,
+  description,
+  message,
   assetName = false,
   balance,
   showmax = false,
 }) => {
-  // Mock exchange rates
-  const exchangeRates = {
-    NGN: 1456,
-    USD: 1,
-  };
-
-  const receivedAmount = (() => {
-    if (value && !isNaN(Number(value))) {
-      const amount = Number(value);
-      const rateUSDT = exchangeRates[currency];
-      return (amount / rateUSDT).toFixed(2);
-    }
-    return "0.00";
-  })();
-
   const formatDisplay = (raw: string) => {
     const digits = raw.replace(/\D/g, "");
     if (!digits) return "";
@@ -57,6 +42,8 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
 
     onChange(raw);
   };
+
+  console.log(value, currency, balance);
 
   return (
     <div className="space-y-4">
@@ -88,16 +75,11 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
           <span className="font-semibold text-foreground">
             {balance?.toLocaleString("en-US", {
               minimumFractionDigits: 2,
-            }) || receivedAmount}{" "}
+            })}{" "}
           </span>
           {assetName && <span className="ml-2">{assetName}</span>}
-          {minamount && (
-            <span className="font-semibold text-foreground">
-              -{" "}
-              {minamount?.toLocaleString("en-US", {
-                minimumFractionDigits: 2,
-              })}{" "}
-            </span>
+          {message && (
+            <span className="font-semibold text-foreground">{message}</span>
           )}
         </p>
 
