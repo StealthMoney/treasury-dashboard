@@ -872,7 +872,10 @@ export default function CreditsPage() {
           <div className="flex justify-between py-3 border-b border-(--grey-1)">
             <span className="text-(--text-1) text-[14px]">Credit Amount:</span>
             <span className="font-semibold text-foreground text-[14px]">
-              {borrowAmount} {borrowCurrency}
+              {Number(borrowAmount).toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+              })}{" "}
+              {borrowCurrency}
             </span>
           </div>
           <div className="flex justify-between py-3 border-b border-(--grey-1)">
