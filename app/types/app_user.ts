@@ -11,7 +11,7 @@ export interface AppuserProps {
 	systemAdmin: boolean
 	systemUser: boolean
 
-	kybCompleted: boolean
+	kybStatus: "ACTIVE" | "PENDING_REVIEW" | "SUSPENDED" | null
 
 	profileMenu: string[]
 

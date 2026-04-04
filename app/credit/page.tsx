@@ -303,8 +303,8 @@ export default function CreditsPage() {
 	const [isKybVerified, setIsKybVerified] = useState(false)
 	const [showKybScreens, setShowKybScreens] = useState(false)
 	const [kybStatus, setKybStatus] = useState<
-		"unverified" | "inreview" | "failed"
-	>("unverified")
+		"ACTIVE" | "PENDING_REVIEW" | "SUSPENDED" | null
+	>(null)
 
 	const { data, refetch, isLoading: creditHistoryLoading } = useCreditHistory()
 	const { data: creditTypes, isLoading: creditTypesLoading } = useCreditTypes()
@@ -432,14 +432,17 @@ export default function CreditsPage() {
 	}
 
 	const handleKybComplete = () => {
-		setIsKybVerified(user?.kybCompleted || false)
+		setIsKybVerified(user?.kybStatus === "ACTIVE" || false)
 		setShowKybScreens(false)
-		setKybStatus("inreview")
+		setKybStatus(user?.kybStatus || null)
 	}
 
 	useEffect(() => {
-		setIsKybVerified(user?.kybCompleted || false)
-		setCanperformActions((user?.kybCompleted && user.businessAdmin) || false)
+		setIsKybVerified(user?.kybStatus === "ACTIVE" || false)
+		setCanperformActions(
+			(user?.kybStatus === "ACTIVE" && user.businessAdmin) || false
+		)
+		setKybStatus(user?.kybStatus || null)
 	}, [user])
 
 	useEffect(() => {
@@ -719,7 +722,9 @@ export default function CreditsPage() {
 								})}
 							</span>{" "}
 							to{" "}
-							<span className="text-foreground font-semibold">Stealth Treasury</span>
+							<span className="text-foreground font-semibold">
+								Stealthtech Solutions
+							</span>
 						</p>
 					</div>
 
@@ -730,7 +735,10 @@ export default function CreditsPage() {
 							message1: { text: "Paystack - Titan" },
 
 							col2: "Account Number",
-							message2: { text: "0522528820", copy: "0522528820" },
+							message2: {
+								text: process.env.NEXT_PUBLIC_ACCOUNT_DETAILS || "",
+								copy: process.env.NEXT_PUBLIC_ACCOUNT_DETAILS || "",
+							},
 
 							col3: "Amount",
 							message3: {
@@ -998,20 +1006,16 @@ export default function CreditsPage() {
 								)}
 								<button
 									title={title}
-									// !canPerformActions || loanStatus === "OVERDUE"
-									disabled={loanStatus === "OVERDUE"}
+									disabled={!canPerformActions || loanStatus === "OVERDUE"}
 									onClick={handlBorrowFund}
-									className="bg-foreground text-background cursor-pointer rounded-lg px-4 py-2 text-sm font-semibold transition sm:px-6">
+									className={`bg-foreground text-background rounded-lg px-4 py-2 text-sm font-semibold transition sm:px-6 ${canPerformActions ? "cursor-pointer" : "cursor-not-allowed"}`}>
 									Get Credit Line
 								</button>
 							</div>
 						</div>
 
 						{!isKybVerified && (
-							<KybBanner
-								kybStatus={kybStatus} // "unverified" | "inreview" | "failed"
-								onAction={handleUpgradeAccount}
-							/>
+							<KybBanner kybStatus={kybStatus} onAction={handleUpgradeAccount} />
 						)}
 						{/* Stats Cards */}
 						{creditHistoryData.length > 0 && (
@@ -1028,8 +1032,9 @@ export default function CreditsPage() {
 							data={tableData}
 							columns={creditHistoryColumns}
 							extraHeader="Credit History"
-							kybStatus={"verified"}
+							kybStatus={kybStatus}
 							tableButtonClick={handlBorrowFund}
+							canPerformAction={!canPerformActions}
 						/>
 					</div>
 

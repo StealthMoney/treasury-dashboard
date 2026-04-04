@@ -579,6 +579,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 						email: owner.email,
 						phoneNumber: owner.phoneNumber,
 						dob,
+						bvn: owner.bvn,
 						addressLine1: owner.homeStreet,
 						addressLine2: owner.homeState,
 						city: owner.homeCity,
@@ -616,6 +617,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 				industry: formData.industry,
 				annualRevenue: Number(formData.annualSalesVolume) || 0,
 				annualRevenueCurrency: formData.annualSalesVolumeCurrency,
+				cacNumber: formData.cacNumber,
 				website: formData.website,
 				linkedIn: formData.linkedin,
 				twitter: formData.twitter,
@@ -672,7 +674,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 						handleClose()
 					}
 				}}
-				className="text-foreground hover:text-foreground/85 mb-6 flex items-center gap-2 text-[16px] transition">
+				className="text-foreground hover:text-foreground/85 mb-6 flex cursor-pointer items-center gap-2 text-[16px] transition">
 				<FaArrowLeft className="bg-background h-8 w-8 rounded-lg border border-(--grey-1)" />
 				Go Back
 			</button>

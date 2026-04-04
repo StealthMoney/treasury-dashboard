@@ -438,7 +438,7 @@ export default function Home() {
 							itemsPerPage,
 							onPageChange: setCurrentPage,
 						}}
-						kybStatus="unverified"
+						kybStatus={null}
 					/>
 				</div>
 				<StepModal

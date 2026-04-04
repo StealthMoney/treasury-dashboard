@@ -4,6 +4,7 @@ import React, { ReactNode } from "react"
 import { HiXMark } from "react-icons/hi2"
 import Image from "next/image"
 import { Spinner } from "./spinner"
+import { usePathname } from "next/navigation"
 
 export interface StepConfig {
 	title: string
@@ -52,6 +53,8 @@ export const StepModal: React.FC<StepModalProps> = ({
 	successtable,
 	repaySuccess,
 }) => {
+	const pathname = usePathname()
+
 	if (!isOpen) return null
 
 	const isLastStep = currentStep === steps.length - 1
@@ -124,14 +127,16 @@ export const StepModal: React.FC<StepModalProps> = ({
 					) : (
 						/* Step Content */
 						<>
-							<div className="mb-6">
-								<p className="text-center text-[16px] font-semibold tracking-wide">
-									<span className="text-foreground">STEP {currentStep + 1}</span>
-									<span className="text-(--text-1)">
-										/{steps.length} - {currentStepConfig.title}{" "}
-									</span>
-								</p>
-							</div>
+							{!pathname.match("/report") && (
+								<div className="mb-6">
+									<p className="text-center text-[16px] font-semibold tracking-wide">
+										<span className="text-foreground">STEP {currentStep + 1}</span>
+										<span className="text-(--text-1)">
+											/{steps.length} - {currentStepConfig.title}{" "}
+										</span>
+									</p>
+								</div>
+							)}
 							<div>{currentStepConfig.content}</div>
 						</>
 					)}
@@ -139,7 +144,7 @@ export const StepModal: React.FC<StepModalProps> = ({
 
 				{/* Footer */}
 				<div className="bg-background flex shrink-0 gap-3 p-6">
-					{!isSuccess && (
+					{!isSuccess && !pathname.match("/report") && (
 						<button
 							onClick={onPreviousStep}
 							disabled={currentStep === 0 || loading}
@@ -155,9 +160,11 @@ export const StepModal: React.FC<StepModalProps> = ({
 						className={`bg-foreground text-background hover:bg-foreground/85 flex flex-1 cursor-pointer items-center justify-center gap-x-3 rounded-lg px-4 py-3 transition`}>
 						{isSuccess
 							? successButtonLabel || "Close"
-							: isLastStep
-								? "Submit"
-								: "Continue"}
+							: pathname.match("/report")
+								? "Generate Report"
+								: isLastStep
+									? "Submit"
+									: "Continue"}
 
 						{loading && <Spinner />}
 					</button>

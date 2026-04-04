@@ -19,7 +19,8 @@ export interface TableProps<T> {
 	columns: TableColumn<T>[]
 	extraHeader?: string | ReactNode
 	pagination?: TablePagination
-	kybStatus: "unverified" | "inreview" | "failed" | "verified"
+	kybStatus: "ACTIVE" | "PENDING_REVIEW" | "SUSPENDED" | null
+	canPerformAction?: boolean
 	tableButtonClick?: () => void
 }
 
@@ -29,6 +30,7 @@ export function Table<T extends { id: string | number }>({
 	extraHeader,
 	pagination,
 	kybStatus,
+	canPerformAction,
 	tableButtonClick,
 }: TableProps<T>) {
 	const isEmpty = data.length === 0
@@ -53,14 +55,15 @@ export function Table<T extends { id: string | number }>({
 						height={120}
 					/>
 					<p className="text-center text-sm text-(--text-1)">
-						{kybStatus === "verified"
+						{kybStatus === "ACTIVE"
 							? "You have no credit history yet!"
 							: "Upload your invoices and bank statements to access a line of credit for your business."}
 					</p>
-					{kybStatus === "verified" && (
+					{kybStatus === "ACTIVE" && (
 						<button
+							disabled={canPerformAction}
 							onClick={tableButtonClick}
-							className="bg-foreground text-background mt-2 cursor-pointer rounded-lg px-6 py-2.5 text-sm font-medium transition hover:opacity-90">
+							className={`bg-foreground text-background mt-2 rounded-lg px-6 py-2.5 text-sm font-medium transition hover:opacity-90 ${!canPerformAction ? "cursor-pointer" : "cursor-not-allowed"}`}>
 							Apply for credit
 						</button>
 					)}

@@ -20,34 +20,38 @@ const ActivationContent = () => {
 
 	const [loading, setLoading] = React.useState(true)
 	const [data, setData] = React.useState<Data | null>(null)
-
-	const handleActivation = React.useCallback(async () => {
-		if (!key) {
-			setData({
-				status: 400,
-				message: "Invalid or missing activation link.",
-			})
-			setLoading(false)
-			return
-		}
-
-		try {
-			const res = await activate(key)
-			setData(res)
-		} catch (err) {
-			console.error("Something went wrong", err)
-			setData({
-				status: 500,
-				message: "Something went wrong.",
-			})
-		} finally {
-			setLoading(false)
-		}
-	}, [key])
+	const hasActivated = React.useRef(false)
 
 	React.useEffect(() => {
-		handleActivation()
-	}, [handleActivation])
+		if (hasActivated.current) return
+		hasActivated.current = true
+
+		const runActivation = async () => {
+			if (!key) {
+				setData({
+					status: 400,
+					message: "Invalid or missing activation link.",
+				})
+				setLoading(false)
+				return
+			}
+
+			try {
+				const res = await activate(key)
+				setData(res)
+			} catch (err) {
+				console.error("Something went wrong", err)
+				setData({
+					status: 500,
+					message: "Something went wrong.",
+				})
+			} finally {
+				setLoading(false)
+			}
+		}
+
+		runActivation()
+	}, [key])
 
 	if (loading) {
 		return (
@@ -77,7 +81,7 @@ const ActivationContent = () => {
 				description={
 					isSuccess
 						? "Your account has been successfully activated."
-						: data?.message || "We couldn’t activate your account."
+						: data?.message || "We couldn't activate your account."
 				}
 				buttonCount={isSuccess ? 1 : 2}
 				buttons={
