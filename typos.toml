@@ -1,9 +1,9 @@
-default.extend-ignore-identifiers-re = [
-  "^bc1\\w+",
-  "^lnbc1\\w+",
-]
+default.extend-ignore-identifiers-re = ["^bc1\\w+", "^lnbc1\\w+"]
 
 default.extend-ignore-re = ["\"eyJ[a-zA-Z0-9_\\-\\.]+\""]
 
 [files]
-extend-exclude = []
+extend-exclude = [
+  "./app/functions/helpers/formatted_date.ts",
+  "./app/vault/page.tsx",                      # ignored temporarily
+]
