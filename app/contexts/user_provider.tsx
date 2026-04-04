@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { getProfile } from "../server/get_profile";
 import { AppuserProps } from "../types/app_user";
 import { signOut } from "next-auth/react";
@@ -47,6 +48,7 @@ export const ProfileProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
+  const { status } = useSession();
   const [user, setUser] = useState<AppuserProps | null>(() => getValidCache());
   const [loading, setLoading] = useState<boolean>(
     () => getValidCache() === null,
@@ -71,14 +73,22 @@ export const ProfileProvider = ({
       }
     } catch (err) {
       console.error(err);
-      setError("Something went wrong");
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   useEffect(() => {
-    if (user) return;
+    if (status !== "authenticated") {
+      if (status === "unauthenticated") setLoading(false);
+      return;
+    }
+
+    if (user) {
+      setLoading(false);
+      return;
+    }
 
     let cancelled = false;
 
@@ -99,7 +109,7 @@ export const ProfileProvider = ({
       } catch (err) {
         if (!cancelled) {
           console.error(err);
-          setError("Something went wrong");
+          setError(err instanceof Error ? err.message : "Something went wrong");
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -109,7 +119,7 @@ export const ProfileProvider = ({
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [status, user]);
 
   const retry = () => fetchProfile();
   const logout = async () => {

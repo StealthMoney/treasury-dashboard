@@ -328,7 +328,7 @@ export default function CreditsPage() {
 
   const titleMap: Record<string, string> = {
     REVIEW: "Your loan is being reviewed",
-    REPAID: "This loan is fully settled, you can request another",
+    REPAID: "Your previous loan is fully settled, you can request another",
     REJECTED: "Your previous loan request was rejected",
   };
 
