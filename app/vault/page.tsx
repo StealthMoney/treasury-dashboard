@@ -429,7 +429,7 @@ export default function Page() {
 					/>
 					{/* Allocations Section */}
 					<Table
-						kybStatus="unverified"
+						kybStatus={null}
 						data={allocationData}
 						columns={allocationColumns}
 						extraHeader="Allocations"

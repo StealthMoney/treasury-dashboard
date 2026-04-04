@@ -1,6 +1,6 @@
 import Image from "next/image"
 
-type KybStatus = "unverified" | "inreview" | "failed"
+type KybStatus = "ACTIVE" | "PENDING_REVIEW" | "SUSPENDED" | null
 
 interface KybBannerProps {
 	kybStatus: KybStatus
@@ -8,28 +8,31 @@ interface KybBannerProps {
 }
 
 export default function KybBanner({ kybStatus, onAction }: KybBannerProps) {
-	const contentMap = {
-		unverified: {
+	const contentMap: Record<
+		string,
+		{ header: string; text: string; button: string | null }
+	> = {
+		null: {
 			header: "Upgrade Your Account",
 			text:
 				"Upgrade your account by verifying your business (KYB) to unlock all platform features.",
 			button: "Upgrade your account",
 		},
-		inreview: {
+		PENDING_REVIEW: {
 			header: "Your verification is under review",
 			text:
-				"We’re reviewing your business details. This usually takes 24–48 hours. You’ll be notified once your account is approved.",
+				"We're reviewing your business details. This usually takes 24–48 hours. You'll be notified once your account is approved.",
 			button: null,
 		},
-		failed: {
+		SUSPENDED: {
 			header: "Verification failed.",
 			text:
-				"We couldn’t verify your business details. Please review your information and try again.",
+				"We couldn't verify your business details. Please review your information and try again.",
 			button: "Retry verification",
 		},
 	}
 
-	const current = contentMap[kybStatus]
+	const current = contentMap[String(kybStatus)] // ← coerce null → "null"
 
 	if (!current) return null
 
@@ -45,7 +48,7 @@ export default function KybBanner({ kybStatus, onAction }: KybBannerProps) {
 				{current.button && (
 					<button
 						onClick={onAction}
-						className="bg-foreground text-background mt-1 rounded-lg px-2 py-2">
+						className="bg-foreground text-background mt-1 cursor-pointer rounded-lg px-2 py-2">
 						{current.button}
 					</button>
 				)}
@@ -54,9 +57,9 @@ export default function KybBanner({ kybStatus, onAction }: KybBannerProps) {
 			<div className="hidden md:flex">
 				<Image
 					src={
-						kybStatus === "unverified"
+						kybStatus === null
 							? "/images/prompt.svg"
-							: kybStatus === "inreview"
+							: kybStatus === "PENDING_REVIEW"
 								? "/images/under_review.svg"
 								: "/images/failed.svg"
 					}
