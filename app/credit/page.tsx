@@ -1041,8 +1041,8 @@ export default function CreditsPage() {
 					<StepModal
 						isOpen={isBorrowOpen}
 						onClose={() => setIsBorrowOpen(false)}
-						title="Borrow Against Treasury"
-						subtitle="Borrow stable liquidity without selling your vault assets."
+						title="Secure a line of credit"
+						subtitle="Apply for a loan and get access to credit."
 						steps={borrowSteps}
 						currentStep={borrowStep}
 						onNextStep={handleBorrowNext}
