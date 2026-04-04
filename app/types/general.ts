@@ -1,71 +1,71 @@
 // types/result.ts
 export type Result<T> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+	| { success: true; data: T }
+	| { success: false; error: string }
 
 export type NavLink = {
-  text: string;
-  href: string;
-  logo: React.ReactNode;
-};
+	text: string
+	href: string
+	logo: React.ReactNode
+}
 
-type InterestRateType = "FIX" | "VARIABLE";
+type InterestRateType = "FIX" | "VARIABLE"
 
-type StatusType = "ACTIVE" | "INACTIVE";
+type StatusType = "ACTIVE" | "INACTIVE"
 
 export interface LoanType {
-  id: number;
-  interestRate: number;
-  interestRateType: InterestRateType;
-  status: StatusType;
-  durationInDays: number;
-  createdAt: string;
-  updatedAt: string;
+	id: number
+	interestRate: number
+	interestRateType: InterestRateType
+	status: StatusType
+	durationInDays: number
+	createdAt: string
+	updatedAt: string
 }
 
 export type LoanStatus =
-  | "REVIEW"
-  | "APPROVED"
-  | "REJECTED"
-  | "DISBURSED"
-  | "REPAID"
-  | "OVERDUE";
+	| "REVIEW"
+	| "APPROVED"
+	| "REJECTED"
+	| "DISBURSED"
+	| "REPAID"
+	| "OVERDUE"
 
 export interface LoanApplication {
-  loanTypeId: number;
-  loanStatus: LoanStatus;
-  durationInDays: number;
-  loanAmount: number;
-  currency: string;
-  loanStartDate: string;
-  loanDueDate: string;
-  reference: string;
-  interest: number;
+	loanTypeId: number
+	loanStatus: LoanStatus
+	durationInDays: number
+	loanAmount: number
+	currency: string
+	loanStartDate: string
+	loanDueDate: string
+	reference: string
+	interest: number
 }
 
-export type LoanStatusUI = "REVIEW" | "APPROVED" | "REJECTED" | "DISBURSED";
+export type LoanStatusUI = "REVIEW" | "APPROVED" | "REJECTED" | "DISBURSED"
 export interface LoanApplicationUI {
-  loanTypeId: number;
-  loanStatus: LoanStatusUI;
-  durationInDays: number;
-  loanAmount: number;
-  currency: string;
-  loanStartDate: string;
-  loanDueDate: string;
-  reference: string;
-  interest: number;
+	loanTypeId: number
+	loanStatus: LoanStatusUI
+	durationInDays: number
+	loanAmount: number
+	currency: string
+	loanStartDate: string
+	loanDueDate: string
+	reference: string
+	interest: number
 }
 
 export type StepStatus =
-  | "completed"
-  | "current"
-  | "pending"
-  | "failed"
-  | "submitted"
-  | "inreview";
+	| "completed"
+	| "current"
+	| "pending"
+	| "failed"
+	| "submitted"
+	| "inreview"
 
 export interface StatusItem {
-  text: string;
-  status: StepStatus;
-  suffix?: string;
+	text: string
+	status: StepStatus
+	suffix?: string
 }

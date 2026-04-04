@@ -1,19 +1,19 @@
 export interface AppuserProps {
-  userId: number;
-  login: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  imageUrl: string | null;
+	userId: number
+	login: string
+	firstName: string
+	lastName: string
+	email: string
+	imageUrl: string | null
 
-  businessAdmin: boolean;
-  businessUser: boolean;
-  systemAdmin: boolean;
-  systemUser: boolean;
+	businessAdmin: boolean
+	businessUser: boolean
+	systemAdmin: boolean
+	systemUser: boolean
 
-  kybCompleted: boolean;
+	kybCompleted: boolean
 
-  profileMenu: string[];
+	profileMenu: string[]
 
-  langKey: string | null;
+	langKey: string | null
 }

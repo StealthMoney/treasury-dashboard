@@ -1,22 +1,22 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #090909;
-  --grey-1: #dbe1e8;
-  --grey2: #e0e0e0;
-  --grey-3: #94a3b8;
-  --grey-4: #fafafa;
-  --text-1: #707070;
-  --green-1: #05ad5d;
-  --red-1: #bb0000;
+	--background: #ffffff;
+	--foreground: #090909;
+	--grey-1: #dbe1e8;
+	--grey2: #e0e0e0;
+	--grey-3: #94a3b8;
+	--grey-4: #fafafa;
+	--text-1: #707070;
+	--green-1: #05ad5d;
+	--red-1: #bb0000;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--font-sans: var(--font-geist-sans);
+	--font-mono: var(--font-geist-mono);
 }
 
 /* @media (prefers-color-scheme: dark) {
@@ -27,28 +27,28 @@
 } */
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+	background: var(--background);
+	color: var(--foreground);
+	font-family: Arial, Helvetica, sans-serif;
 }
 
 .prompt-image {
-  background: url("/images/prompt.svg");
-  background-size: contain;
+	background: url("/images/prompt.svg");
+	background-size: contain;
 }
 
 @keyframes line-slide {
-  0% {
-    transform: translateX(-100%);
-  }
-  50% {
-    transform: translateX(100%);
-  }
-  100% {
-    transform: translateX(-100%);
-  }
+	0% {
+		transform: translateX(-100%);
+	}
+	50% {
+		transform: translateX(100%);
+	}
+	100% {
+		transform: translateX(-100%);
+	}
 }
 
 .animate-line-slide {
-  animation: line-slide 1.2s ease-in-out infinite;
+	animation: line-slide 1.2s ease-in-out infinite;
 }

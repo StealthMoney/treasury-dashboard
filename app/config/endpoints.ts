@@ -1,46 +1,46 @@
 const endpoints = (params?: string | number) => {
-  const env = process.env.NODE_ENV;
-  const local =
-    process.env.STEALTH_ENDPOINT_DEV ||
-    process.env.NEXT_PUBLIC_STEALTH_ENDPOINT_DEV;
-  const prod =
-    process.env.STEALTH_ENDPOINT_PROD ||
-    process.env.NEXT_PUBLIC_STEALTH_ENDPOINT_PROD;
+	const env = process.env.NODE_ENV
+	const local =
+		process.env.STEALTH_ENDPOINT_DEV ||
+		process.env.NEXT_PUBLIC_STEALTH_ENDPOINT_DEV
+	const prod =
+		process.env.STEALTH_ENDPOINT_PROD ||
+		process.env.NEXT_PUBLIC_STEALTH_ENDPOINT_PROD
 
-  if (!local || !prod) throw new Error("Missing env variables");
+	if (!local || !prod) throw new Error("Missing env variables")
 
-  const baseUrl = env === "development" ? local : prod;
+	const baseUrl = env === "development" ? local : prod
 
-  const user = {
-    register: `${baseUrl}/register`,
-    profile: `${baseUrl}/profile/info`,
-    activate: `${baseUrl}/activate?key=${params}`,
-    navMenu: `${baseUrl}/profile`,
-  };
+	const user = {
+		register: `${baseUrl}/register`,
+		profile: `${baseUrl}/profile/info`,
+		activate: `${baseUrl}/activate?key=${params}`,
+		navMenu: `${baseUrl}/profile`,
+	}
 
-  const auth = {
-    login: `${baseUrl}/authenticate`,
-    logout: `${baseUrl}/logout`,
-    "change-password": `${baseUrl}/account/change-password`,
-  };
+	const auth = {
+		login: `${baseUrl}/authenticate`,
+		logout: `${baseUrl}/logout`,
+		"change-password": `${baseUrl}/account/change-password`,
+	}
 
-  const credit = {
-    requestnewcredit: `${baseUrl}/credit-lines`,
-    getcredithistory: `${baseUrl}/credit-lines`,
-    "credit-type": `${baseUrl}/credit-line-types`,
-  };
+	const credit = {
+		requestnewcredit: `${baseUrl}/credit-lines`,
+		getcredithistory: `${baseUrl}/credit-lines`,
+		"credit-type": `${baseUrl}/credit-line-types`,
+	}
 
-  const account = {
-    "edit-profile": `${baseUrl}/account`,
-    "upgrade-account": `${baseUrl}/businesses`,
-  };
+	const account = {
+		"edit-profile": `${baseUrl}/account`,
+		"upgrade-account": `${baseUrl}/businesses`,
+	}
 
-  return {
-    user,
-    auth,
-    account,
-    credit,
-  };
-};
+	return {
+		user,
+		auth,
+		account,
+		credit,
+	}
+}
 
-export default endpoints;
+export default endpoints

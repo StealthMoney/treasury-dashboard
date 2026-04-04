@@ -1,12 +1,11 @@
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 
 import endpoints from "@/app/config/endpoints"
 import { NextResponse } from "next/server"
 
 export async function POST(request: Request) {
 	const url = endpoints().user.register
-    console.log(url, "is url");
-    
+	console.log(url, "is url")
 
 	let userData
 	try {

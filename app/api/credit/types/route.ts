@@ -1,11 +1,11 @@
-import { getCreditTypes } from "@/app/server/credits";
+import { getCreditTypes } from "@/app/server/credits"
 
 export async function GET() {
-  const res = await getCreditTypes();
+	const res = await getCreditTypes()
 
-  if (!res.success) {
-    return Response.json({ error: res.error }, { status: 400 });
-  }
+	if (!res.success) {
+		return Response.json({ error: res.error }, { status: 400 })
+	}
 
-  return Response.json(res.data);
+	return Response.json(res.data)
 }
