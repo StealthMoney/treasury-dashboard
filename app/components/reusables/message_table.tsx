@@ -1,91 +1,80 @@
-import { AiOutlineCheck } from "react-icons/ai";
-
-type Status = "submitted" | "inreview" | "pending";
-
-interface StatusItem {
-  text: string;
-  status: Status;
-}
+import { AiOutlineCheck } from "react-icons/ai"
+import { StatusItem } from "@/app/types/general"
 
 interface Table {
-  header?: string;
-
-  // default mode
-  columns?: string[];
-
-  // status mode
-  useStatus?: boolean;
-  statusItems?: StatusItem[];
-  showAsList: boolean;
+	header?: string
+	columns?: string[]
+	useStatus?: boolean
+	statusItems?: StatusItem[]
+	showAsList: boolean
 }
 
 export default function Message_table({
-  header = "Approval Status:",
-  columns = ["Required Approval", "Approved so far", "Estimated completion"],
-  useStatus = false,
-  statusItems = [],
-  showAsList = true,
+	header = "Approval Status:",
+	columns = ["Required Approval", "Approved so far", "Estimated completion"],
+	useStatus = false,
+	statusItems = [],
+	showAsList = true,
 }: Table) {
-  return (
-    <div className="bg-background border border-(--grey-1) rounded-lg overflow-hidden">
-      <div className="bg-(--grey-4) p-4">
-        <p className="font-semibold text-foreground text-[14px]">{header}</p>
-      </div>
+	return (
+		<div className="bg-background overflow-hidden rounded-lg border border-(--grey-1)">
+			<div className="bg-(--grey-4) p-4">
+				<p className="text-foreground text-[14px] font-semibold">{header}</p>
+			</div>
 
-      <div className="px-4 py-3">
-        {/* ✅ DEFAULT MODE (your current UI untouched) */}
-        {!useStatus && (
-          <ul className="space-y-3 text-[14px] text-(--text-1) list-disc pl-5 marker:text-(--text-1)">
-            {columns.map((col, index) =>
-              showAsList ? <li key={index}>{col}</li> : col,
-            )}
-          </ul>
-        )}
+			<div className="px-4 py-3">
+				{!useStatus && (
+					<ul className="list-disc space-y-3 pl-5 text-[14px] text-(--text-1) marker:text-(--text-1)">
+						{columns.map((col, index) =>
+							showAsList ? <li key={index}>{col}</li> : col
+						)}
+					</ul>
+				)}
 
-        {/* ✅ STATUS MODE */}
-        {useStatus && (
-          <div className="space-y-3">
-            {statusItems.map((item, index) => {
-              const isSubmitted = item.status === "submitted";
-              const isInReview = item.status === "inreview";
+				{useStatus && (
+					<div className="space-y-3">
+						{statusItems.map((item, index) => {
+							const isCompleted = item.status === "completed"
+							const isCurrent = item.status === "current"
+							const isFailed = item.status === "failed"
 
-              return (
-                <div key={index} className="flex items-center gap-3">
-                  {/* indicator */}
-                  <div
-                    className={`w-4 h-4 rounded flex items-center justify-center
-                      ${
-                        isSubmitted
-                          ? "bg-green-500 border-green-500"
-                          : isInReview
-                            ? "border border-dashed border-(--text-1)"
-                            : "border border-(--grey-1)"
-                      }
-                    `}
-                  >
-                    {isSubmitted && (
-                      <AiOutlineCheck className="w-3 h-3 text-white" />
-                    )}
-                  </div>
+							return (
+								<div key={index} className="flex items-center gap-3">
+									{/* indicator */}
+									<div
+										className={`flex h-4 w-4 shrink-0 items-center justify-center rounded ${
+											isCompleted
+												? "border-green-500 bg-green-500"
+												: isCurrent
+													? "border border-dashed border-(--text-1)"
+													: isFailed
+														? "border-red-500 bg-red-500"
+														: "border border-(--grey-1)"
+										} `}>
+										{isCompleted && <AiOutlineCheck className="h-3 w-3 text-white" />}
+										{isFailed && (
+											<span className="text-[10px] leading-none font-bold text-white">
+												✕
+											</span>
+										)}
+									</div>
 
-                  {/* text */}
-                  <p
-                    className={`text-[14px] ${
-                      isSubmitted ? "line-through" : ""
-                    }`}
-                  >
-                    {item.text}
-
-                    {isInReview && (
-                      <span className="font-semibold ml-1">(In review)</span>
-                    )}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </div>
-  );
+									{/* text */}
+									<p
+										className={`text-[14px] ${
+											isCompleted ? "text-(--text-1) line-through" : ""
+										} ${isFailed ? "text-red-500" : ""}`}>
+										{item.text}
+										{item.suffix && (
+											<span className="ml-1 font-semibold">{item.suffix}</span>
+										)}
+									</p>
+								</div>
+							)
+						})}
+					</div>
+				)}
+			</div>
+		</div>
+	)
 }
