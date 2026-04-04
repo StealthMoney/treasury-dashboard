@@ -13,7 +13,7 @@ jobs:
    - uses: actions/setup-node@v3
      with:
       node-version: 20
-      cache: "yarn"
-   - run: yarn install --frozen-lockfile
+      cache: "npm"
+   - run: npm ci
    - name: Run check code
      run: yarn check-code
