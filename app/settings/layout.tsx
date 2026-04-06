@@ -1,9 +1,9 @@
-import Layoutclient from "../components/reusables/layoutclient";
+import Layoutclient from "../components/reusables/layoutclient"
 
 export default function RootLayout({
-  children,
+	children,
 }: {
-  children: React.ReactNode;
+	children: React.ReactNode
 }) {
-  return <Layoutclient>{children}</Layoutclient>;
+	return <Layoutclient>{children}</Layoutclient>
 }

@@ -1,13 +1,22 @@
-import "./globals.css";
+import GlobalProfileGuard from "./components/reusables/profile_guard"
+import ProvideWrapper from "./components/reusables/provider_wrapper"
+import QueryProvider from "./contexts/query_provider"
+import "./globals.css"
 
 export default function RootLayout({
-  children,
+	children,
 }: {
-  children: React.ReactNode;
+	children: React.ReactNode
 }) {
-  return (
-    <html lang="en">
-      <body className="antialiased overflow-x-hidden">{children}</body>
-    </html>
-  );
+	return (
+		<html lang="en">
+			<body className="overflow-x-hidden antialiased">
+				<QueryProvider>
+					<ProvideWrapper>
+						<GlobalProfileGuard>{children}</GlobalProfileGuard>
+					</ProvideWrapper>
+				</QueryProvider>
+			</body>
+		</html>
+	)
 }
