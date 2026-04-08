@@ -1,7 +1,6 @@
 const endpoints = (params?: string | number) => {
 	const envURL =
-		process.env.STEALTH_ENDPOINT ||
-		process.env.NEXT_PUBLIC_STEALTH_ENDPOINT
+		process.env.STEALTH_ENDPOINT || process.env.NEXT_PUBLIC_STEALTH_ENDPOINT
 
 	if (!envURL) throw new Error("Missing env variables")
 
