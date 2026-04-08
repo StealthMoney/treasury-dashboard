@@ -49,9 +49,16 @@ export const authOptions: NextAuthOptions = {
 					placeholder: "********",
 				},
 			},
-			async authorize(credentials) {
-				const authEndpoint = endpoints().auth.login
-				const res = await fetch(authEndpoint, {
+			async authorize(credentials, req) {
+				// const authEndpoint = "/api/login"
+				// console.log(authEndpoint, "is endpoint url")
+				let baseUrl = process.env.NEXTAUTH_URL
+				if (!baseUrl) {
+					const protocol = process.env.NODE_ENV === "development" ? "http" : "https"
+					baseUrl = `${protocol}:${req?.headers?.host}`
+				}
+				console.log(baseUrl, "is baseurl")
+				const res = await fetch(`${baseUrl}/api/login`, {
 					method: "POST",
 					body: JSON.stringify({
 						username: credentials?.username,
@@ -62,6 +69,7 @@ export const authOptions: NextAuthOptions = {
 
 				console.log("AUTH STATUS:", res.status)
 				console.log("AUTH OK:", res.ok)
+				console.log("ENT:", res)
 
 				const user = await res.json()
 				console.log("AUTH BODY:", JSON.stringify(user))
