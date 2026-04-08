@@ -1,38 +1,31 @@
 const endpoints = (params?: string | number) => {
-	const env = process.env.NODE_ENV
-	const local =
-		process.env.STEALTH_ENDPOINT_DEV ||
-		process.env.NEXT_PUBLIC_STEALTH_ENDPOINT_DEV
-	const prod =
-		process.env.STEALTH_ENDPOINT_PROD ||
-		process.env.NEXT_PUBLIC_STEALTH_ENDPOINT_PROD
+	const envURL =
+		process.env.STEALTH_ENDPOINT || process.env.NEXT_PUBLIC_STEALTH_ENDPOINT
 
-	if (!local || !prod) throw new Error("Missing env variables")
-
-	const baseUrl = env === "development" ? local : prod
+	if (!envURL) throw new Error("Missing env variables")
 
 	const user = {
-		register: `${baseUrl}/register`,
-		profile: `${baseUrl}/profile/info`,
-		activate: `${baseUrl}/activate?key=${params}`,
-		navMenu: `${baseUrl}/profile`,
+		register: `${envURL}/register`,
+		profile: `${envURL}/profile/info`,
+		activate: `${envURL}/activate?key=${params}`,
+		navMenu: `${envURL}/profile`,
 	}
 
 	const auth = {
-		login: `${baseUrl}/authenticate`,
-		logout: `${baseUrl}/logout`,
-		"change-password": `${baseUrl}/account/change-password`,
+		login: `${envURL}/authenticate`,
+		logout: `${envURL}/logout`,
+		"change-password": `${envURL}/account/change-password`,
 	}
 
 	const credit = {
-		requestnewcredit: `${baseUrl}/credit-lines`,
-		getcredithistory: `${baseUrl}/credit-lines`,
-		"credit-type": `${baseUrl}/credit-line-types`,
+		requestnewcredit: `${envURL}/credit-lines`,
+		getcredithistory: `${envURL}/credit-lines`,
+		"credit-type": `${envURL}/credit-line-types`,
 	}
 
 	const account = {
-		"edit-profile": `${baseUrl}/account`,
-		"upgrade-account": `${baseUrl}/businesses`,
+		"edit-profile": `${envURL}/account`,
+		"upgrade-account": `${envURL}/businesses`,
 	}
 
 	return {
