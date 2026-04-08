@@ -5,7 +5,6 @@ import { NextResponse } from "next/server"
 
 export async function POST(request: Request) {
 	const url = endpoints().user.register
-	console.log(url, "is url")
 
 	let userData
 	try {
