@@ -50,7 +50,7 @@ export async function POST(request: Request) {
 		return NextResponse.json(
 			{
 				success: false,
-				message: error instanceof Error ? error.message : "Error reseting password",
+				message: error instanceof Error ? error.message : "Error resetting password",
 			},
 			{ status: 500 }
 		)
