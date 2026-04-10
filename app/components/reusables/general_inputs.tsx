@@ -3,6 +3,7 @@
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai"
 import React, { useState, ChangeEvent, useRef } from "react"
 import { HiX } from "react-icons/hi"
+import { InputFieldProps, TextFieldProps } from "@/app/types/inputs"
 
 type SelectOption = string | { label: string; value: string }
 
@@ -133,62 +134,6 @@ export function FilePickerField({
 	)
 }
 
-// export function TextField({
-//   label,
-//   id,
-//   placeholder,
-//   value,
-//   onChange,
-//   error,
-//   prefix,
-// }: {
-//   label: string;
-//   id: string;
-//   placeholder?: string;
-//   value: string;
-//   onChange: (v: string) => void;
-//   error?: string;
-//   prefix?: string;
-// }) {
-//   return (
-//     <div className="space-y-1.5">
-//       <label htmlFor={id} className="block text-sm font-medium text-(--text-1)">
-//         {label}
-//       </label>
-//       <div
-//         className={`flex items-center border rounded-lg bg-(--grey-4) transition-all ${error ? "border-(--red-1) focus-within:border-(--red-1)" : "border-(--grey-1) focus-within:border-(--grey-1)"}`}
-//       >
-//         {prefix && (
-//           <span className="pl-3 pr-2 text-(--text-1) text-[14px] select-none border bg-background border-(--grey-1) py-2.5">
-//             {prefix}
-//           </span>
-//         )}
-//         <input
-//           id={id}
-//           type="text"
-//           placeholder={placeholder}
-//           value={value}
-//           onChange={(e) => onChange(e.target.value)}
-//           className="flex-1 px-3 py-2.5 bg-transparent text-[14px] text-foreground placeholder-(--text-1) outline-none"
-//         />
-//       </div>
-//       {error && <p className="text-xs text-(--red-1)">{error}</p>}
-//     </div>
-//   );
-// }
-
-interface TextFieldProps {
-	label: string
-	id: string
-	placeholder?: string
-	value: string
-	onChange: (v: string) => void
-	error?: string
-	prefix?: string
-	type?: string
-	disabled?: boolean
-}
-
 export function TextField({
 	label,
 	id,
@@ -277,6 +222,57 @@ export function PasswordField({
 				</button>
 			</div>
 			{error && <p className="text-xs text-(--red-1)">{error}</p>}
+		</div>
+	)
+}
+
+export function InputField({
+	label,
+	id,
+	type = "text",
+	placeholder,
+	value,
+	onChange,
+	error,
+	prefix,
+	showToggle,
+	showPassword,
+	onToggle,
+}: InputFieldProps) {
+	return (
+		<div className="space-y-1.5">
+			<label htmlFor={id} className="block text-sm font-medium text-gray-700">
+				{label}
+			</label>
+			<div
+				className={`flex items-center rounded-lg border bg-gray-50 transition-all focus-within:bg-white ${error ? "border-(--red-1) focus-within:border-(--red-1) focus-within:ring-1 focus-within:ring-red-200" : "border-gray-200 focus-within:border-gray-400 focus-within:ring-1 focus-within:ring-gray-200"}`}>
+				{prefix && (
+					<span className="border-r border-gray-200 py-2.5 pr-3 pl-3 text-sm whitespace-nowrap text-gray-400 select-none">
+						{prefix}
+					</span>
+				)}
+				<input
+					id={id}
+					type={showToggle ? (showPassword ? "text" : "password") : type}
+					placeholder={placeholder}
+					value={value}
+					onChange={(e) => onChange(e.target.value)}
+					className="flex-1 bg-transparent px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 outline-none"
+				/>
+				{showToggle && (
+					<button
+						type="button"
+						onClick={onToggle}
+						className="pr-3 text-gray-400 transition-colors hover:text-gray-600">
+						{showPassword ? (
+							<AiOutlineEyeInvisible size={18} />
+						) : (
+							<AiOutlineEye size={18} />
+						)}
+					</button>
+				)}
+			</div>
+			{error && <p className="mt-1 text-xs text-(--red-1)">{error}</p>}
 		</div>
 	)
 }

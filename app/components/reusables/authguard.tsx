@@ -6,7 +6,7 @@ import { useRouter, usePathname } from "next/navigation"
 import { useProfile } from "@/app/contexts/user_provider"
 import { LineLoader } from "./line_loader"
 
-const PUBLIC_ROUTES = ["/", "/account/activate"]
+const PUBLIC_ROUTES = ["/", "/account/activate", "/reset-password"]
 const ROUTE_MAP: Record<string, string> = {
 	"/credit": "Credit",
 	"/report": "Report",
