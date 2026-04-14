@@ -17,6 +17,9 @@ import { FilePickerField } from "../components/reusables/general_inputs"
 import { uploadKybDoc } from "../server/upgrade_account"
 import { Spinner } from "../components/reusables/spinner"
 import { fileToBase64 } from "../functions/helpers/base64"
+import { useProfile } from "../contexts/user_provider"
+import { useBanklists, useBankverify } from "../hooks/use_bank_list"
+import { Banklist } from "../types/general"
 
 interface OwnerInfo {
 	id: string
@@ -240,6 +243,21 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 	const [formData, setFormData] = useState<KYBFormData>(initialFormData)
 	const [errors, setErrors] = useState<Record<string, string>>({})
 	const [loading, setLoading] = useState(false)
+	const [chosenBankCode, setChosenBankCode] = useState<Banklist | null>(null)
+	const [enabled, setEnabled] = useState(false)
+	const { user } = useProfile()
+
+	const { data: banklists } = useBanklists()
+	const {
+		data: verifyInfo,
+		refetch,
+		isLoading,
+	} = useBankverify(
+		enabled,
+		setEnabled,
+		formData.accountNumber,
+		chosenBankCode?.nipBankCode || ""
+	)
 
 	const updateFormData = useCallback((updates: Partial<KYBFormData>) => {
 		setFormData((prev) => ({ ...prev, ...updates }))
@@ -444,6 +462,12 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 						"Enter a valid 10-digit account number (e.g. 0123456789)"
 				if (!formData.accountName)
 					newErrors.accountName = "Account Name is required"
+				else if (
+					!verifyInfo ||
+					verifyInfo?.responseCode !== "000" ||
+					!verifyInfo?.successful
+				)
+					newErrors.accountName = "Could not validate given bank details"
 				break
 
 			default:
@@ -618,11 +642,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 				},
 			}
 
-			console.log(payload, "FINAL PAYLOAD")
-
 			const result = await uploadKybDoc(JSON.stringify(payload))
-
-			console.log(result, "SUCCESS")
 
 			if (result.success) {
 				setCurrentStep(1)
@@ -636,6 +656,33 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 			setLoading(false)
 		}
 	}
+
+	useEffect(() => {
+		const chosen = banklists?.data?.find((item: Banklist) => {
+			if (item.bankName === formData.bankName) {
+				return item.nipBankCode
+			}
+		})
+		setChosenBankCode(chosen)
+	}, [formData.bankName, banklists])
+
+	useEffect(() => {
+		if (!formData.bankName || formData.bankName === "") {
+			setEnabled(false)
+		} else {
+			setEnabled(true)
+		}
+	}, [formData.bankName])
+
+	useEffect(() => {
+		if (formData.bankName !== "" && formData.accountNumber !== "") {
+			refetch()
+		}
+	}, [formData.bankName, formData.accountName, formData.accountNumber, refetch])
+
+	useEffect(() => {
+		updateFormData({ accountName: verifyInfo?.data?.accountName })
+	}, [verifyInfo?.data, updateFormData])
 
 	return (
 		<div className="bg-background min-h-screen w-full px-6 py-8 md:max-w-[80%]">
@@ -1566,10 +1613,11 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 							onChange={(e) => updateFormData({ bankName: e.target.value })}
 							className={`${baseSelect} w-full`}>
 							<option value="">Bank Name*</option>
-							<option value="First Bank">First Bank</option>
-							<option value="GTBank">GTBank</option>
-							<option value="Access Bank">Access Bank</option>
-							<option value="Zenith Bank">Zenith Bank</option>
+							{banklists?.data?.map((item: Banklist, index: number) => (
+								<option key={index} value={item.bankName}>
+									{item.bankName}
+								</option>
+							))}
 						</select>
 						{errors.bankName && (
 							<p className="-mt-6 ml-1 text-sm text-(--red-1)">{errors.bankName}</p>
@@ -1593,9 +1641,9 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 								<input
 									type="text"
 									placeholder="Account Name*"
-									value={formData.accountName}
-									onChange={(e) => updateFormData({ accountName: e.target.value })}
-									className={baseInput}
+									disabled
+									value={verifyInfo?.data?.accountName}
+									className={`${baseInput} cursor-not-allowed bg-gray-200!`}
 								/>
 								{errors.accountName && (
 									<p className="text-sm text-(--red-1)">{errors.accountName}</p>
