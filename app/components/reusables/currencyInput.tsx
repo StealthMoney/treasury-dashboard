@@ -11,6 +11,7 @@ interface CurrencyInputProps {
 	assetName?: string
 	balance?: number
 	showmax: boolean
+	error?: string
 }
 
 export const CurrencyInput: React.FC<CurrencyInputProps> = ({
@@ -25,6 +26,7 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
 	assetName = false,
 	balance,
 	showmax = false,
+	error,
 }) => {
 	const formatDisplay = (raw: string) => {
 		const digits = raw.replace(/\D/g, "")
@@ -67,6 +69,7 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
 					{/* <option value="USD">USD</option> */}
 				</select>
 			</div>
+			{error && <p className="mt-1 text-sm text-(--red-1)">{error}</p>}
 
 			<div className="flex items-center justify-between">
 				<p className="text-sm text-(--text-1)">

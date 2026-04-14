@@ -46,7 +46,7 @@ export const useCreditStats = (creditHistoryData: LoanApplication[]) => {
 					minimumFractionDigits: 2,
 					maximumFractionDigits: 2,
 				})}`,
-				footer: "+10.00 %",
+				footer: "", // + or - here like +10%
 			},
 		] as StatData[]
 	}, [creditHistoryData])
