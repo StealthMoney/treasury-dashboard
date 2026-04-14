@@ -3,7 +3,7 @@
 import { StatUIConfig } from "../components/reusables/stats_section"
 import { StatsSection } from "../components/reusables/stats_section"
 import { Table } from "../components/reusables/table"
-import { ChangeEvent, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { StepConfig } from "../components/reusables/modal"
 import { StepModal } from "../components/reusables/modal"
 import { CurrencyInput } from "../components/reusables/currencyInput"
