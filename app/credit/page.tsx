@@ -144,12 +144,6 @@ const creditHistoryColumns = [
 	// },
 ]
 
-export const creditStatsUIConfig: StatUIConfig[] = [
-	// Example: no button here, but you could add later
-	{ index: 2, footerClass: "text-(--green-1) font-semibold" },
-	{ index: 0, showButton: true },
-]
-
 export const activeLoansColumns = [
 	{
 		header: "Loan ID",
@@ -279,13 +273,18 @@ export default function CreditsPage() {
 		"14"
 	)
 
-	const [borrowAmount, setBorrowAmount] = useState("10000")
+	const [borrowAmount, setBorrowAmount] = useState("")
 	const [borrowCurrency, setBorrowCurrency] = useState<"USD" | "NGN">("NGN")
 
 	const [invoiceFile, setInvoiceFile] = useState<File | null>(null)
 	const [bankStatementFile, setBankStatementFile] = useState<File | null>(null)
 	const [loanTypeId, setLoanTypeId] = useState<number | null>(null)
-	const [loadDurationInDays, setLoanDurationInDays] = useState<number[]>([])
+	const [loadDurationInDays, setLoanDurationInDays] = useState<
+		{
+			label: string
+			value: string
+		}[]
+	>([])
 	const [creditHistoryData, setCreditHistoryData] = useState<LoanApplication[]>(
 		[]
 	)
@@ -296,6 +295,7 @@ export default function CreditsPage() {
 		invoice?: string
 		bankStatement?: string
 		duration?: string
+		borrowAmount?: string
 	}>({})
 
 	const [loanDuration, setLoanDuration] = useState("")
@@ -325,6 +325,20 @@ export default function CreditsPage() {
 
 	const title = titleMap[loanStatus] ?? ""
 
+	const creditStatsUIConfig: StatUIConfig[] = [
+		// Example: no button here, but you could add later
+		{ index: 2, footerClass: "text-(--green-1) font-semibold" },
+		{
+			index: 0,
+			showButton:
+				loanStatus === "REVIEW" ||
+				loanStatus === "REPAID" ||
+				loanStatus === "REJECTED"
+					? false
+					: true,
+		},
+	]
+
 	const validateStep1 = () => {
 		const newErrors: typeof errors = {}
 
@@ -343,6 +357,27 @@ export default function CreditsPage() {
 		setErrors(newErrors)
 
 		return Object.keys(newErrors).length === 0
+	}
+
+	const validateStep2 = () => {
+		const newErrors: typeof errors = {}
+
+		const amount = Number(borrowAmount)
+
+		if (!borrowAmount || borrowAmount.trim() === "") {
+			newErrors.borrowAmount = "Enter an amount to borrow"
+		} else if (isNaN(amount) || amount <= 0) {
+			newErrors.borrowAmount = "Amount must be greater than 0"
+		}
+
+		setErrors(newErrors)
+
+		return Object.keys(newErrors).length === 0
+	}
+
+	const onBorrowChange = (val: string) => {
+		setBorrowAmount(val)
+		validateStep2()
 	}
 
 	useEffect(() => {
@@ -446,11 +481,12 @@ export default function CreditsPage() {
 	}, [user])
 
 	useEffect(() => {
-		if (creditTypes) {
-			setLoanDurationInDays(
-				creditTypes.map((item: LoanType) => item.durationInDays)
-			)
-		}
+		setLoanDurationInDays(
+			(creditTypes || []).map((item: LoanType) => ({
+				label: `${item.durationInDays} days ${(item.interestRate * 100).toFixed(0)}%`,
+				value: String(item.durationInDays),
+			}))
+		)
 	}, [creditTypes])
 
 	useEffect(() => {
@@ -816,10 +852,7 @@ export default function CreditsPage() {
 							setLoanDuration(value)
 							setErrors((prev) => ({ ...prev, duration: undefined }))
 						}}
-						options={loadDurationInDays.map((item) => ({
-							label: item.toString(),
-							value: item.toString(),
-						}))}
+						options={loadDurationInDays}
 						placeholder="Select duration"
 						error={errors.duration}
 					/>
@@ -838,13 +871,14 @@ export default function CreditsPage() {
 				<div className="space-y-6">
 					<CurrencyInput
 						value={borrowAmount}
-						onChange={setBorrowAmount}
+						onChange={(value) => onBorrowChange(value)}
 						onCurrencyChange={setBorrowCurrency}
 						placeholder="Amount to borrow"
 						showmax={false}
 						currency={borrowCurrency}
 						message={"You can only borrow up to half of your invoice"}
 						label={`Enter Loan Amount (${borrowCurrency === "NGN" ? "₦" : "$"})`}
+						error={errors.borrowAmount}
 					/>
 				</div>
 			),
@@ -877,7 +911,7 @@ export default function CreditsPage() {
 					<div className="flex justify-between border-b border-(--grey-1) py-3">
 						<span className="text-[14px] text-(--text-1)">Interests:</span>
 						<span className="text-foreground text-[14px] font-semibold">
-							{((interestRate ?? 0) / 100) * (Number(borrowAmount) ?? 0)} NGN
+							{(interestRate ?? 0) * (Number(borrowAmount) ?? 0)} NGN
 						</span>
 					</div>
 				</div>
@@ -889,6 +923,11 @@ export default function CreditsPage() {
 		// only validate on step 0
 		if (borrowStep === 0) {
 			const isValid = validateStep1()
+			if (!isValid) return
+		}
+
+		if (borrowStep === 1) {
+			const isValid = validateStep2()
 			if (!isValid) return
 		}
 
@@ -1060,7 +1099,7 @@ export default function CreditsPage() {
 								showAsList={true}
 							/>
 						}
-						successButtonLabel="Go to Credit"
+						successButtonLabel="Go to Credit Overview"
 					/>
 
 					<StepModal

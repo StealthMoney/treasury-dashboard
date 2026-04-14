@@ -68,13 +68,30 @@ export const buildLoanUI = (
 	}
 
 	const messageMap: Record<LoanStatus, string> = {
-		REVIEW: `Your request for $${loan.loanAmount} ${loan.currency} is being reviewed.\nThis usually takes 24-48 hours.`,
+		REVIEW: `Your request for ${Number(loan.loanAmount).toLocaleString("en-NG", {
+			minimumFractionDigits: 0,
+			maximumFractionDigits: 2,
+		})} ${loan.currency} is being reviewed.\nThis usually takes 24-48 hours.`,
 
-		APPROVED: `Your loan request for $${loan.loanAmount} ${loan.currency} has been approved.\nFunds will be processed soon.`,
+		APPROVED: `Your loan request for $${Number(loan.loanAmount).toLocaleString(
+			"en-NG",
+			{
+				minimumFractionDigits: 0,
+				maximumFractionDigits: 2,
+			}
+		)} ${loan.currency} has been approved.\nFunds will be processed soon.`,
 
-		REJECTED: `Unfortunately, your loan request for $${loan.loanAmount} ${loan.currency} was not approved.`,
+		REJECTED: `Unfortunately, your loan request for $${Number(
+			loan.loanAmount
+		).toLocaleString("en-NG", {
+			minimumFractionDigits: 0,
+			maximumFractionDigits: 2,
+		})} ${loan.currency} was not approved.`,
 
-		DISBURSED: `Your loan of $${loan.loanAmount} ${loan.currency} has been successfully disbursed.\nKindly repay by `,
+		DISBURSED: `Your loan of $${Number(loan.loanAmount).toLocaleString("en-NG", {
+			minimumFractionDigits: 2,
+			maximumFractionDigits: 2,
+		})} ${loan.currency} has been successfully disbursed.\nKindly repay by `,
 	}
 
 	const statusItemsMap: Record<LoanStatus, StatusItem[]> = {
