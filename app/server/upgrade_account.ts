@@ -17,7 +17,7 @@ export const uploadKybDoc = async (
 
 		const url = endpoints().account["upgrade-account"]
 
-		console.log(body)
+		console.log(body, "is server gotten body")
 
 		const res = await fetch(url, {
 			method: "POST",
@@ -28,7 +28,15 @@ export const uploadKybDoc = async (
 		console.log(res, "at upload")
 
 		if (!res.ok) {
-			return { success: false, error: "Failed to upload documents" }
+			try {
+				const data = await res.json()
+				return {
+					success: false,
+					error: data.message || "Failed to upload documents",
+				}
+			} catch (_) {
+				console.log(_)
+			}
 		}
 
 		const response = await res.json()

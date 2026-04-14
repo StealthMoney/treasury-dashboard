@@ -20,6 +20,8 @@ import { fileToBase64 } from "../functions/helpers/base64"
 import { useProfile } from "../contexts/user_provider"
 import { useBanklists, useBankverify } from "../hooks/use_bank_list"
 import { Banklist } from "../types/general"
+import { FeedbackModal } from "../components/reusables/feedback_modal"
+import Image from "next/image"
 
 interface OwnerInfo {
 	id: string
@@ -180,7 +182,7 @@ function MultiFilePickerField({
 	return (
 		<div>
 			<p className="mb-2 text-[14px] text-(--text-1)" aria-label={label}>
-				{label} *
+				{label}
 			</p>
 			<input
 				title="file-picker"
@@ -245,14 +247,11 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 	const [loading, setLoading] = useState(false)
 	const [chosenBankCode, setChosenBankCode] = useState<Banklist | null>(null)
 	const [enabled, setEnabled] = useState(false)
+	const [submitError, setSubmitError] = useState<string | null>(null)
 	const { user } = useProfile()
 
 	const { data: banklists } = useBanklists()
-	const {
-		data: verifyInfo,
-		refetch,
-		isLoading,
-	} = useBankverify(
+	const { data: verifyInfo, refetch } = useBankverify(
 		enabled,
 		setEnabled,
 		formData.accountNumber,
@@ -344,6 +343,9 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 				if (!formData.cacNumber) newErrors.cacNumber = "CAC number is required"
 				else if (!/^rc\d+$/i.test(formData.cacNumber))
 					newErrors.cacNumber = "CAC number must start with RC (e.g. RC1234567)"
+				else if (!/^rc\d{6,}$/i.test(formData.cacNumber)) {
+					newErrors.cacNumber = "CAC format invalid" // at least 6digits after rc
+				}
 				break
 
 			case 2:
@@ -450,7 +452,8 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 					newErrors.boardRegisterDoc = "Register of Board of Directors is required"
 				if (!formData.proofOfAddressDoc)
 					newErrors.proofOfAddressDoc = "Proof of Address is required"
-				// taxFilingDoc is optional – no validation
+				if (!formData.taxFilingDoc)
+					newErrors.taxFilingDoc = "Tax Document is required"
 				break
 
 			case 6:
@@ -649,6 +652,8 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 				setFormData(initialFormData)
 				localStorage.removeItem("profile_cache")
 				onComplete()
+			} else {
+				setSubmitError(result.error || "Failed to submit KYB documents.")
 			}
 		} catch (err) {
 			console.error("KYB submission failed:", err)
@@ -785,12 +790,18 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 								<div className="flex w-full flex-col">
 									<div className="flex w-full">
 										<input
-											type="number"
+											type="text"
 											placeholder="Annual Projected Sales Volume*"
-											value={formData.annualSalesVolume}
-											onChange={(e) =>
-												updateFormData({ annualSalesVolume: e.target.value })
+											value={
+												formData.annualSalesVolume
+													? Number(formData.annualSalesVolume).toLocaleString("en-US")
+													: ""
 											}
+											onChange={(e) => {
+												// Strip all non-digit characters before storing
+												const raw = e.target.value.replace(/[^0-9]/g, "")
+												updateFormData({ annualSalesVolume: raw })
+											}}
 											className={splitLeft}
 										/>
 										<select
@@ -823,6 +834,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 										<option value="Finance">Finance</option>
 										<option value="Retail">Retail</option>
 										<option value="Manufacturing">Manufacturing</option>
+										<option value="Other">Other</option>
 									</select>
 									{errors.industry && (
 										<p className="text-sm text-(--red-1)">{errors.industry}</p>
@@ -840,6 +852,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 										<option value="Partnership">Partnership</option>
 										<option value="Corporation">Corporation</option>
 										<option value="LLC">LLC</option>
+										<option value="Other">Other</option>
 									</select>
 									{errors.businessType && (
 										<p className="text-sm text-(--red-1)">{errors.businessType}</p>
@@ -1007,8 +1020,8 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 							<div className="flex flex-col">
 								<input
-									title="Office country"
-									placeholder="Office country"
+									title="country"
+									placeholder="Country"
 									value={formData.officeCountry}
 									onChange={(e) => updateFormData({ officeCountry: e.target.value })}
 									className={baseInput}
@@ -1021,7 +1034,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 							<div className="flex flex-col">
 								<input
 									title="Office state"
-									placeholder="Office state"
+									placeholder="State"
 									value={formData.officeState}
 									onChange={(e) => updateFormData({ officeState: e.target.value })}
 									className={baseInput}
@@ -1036,7 +1049,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 							<div className="flex flex-col">
 								<input
 									type="text"
-									placeholder="Office city*"
+									placeholder="City*"
 									value={formData.officeCity}
 									onChange={(e) => updateFormData({ officeCity: e.target.value })}
 									className={baseInput}
@@ -1400,7 +1413,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 											<div className="flex flex-col">
 												<input
 													type="text"
-													placeholder="City"
+													placeholder="Postal code"
 													value={owner.homePostalCode}
 													onChange={(e) =>
 														updateOwner(owner.id, {
@@ -1513,10 +1526,12 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 									required
 								/>
 								<FilePickerField
-									label="Tax Filing Document (Optional)"
+									label="Tax Filing Document"
 									file={formData.taxFilingDoc}
 									onFileChange={(file) => updateFormData({ taxFilingDoc: file })}
 									onFileRemove={() => updateFormData({ taxFilingDoc: null })}
+									error={errors.taxFilingDoc}
+									required
 								/>
 								<FilePickerField
 									label="Status of Registration"
@@ -1579,7 +1594,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 								Upload other supporting documents
 							</p>
 							<MultiFilePickerField
-								label="Supporting Document"
+								label="Supporting Document (Optional)"
 								files={formData.supportingDoc}
 								onFilesChange={(files) => updateFormData({ supportingDoc: files })}
 								error={errors.supportingDoc}
@@ -1673,6 +1688,30 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 					</KYBStepWrapper>
 				)}
 			</div>
+
+			<FeedbackModal
+				isOpen={!!submitError}
+				onClose={() => setSubmitError(null)}
+				icon={
+					<Image
+						src="/images/failed.svg"
+						className="h-24 w-24"
+						width={50}
+						height={50}
+						alt="icon"
+					/>
+				}
+				title="Submission Failed"
+				description={submitError ?? "An unexpected error occurred."}
+				buttonCount={1}
+				buttons={[
+					{
+						label: "Close",
+						variant: "outline",
+						onClick: () => setSubmitError(null),
+					},
+				]}
+			/>
 		</div>
 	)
 }
