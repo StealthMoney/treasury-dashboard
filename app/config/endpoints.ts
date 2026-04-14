@@ -1,4 +1,4 @@
-const endpoints = (params?: string | number) => {
+const endpoints = (params?: string | number, params2?: string | number) => {
 	const envURL =
 		process.env.STEALTH_ENDPOINT || process.env.NEXT_PUBLIC_STEALTH_ENDPOINT
 
@@ -14,13 +14,19 @@ const endpoints = (params?: string | number) => {
 	const auth = {
 		login: `${envURL}/authenticate`,
 		logout: `${envURL}/logout`,
-		"change-password": `${envURL}/account/change-password`,
+		"forgot-password": `${envURL}/account/reset-password/init`,
+		"reset-password": `${envURL}/account/reset-password/finish`,
 	}
 
 	const credit = {
 		requestnewcredit: `${envURL}/credit-lines`,
 		getcredithistory: `${envURL}/credit-lines`,
 		"credit-type": `${envURL}/credit-line-types`,
+	}
+
+	const banks = {
+		list: `${envURL}/payments/get-banks`,
+		verify: `${envURL}/payments/name-inquiry?accountNumber=${params}&bankCode=${params2}`,
 	}
 
 	const account = {
@@ -33,6 +39,7 @@ const endpoints = (params?: string | number) => {
 		auth,
 		account,
 		credit,
+		banks,
 	}
 }
 

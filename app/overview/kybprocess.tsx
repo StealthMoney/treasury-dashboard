@@ -17,6 +17,9 @@ import { FilePickerField } from "../components/reusables/general_inputs"
 import { uploadKybDoc } from "../server/upgrade_account"
 import { Spinner } from "../components/reusables/spinner"
 import { fileToBase64 } from "../functions/helpers/base64"
+import { useProfile } from "../contexts/user_provider"
+import { useBanklists, useBankverify } from "../hooks/use_bank_list"
+import { Banklist } from "../types/general"
 
 interface OwnerInfo {
 	id: string
@@ -77,8 +80,6 @@ interface KYBFormData {
 	mouDoc: File | null
 	boardRegisterDoc: File | null
 	proofOfAddressDoc: File | null
-	DueDiligenceDoc: File | null
-	amlDoc: File | null
 	supportingDoc: File[]
 
 	// Step 6
@@ -137,8 +138,6 @@ const initialFormData: KYBFormData = {
 	mouDoc: null,
 	boardRegisterDoc: null,
 	proofOfAddressDoc: null,
-	DueDiligenceDoc: null,
-	amlDoc: null,
 	supportingDoc: [],
 	bankName: "",
 	accountNumber: "",
@@ -244,6 +243,21 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 	const [formData, setFormData] = useState<KYBFormData>(initialFormData)
 	const [errors, setErrors] = useState<Record<string, string>>({})
 	const [loading, setLoading] = useState(false)
+	const [chosenBankCode, setChosenBankCode] = useState<Banklist | null>(null)
+	const [enabled, setEnabled] = useState(false)
+	const { user } = useProfile()
+
+	const { data: banklists } = useBanklists()
+	const {
+		data: verifyInfo,
+		refetch,
+		isLoading,
+	} = useBankverify(
+		enabled,
+		setEnabled,
+		formData.accountNumber,
+		chosenBankCode?.nipBankCode || ""
+	)
 
 	const updateFormData = useCallback((updates: Partial<KYBFormData>) => {
 		setFormData((prev) => ({ ...prev, ...updates }))
@@ -337,16 +351,6 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 					newErrors.businessEmail = "Business Email is required"
 				else if (!isValidEmail(formData.businessEmail))
 					newErrors.businessEmail = "Enter a valid email (e.g. info@company.com)"
-
-				if (!formData.supportEmail)
-					newErrors.supportEmail = "Support Email is required"
-				else if (!isValidEmail(formData.supportEmail))
-					newErrors.supportEmail = "Enter a valid email (e.g. support@company.com)"
-
-				if (!formData.disputeEmail)
-					newErrors.disputeEmail = "Dispute Email is required"
-				else if (!isValidEmail(formData.disputeEmail))
-					newErrors.disputeEmail = "Enter a valid email (e.g. disputes@company.com)"
 
 				if (!formData.phoneNumber)
 					newErrors.phoneNumber = "Phone Number is required"
@@ -446,12 +450,6 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 					newErrors.boardRegisterDoc = "Register of Board of Directors is required"
 				if (!formData.proofOfAddressDoc)
 					newErrors.proofOfAddressDoc = "Proof of Address is required"
-				if (!formData.amlDoc)
-					newErrors.amlDoc = "AML Policy and Procedures document is required"
-				if (!formData.DueDiligenceDoc)
-					newErrors.DueDiligenceDoc = "Customer Due Diligence Doc is required"
-				if (!formData.supportingDoc || formData.supportingDoc.length === 0)
-					newErrors.supportingDoc = "Supporting Document is required"
 				// taxFilingDoc is optional – no validation
 				break
 
@@ -464,6 +462,12 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 						"Enter a valid 10-digit account number (e.g. 0123456789)"
 				if (!formData.accountName)
 					newErrors.accountName = "Account Name is required"
+				else if (
+					!verifyInfo ||
+					verifyInfo?.responseCode !== "000" ||
+					!verifyInfo?.successful
+				)
+					newErrors.accountName = "Could not validate given bank details"
 				break
 
 			default:
@@ -558,10 +562,6 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 					formData.proofOfAddressDoc &&
 						toDoc(formData.proofOfAddressDoc, "PROOF_OF_ADDRESS"),
 
-					formData.DueDiligenceDoc && toDoc(formData.DueDiligenceDoc, "OTHER"),
-
-					formData.amlDoc && toDoc(formData.amlDoc, "OTHER"),
-
 					...formData.supportingDoc.map((file) => toDoc(file, "OTHER")),
 				].filter(Boolean) as Promise<DocPayload>[]
 			)
@@ -642,11 +642,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 				},
 			}
 
-			console.log(payload, "FINAL PAYLOAD")
-
 			const result = await uploadKybDoc(JSON.stringify(payload))
-
-			console.log(result, "SUCCESS")
 
 			if (result.success) {
 				setCurrentStep(1)
@@ -660,6 +656,33 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 			setLoading(false)
 		}
 	}
+
+	useEffect(() => {
+		const chosen = banklists?.data?.find((item: Banklist) => {
+			if (item.bankName === formData.bankName) {
+				return item.nipBankCode
+			}
+		})
+		setChosenBankCode(chosen)
+	}, [formData.bankName, banklists])
+
+	useEffect(() => {
+		if (!formData.bankName || formData.bankName === "") {
+			setEnabled(false)
+		} else {
+			setEnabled(true)
+		}
+	}, [formData.bankName])
+
+	useEffect(() => {
+		if (formData.bankName !== "" && formData.accountNumber !== "") {
+			refetch()
+		}
+	}, [formData.bankName, formData.accountName, formData.accountNumber, refetch])
+
+	useEffect(() => {
+		updateFormData({ accountName: verifyInfo?.data?.accountName })
+	}, [verifyInfo?.data, updateFormData])
 
 	return (
 		<div className="bg-background min-h-screen w-full px-6 py-8 md:max-w-[80%]">
@@ -873,7 +896,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 							<div className="w-full">
 								<input
 									type="email"
-									placeholder="Support Email* (e.g. support@company.com)"
+									placeholder="Support Email (e.g. support@company.com)"
 									value={formData.supportEmail}
 									onChange={(e) => updateFormData({ supportEmail: e.target.value })}
 									className={baseInput}
@@ -888,7 +911,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 							<div className="w-full">
 								<input
 									type="email"
-									placeholder="Dispute Email* (e.g. disputes@company.com)"
+									placeholder="Dispute Email (e.g. disputes@company.com)"
 									value={formData.disputeEmail}
 									onChange={(e) => updateFormData({ disputeEmail: e.target.value })}
 									className={baseInput}
@@ -983,32 +1006,26 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 						}>
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 							<div className="flex flex-col">
-								<select
-									title="office country"
+								<input
+									title="Office country"
+									placeholder="Office country"
 									value={formData.officeCountry}
 									onChange={(e) => updateFormData({ officeCountry: e.target.value })}
-									className={baseSelect}>
-									<option value="">Country*</option>
-									<option value="Nigeria">Nigeria</option>
-									<option value="Ghana">Ghana</option>
-									<option value="Kenya">Kenya</option>
-								</select>
+									className={baseInput}
+								/>
 								{errors.officeCountry && (
 									<p className="text-sm text-(--red-1)">{errors.officeCountry}</p>
 								)}
 							</div>
 
 							<div className="flex flex-col">
-								<select
-									title="office state"
+								<input
+									title="Office state"
+									placeholder="Office state"
 									value={formData.officeState}
 									onChange={(e) => updateFormData({ officeState: e.target.value })}
-									className={baseSelect}>
-									<option value="">State or Region*</option>
-									<option value="Lagos">Lagos</option>
-									<option value="Abuja">Abuja</option>
-									<option value="Kano">Kano</option>
-								</select>
+									className={baseInput}
+								/>
 								{errors.officeState && (
 									<p className="text-sm text-(--red-1)">{errors.officeState}</p>
 								)}
@@ -1017,16 +1034,13 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 							<div className="flex flex-col">
-								<select
-									title="office city"
+								<input
+									type="text"
+									placeholder="Office city*"
 									value={formData.officeCity}
 									onChange={(e) => updateFormData({ officeCity: e.target.value })}
-									className={baseSelect}>
-									<option value="">City*</option>
-									<option value="Ikeja">Ikeja</option>
-									<option value="Victoria Island">Victoria Island</option>
-									<option value="Lekki">Lekki</option>
-								</select>
+									className={baseInput}
+								/>
 								{errors.officeCity && (
 									<p className="text-sm text-(--red-1)">{errors.officeCity}</p>
 								)}
@@ -1067,18 +1081,18 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 						title={
 							<div className="flex items-center justify-between rounded-lg">
 								<p className="text-foreground text-[14px] font-semibold">
-									Owner(s) Information
+									Director(s) Information
 								</p>
 
 								<div className="flex flex-col items-center gap-x-2 md:flex-row">
 									<small className="hidden text-(--text-1) md:flex">
-										Multiple Owners?
+										Multiple Directors?
 									</small>
 									<button
 										onClick={addOwner}
 										className="bg-foreground text-background hover:bg-foreground/85 flex cursor-pointer items-center gap-2 rounded px-3 py-2 text-sm transition">
 										<HiPlus className="h-4 w-4" />
-										Add Owner
+										Add Director
 									</button>
 								</div>
 							</div>
@@ -1100,7 +1114,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 									className="space-y-6 border-b border-(--grey-1) pb-8 last:border-0">
 									<div className="flex items-center justify-between">
 										<p className="font-semibold text-gray-900">
-											Owner {formData.owners.length - index}
+											Director {formData.owners.length - index}
 										</p>
 										{formData.owners.length > 1 && (
 											<button
@@ -1129,7 +1143,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 											<div className="flex flex-col">
 												<input
 													title="first name"
-													placeholder="firstname"
+													placeholder="First name"
 													value={owner.firstName}
 													onChange={(e) =>
 														updateOwner(owner.id, { firstName: e.target.value })
@@ -1146,7 +1160,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 											<div className="flex flex-col">
 												<input
 													title="last name"
-													placeholder="lastname"
+													placeholder="Last name"
 													value={owner.lastName}
 													onChange={(e) =>
 														updateOwner(owner.id, { lastName: e.target.value })
@@ -1165,7 +1179,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 												<input
 													title="email"
 													value={owner.email}
-													placeholder="email"
+													placeholder="Email"
 													onChange={(e) => updateOwner(owner.id, { email: e.target.value })}
 													className={baseInput}
 												/>
@@ -1179,7 +1193,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 											<div className="flex flex-col">
 												<input
 													title="phone number"
-													placeholder="phone number"
+													placeholder="Phone number"
 													value={owner.phoneNumber}
 													onChange={(e) =>
 														updateOwner(owner.id, {
@@ -1199,9 +1213,9 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 										<div className="grid grid-cols-1 gap-4">
 											<div className="flex flex-col">
 												<input
-													title="bvn"
+													title="BVN"
 													value={owner.bvn}
-													placeholder="bvn"
+													placeholder="BVN"
 													onChange={(e) => updateOwner(owner.id, { bvn: e.target.value })}
 													className={baseInput}
 												/>
@@ -1348,17 +1362,15 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 
 										<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 											<div className="flex flex-col">
-												<select
-													title="state"
+												<input
+													type="text"
+													placeholder="State"
 													value={owner.homeState}
 													onChange={(e) =>
 														updateOwner(owner.id, { homeState: e.target.value })
 													}
-													className={baseInput}>
-													<option value="">State or Region*</option>
-													<option value="Lagos">Lagos</option>
-													<option value="Abuja">Abuja</option>
-												</select>
+													className={baseInput}
+												/>
 												{errors[`owner_${owner.id}_homeState`] && (
 													<p className="text-sm text-(--red-1)">
 														{errors[`owner_${owner.id}_homeState`]}
@@ -1367,17 +1379,15 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 											</div>
 
 											<div className="flex flex-col">
-												<select
-													title="city"
+												<input
+													type="text"
+													placeholder="City"
 													value={owner.homeCity}
 													onChange={(e) =>
 														updateOwner(owner.id, { homeCity: e.target.value })
 													}
-													className={baseSelect}>
-													<option value="">City*</option>
-													<option value="Ikeja">Ikeja</option>
-													<option value="Victoria Island">Victoria Island</option>
-												</select>
+													className={baseInput}
+												/>
 												{errors[`owner_${owner.id}_homeCity`] && (
 													<p className="text-sm text-(--red-1)">
 														{errors[`owner_${owner.id}_homeCity`]}
@@ -1388,19 +1398,17 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 
 										<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 											<div className="flex flex-col">
-												<select
-													title="postal code"
+												<input
+													type="text"
+													placeholder="City"
 													value={owner.homePostalCode}
 													onChange={(e) =>
 														updateOwner(owner.id, {
 															homePostalCode: e.target.value,
 														})
 													}
-													className={baseSelect}>
-													<option value="">Postal Code*</option>
-													<option value="100001">100001</option>
-													<option value="100002">100002</option>
-												</select>
+													className={baseInput}
+												/>
 												{errors[`owner_${owner.id}_homePostalCode`] && (
 													<p className="text-sm text-(--red-1)">
 														{errors[`owner_${owner.id}_homePostalCode`]}
@@ -1559,38 +1567,6 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 							/>
 						</div>
 
-						{/* AML Document */}
-						<div>
-							<div className="relative my-6 flex items-center justify-center">
-								<div className="absolute inset-x-0 top-1/2 border-t border-(--grey-1)" />
-								<span className="bg-background text-foreground relative px-4 text-[16px] font-medium uppercase">
-									AML DOCUMENT
-								</span>
-							</div>
-							<p className="mb-4 text-[14px] text-(--text-1)">
-								Please upload your AML (Anti-Money Laundering) compliance document. This
-								is required to ensure regulatory compliance.
-							</p>
-							<div className="space-y-3">
-								<FilePickerField
-									label="Customer Due Diligence"
-									file={formData.DueDiligenceDoc}
-									onFileChange={(file) => updateFormData({ DueDiligenceDoc: file })}
-									onFileRemove={() => updateFormData({ DueDiligenceDoc: null })}
-									error={errors.DueDiligenceDoc}
-									required
-								/>
-								<FilePickerField
-									label="AML Policy and Procedures"
-									file={formData.amlDoc}
-									onFileChange={(file) => updateFormData({ amlDoc: file })}
-									onFileRemove={() => updateFormData({ amlDoc: null })}
-									error={errors.amlDoc}
-									required
-								/>
-							</div>
-						</div>
-
 						{/* Supporting Documents */}
 						<div>
 							<div className="relative my-6 flex items-center justify-center">
@@ -1637,10 +1613,11 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 							onChange={(e) => updateFormData({ bankName: e.target.value })}
 							className={`${baseSelect} w-full`}>
 							<option value="">Bank Name*</option>
-							<option value="First Bank">First Bank</option>
-							<option value="GTBank">GTBank</option>
-							<option value="Access Bank">Access Bank</option>
-							<option value="Zenith Bank">Zenith Bank</option>
+							{banklists?.data?.map((item: Banklist, index: number) => (
+								<option key={index} value={item.bankName}>
+									{item.bankName}
+								</option>
+							))}
 						</select>
 						{errors.bankName && (
 							<p className="-mt-6 ml-1 text-sm text-(--red-1)">{errors.bankName}</p>
@@ -1664,9 +1641,9 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 								<input
 									type="text"
 									placeholder="Account Name*"
-									value={formData.accountName}
-									onChange={(e) => updateFormData({ accountName: e.target.value })}
-									className={baseInput}
+									disabled
+									value={verifyInfo?.data?.accountName}
+									className={`${baseInput} cursor-not-allowed bg-gray-200!`}
 								/>
 								{errors.accountName && (
 									<p className="text-sm text-(--red-1)">{errors.accountName}</p>

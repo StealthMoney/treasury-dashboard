@@ -69,3 +69,23 @@ export interface StatusItem {
 	status: StepStatus
 	suffix?: string
 }
+
+export interface Banklist {
+	nipBankCode: string
+	bankName: string
+}
+
+type NameInquiryData = {
+	accountName: string
+	accountNumber: string
+	kycLevel: string | null
+	nameInquiryReference: string | null
+	channelCode: string | null
+}
+
+export type NameInquiryResponse = {
+	data: NameInquiryData
+	responseMessage: string
+	responseCode: string
+	successful: boolean
+}

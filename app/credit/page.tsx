@@ -434,7 +434,7 @@ export default function CreditsPage() {
 	const handleKybComplete = () => {
 		setIsKybVerified(user?.kybStatus === "ACTIVE" || false)
 		setShowKybScreens(false)
-		setKybStatus(user?.kybStatus || null)
+		setKybStatus("PENDING_REVIEW")
 	}
 
 	useEffect(() => {
