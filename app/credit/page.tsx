@@ -18,19 +18,26 @@ import KybBanner from "../components/reusables/kybinfo_banner"
 import { KYBScreens } from "../overview/kybprocess"
 import { useProfile } from "../contexts/user_provider"
 import { fileToBase64 } from "../functions/helpers/base64"
-import { requestNewCredit } from "../server/credits"
+import {
+	repayCreditFinish,
+	repayCreditInitiate,
+	requestNewCredit,
+} from "../server/credits"
 import { FeedbackModal } from "../components/reusables/feedback_modal"
 import {
+	InitiateLoanRepaymentDetails,
 	LoanApplication,
 	LoanApplicationUI,
 	LoanStatus,
 	LoanType,
+	RepaymentRecord,
 } from "../types/general"
 import { useCreditStats } from "../hooks"
 import { buildLoanUI } from "../functions/helpers/statusmapper"
 import { useCreditHistory, useCreditTypes } from "../hooks/use_credit_history"
 import PageSkeleton from "../components/reusables/page_skeleton"
 import { formatDateWithSuffix } from "../functions/helpers/formatted_date"
+import { getDaysLeft } from "../functions/helpers/days_left"
 
 interface ActiveLoan {
 	id: string
@@ -88,7 +95,9 @@ const creditHistoryColumns = [
 				<p className="text-xs font-semibold text-gray-900 sm:text-sm">
 					{row.loanTypeId}
 				</p>
-				<p className="text-xs text-gray-500">{row.loanStartDate || null}</p>
+				<p className="text-xs text-gray-500">
+					{row.loanStartDate ? formatDateWithSuffix(row.loanStartDate) : ""}
+				</p>
 			</>
 		),
 	},
@@ -124,19 +133,7 @@ const creditHistoryColumns = [
 					{row.loanDueDate ? formatDateWithSuffix(row.loanDueDate) : ""}
 				</p>
 				<p className="text-xs text-gray-500">
-					{(() => {
-						if (!row.loanStartDate || !row.loanDueDate) return "N/A"
-						const diff =
-							(new Date(row.loanDueDate).getTime() -
-								new Date(row.loanStartDate).getTime()) /
-							(1000 * 60 * 60 * 24)
-
-						const days = Math.ceil(diff)
-
-						if (!Number.isFinite(days)) return "N/A"
-
-						return `${days} ${days === 1 ? "day" : "days"}`
-					})()}
+					{getDaysLeft(row.loanStartDate, row.loanDueDate)}
 				</p>
 			</>
 		),
@@ -273,8 +270,14 @@ export default function CreditsPage() {
 	const [isRepayOpen, setIsRepayOpen] = useState(false)
 	const [repayStep, setRepayStep] = useState(0)
 	const [repaySuccess, setRepaySuccess] = useState(false)
-	const [repayAmount, setRepayAmount] = useState("50000000")
+	const [repayAmount, setRepayAmount] = useState("")
 	const [repayCurrency, setRepayCurrency] = useState<"USD" | "NGN">("NGN")
+	const [repayLoading, setRepayLoading] = useState(false)
+	const [repayError, setRepayError] = useState("")
+	const [repaySuccessResponse, setRepaySuccessResponse] =
+		useState<InitiateLoanRepaymentDetails | null>(null)
+	const [finalRepayResponse, setFinalRepayResponse] =
+		useState<RepaymentRecord | null>(null)
 
 	// Extend Credit Date Modal State
 	const [isExtendOpen, setIsExtendOpen] = useState(false)
@@ -422,7 +425,34 @@ export default function CreditsPage() {
 		setRepaySuccess(false)
 	}
 
-	const handleRepayNext = () => {
+	const handleRepayNext = async () => {
+		if (repayStep === 0) {
+			setRepayLoading(true)
+			const payload = {
+				loanReference: creditHistoryData[0].reference,
+			}
+
+			try {
+				const repay = await repayCreditInitiate(JSON.stringify(payload))
+				if (repay.success) {
+					setRepayLoading(false)
+					setRepayStep(repayStep + 1)
+					setRepayError("")
+					setRepaySuccessResponse(repay.data)
+				} else {
+					setRepayError(repay.error)
+					return
+				}
+			} catch (err) {
+				console.error(err)
+				setRepayError(
+					err instanceof Error ? err.message.toString() : "something went wrong"
+				)
+			} finally {
+				setRepayError("")
+				setRepayLoading(false)
+			}
+		}
 		if (repayStep < repaySteps.length - 1) {
 			setRepayStep(repayStep + 1)
 		}
@@ -434,13 +464,32 @@ export default function CreditsPage() {
 		}
 	}
 
-	const handleRepaySubmit = () => {
-		const formData = {
-			amountRepaid: repayAmount,
-			currency: repayCurrency,
+	const handleRepaySubmit = async () => {
+		const payload = {
+			referenceNumber: repaySuccessResponse?.repaymentReference,
 		}
-		console.log("Repay Loan Submitted:", formData)
-		setRepaySuccess(true)
+
+		setRepayLoading(true)
+
+		try {
+			const finalRepay = await repayCreditFinish(JSON.stringify(payload))
+			if (!finalRepay.success) {
+				setRepayError(finalRepay.error)
+				return
+			} else {
+				setRepayLoading(false)
+				setFinalRepayResponse(finalRepay.data)
+				setRepaySuccess(true)
+			}
+		} catch (err) {
+			console.error(err)
+			setRepayError(
+				err instanceof Error ? err.message.toString() : "something went wrong"
+			)
+		} finally {
+			setRepayError("")
+			setRepayLoading(false)
+		}
 	}
 
 	const handleExtendClick = () => {
@@ -518,6 +567,14 @@ export default function CreditsPage() {
 			setCreditHistoryData(data)
 		}
 	}, [data])
+
+	useEffect(() => {
+		if (creditHistoryData.length > 0) {
+			setRepayAmount(creditHistoryData[0].loanAmount.toString())
+		}
+	}, [creditHistoryData])
+
+	console.log(repaySuccessResponse)
 
 	const handleModalClose = () => {
 		setBorrowFundError(false)
@@ -727,7 +784,24 @@ export default function CreditsPage() {
 			title: "REPAY CREDIT",
 			content: (
 				<div className="space-y-6">
-					<OutstandingCredits />
+					<OutstandingCredits
+						total={creditHistoryData[0]?.loanAmount.toLocaleString("en-US", {
+							maximumSignificantDigits: 2,
+						})}
+						principal={creditHistoryData[0]?.loanAmount?.toLocaleString("en-US", {
+							maximumSignificantDigits: 2,
+						})}
+						interest={creditHistoryData[0]?.interest?.toLocaleString("en-US", {
+							maximumSignificantDigits: 2,
+						})}
+						dueDate={formatDateWithSuffix(
+							creditHistoryData[0]?.loanDueDate?.toString()
+						)}
+						daysLeft={getDaysLeft(
+							creditHistoryData[0]?.loanStartDate,
+							creditHistoryData[0]?.loanDueDate
+						)}
+					/>
 
 					<div className="space-y-2">
 						<label className="text-foreground text-[14px] font-medium">
@@ -739,11 +813,12 @@ export default function CreditsPage() {
 							onCurrencyChange={setRepayCurrency}
 							placeholder="Amount to repay"
 							description="Minimum amount to be paid:"
-							balance={500000}
+							balance={Number(repayAmount)}
 							showmax={false}
 							currency={repayCurrency}
 							// minamount={50000000}
 							label=""
+							disabled={true}
 						/>
 					</div>
 
@@ -764,13 +839,13 @@ export default function CreditsPage() {
 							Transfer{" "}
 							<span className="text-foreground font-semibold">
 								{repayCurrency === "NGN" ? "₦" : "$"}
-								{Number(repayAmount || 0).toLocaleString("en-NG", {
+								{Number(repaySuccessResponse?.amountDue || 0).toLocaleString("en-NG", {
 									minimumFractionDigits: 0,
 								})}
 							</span>{" "}
 							to{" "}
 							<span className="text-foreground font-semibold">
-								Stealthtech Solutions
+								{repaySuccessResponse?.accountName}
 							</span>
 						</p>
 					</div>
@@ -783,18 +858,18 @@ export default function CreditsPage() {
 
 							col2: "Account Number",
 							message2: {
-								text: process.env.NEXT_PUBLIC_ACCOUNT_DETAILS || "",
-								copy: process.env.NEXT_PUBLIC_ACCOUNT_DETAILS || "",
+								text: repaySuccessResponse?.accountNumber || "",
+								copy: repaySuccessResponse?.accountNumber || "",
 							},
 
 							col3: "Amount",
 							message3: {
 								text: `${repayCurrency === "NGN" ? "₦" : "$"} ${Number(
-									repayAmount || 0
+									repaySuccessResponse?.amountDue || 0
 								).toLocaleString("en-NG", {
 									minimumFractionDigits: 0,
 								})}`,
-								copy: repayAmount,
+								copy: String(repaySuccessResponse?.amountDue || 0),
 							},
 						}}
 					/>
@@ -804,15 +879,8 @@ export default function CreditsPage() {
 							When making your bank transfer, kindly use this as narration:
 						</p>
 						<p className="text-foreground text-[14px] font-semibold">
-							Monlwave_for_stealth_treasury
+							{repaySuccessResponse?.narration}
 						</p>
-					</div>
-
-					<div className="rounded-lg p-4 text-center">
-						<p className="text-[12px] text-(--text-1)">
-							This account is for this transaction only and expires in
-						</p>
-						<p className="text-foreground mt-1 text-[18px] font-bold">30:00</p>
 					</div>
 				</div>
 			),
@@ -1123,7 +1191,12 @@ export default function CreditsPage() {
 						onNextStep={handleRepayNext}
 						onPreviousStep={handleRepayPrevious}
 						onSubmit={handleRepaySubmit}
+						loading={repayLoading}
 						isSuccess={repaySuccess}
+						amount={repaySuccessResponse?.amountDue?.toLocaleString("en-US", {
+							maximumFractionDigits: 2,
+						})}
+						isError={repayError}
 						repaySuccess={repaySuccess}
 						successTitle="Repayment successful"
 						successMessage=""
@@ -1133,13 +1206,19 @@ export default function CreditsPage() {
 								header="Meta:"
 								messages={{
 									col1: "Transaction ID:",
-									message1: "TRX-839203",
+									message1: finalRepayResponse?.repaymentReference || "",
 									col2: "Date:",
-									message2: "24th Mar, 2026.12:23 PM",
+									message2: finalRepayResponse?.repaymentDate
+										? formatDateWithSuffix(finalRepayResponse?.repaymentDate)
+										: "N/A",
 									col3: "Method:",
 									message3: "Bank Transfer",
 									col4: " Outstanding Balance:",
-									message4: "0.00",
+									message4: (
+										creditHistoryData[0]?.loanAmount +
+										creditHistoryData[0]?.interest -
+										(finalRepayResponse?.amountPaid || 0)
+									).toLocaleString("en-US", { maximumFractionDigits: 2 }),
 								}}
 							/>
 						}
