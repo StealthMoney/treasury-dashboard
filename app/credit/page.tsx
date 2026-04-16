@@ -30,6 +30,7 @@ import { useCreditStats } from "../hooks"
 import { buildLoanUI } from "../functions/helpers/statusmapper"
 import { useCreditHistory, useCreditTypes } from "../hooks/use_credit_history"
 import PageSkeleton from "../components/reusables/page_skeleton"
+import { formatDateWithSuffix } from "../functions/helpers/formatted_date"
 
 interface ActiveLoan {
 	id: string
@@ -96,7 +97,9 @@ const creditHistoryColumns = [
 		accessor: (row: LoanApplication) => (
 			<>
 				<p className="text-xs font-semibold text-gray-900 sm:text-sm">
-					{row.loanAmount}
+					{Number(row.loanAmount).toLocaleString("en-US", {
+						maximumFractionDigits: 2,
+					})}
 				</p>
 				<p className="text-xs text-gray-500">{row.currency}</p>
 			</>
@@ -118,14 +121,22 @@ const creditHistoryColumns = [
 		accessor: (row: LoanApplication) => (
 			<>
 				<p className="text-xs font-semibold text-gray-900 sm:text-sm">
-					{row.loanDueDate}
+					{row.loanDueDate ? formatDateWithSuffix(row.loanDueDate) : ""}
 				</p>
 				<p className="text-xs text-gray-500">
-					{Math.ceil(
-						(new Date(row.loanDueDate).getTime() -
-							new Date(row.loanStartDate).getTime()) /
+					{(() => {
+						if (!row.loanStartDate || !row.loanDueDate) return "N/A"
+						const diff =
+							(new Date(row.loanDueDate).getTime() -
+								new Date(row.loanStartDate).getTime()) /
 							(1000 * 60 * 60 * 24)
-					) || "N/A"}
+
+						const days = Math.ceil(diff)
+
+						if (!Number.isFinite(days)) return "N/A"
+
+						return `${days} ${days === 1 ? "day" : "days"}`
+					})()}
 				</p>
 			</>
 		),
