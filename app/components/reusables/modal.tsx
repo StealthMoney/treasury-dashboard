@@ -125,10 +125,6 @@ export const StepModal: React.FC<StepModalProps> = ({
 							</div>
 
 							{successtable}
-
-							{isError && isError !== "" && (
-								<p className="text-center text-[14px] text-(--red-1)">{isError}</p>
-							)}
 						</>
 					) : (
 						/* Step Content */
@@ -145,6 +141,10 @@ export const StepModal: React.FC<StepModalProps> = ({
 							)}
 							<div>{currentStepConfig.content}</div>
 						</>
+					)}
+
+					{isError && isError !== "" && (
+						<p className="text-left text-[14px] text-(--red-1) mt-3">{isError}</p>
 					)}
 				</div>
 
