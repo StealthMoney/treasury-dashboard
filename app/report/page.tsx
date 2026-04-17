@@ -266,27 +266,33 @@ export default function ReportOverviewPage() {
 							<h1 className="text-foreground text-2xl font-bold sm:text-3xl">
 								Report Overview
 							</h1>
-							<p className="mt-1 text-sm text-(--text-1)">Generate your report here</p>
+							<p className="mt-1 text-sm text-(--text-1)">
+								You can generate a report of your previous credit transactions
+							</p>
 						</div>
-						<button
-							onClick={handleGenerateReport}
-							className="bg-foreground cursor-pointer rounded-full px-6 py-2.5 font-semibold whitespace-nowrap text-white transition hover:opacity-90">
-							Generate Report
-						</button>
+						{!true && (
+							<button
+								onClick={handleGenerateReport}
+								className="bg-foreground cursor-pointer rounded-full px-6 py-2.5 font-semibold whitespace-nowrap text-white transition hover:opacity-90">
+								Generate Report
+							</button>
+						)}
 					</div>
 
 					{/* Stats Section */}
-					<StatsSection
-						actionDisabled={false}
-						stats={creditStatsData}
-						uiConfig={[]}
-						buttonLabel="Repay Credit"
-						onButtonClick={() => {}}
-					/>
+					{!true && (
+						<StatsSection
+							actionDisabled={false}
+							stats={creditStatsData}
+							uiConfig={[]}
+							buttonLabel="Repay Credit"
+							onButtonClick={() => {}}
+						/>
+					)}
 
 					{/* Table Section */}
 					<Table
-						data={reportTableData}
+						data={[]}
 						columns={reportColumns}
 						kybStatus={null}
 						tableButtonClick={() => {}}

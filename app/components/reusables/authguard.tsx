@@ -11,7 +11,7 @@ const ROUTE_MAP: Record<string, string> = {
 	"/credit": "Credit",
 	"/report": "Report",
 	"/profile": "Profile",
-	"/settings": "Settings",
+	"/settings": "Setting",
 }
 
 type AuthDecision =

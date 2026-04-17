@@ -1,5 +1,6 @@
 import { ReactNode } from "react"
 import Image from "next/image"
+import { usePathname } from "next/navigation"
 
 export interface TableColumn<T> {
 	header: string | ReactNode
@@ -34,6 +35,7 @@ export function Table<T extends { id: string | number }>({
 	tableButtonClick,
 }: TableProps<T>) {
 	const isEmpty = data.length === 0
+	const pathname = usePathname()
 
 	return (
 		<div className="bg-background mb-8 overflow-hidden rounded-lg border border-(--grey-1)">
@@ -55,11 +57,13 @@ export function Table<T extends { id: string | number }>({
 						height={120}
 					/>
 					<p className="text-center text-sm text-(--text-1)">
-						{kybStatus === "ACTIVE"
+						{kybStatus === "ACTIVE" && pathname === "/credit"
 							? "You have no credit history yet!"
-							: "Upload your invoices and bank statements to access a line of credit for your business."}
+							: pathname === "/credit"
+								? "Upload your invoices and bank statements to access a line of credit for your business."
+								: "You cannot generate report till you've secured a credit line"}
 					</p>
-					{kybStatus === "ACTIVE" && (
+					{kybStatus === "ACTIVE" && pathname === "/credit" && (
 						<button
 							disabled={canPerformAction}
 							onClick={tableButtonClick}
