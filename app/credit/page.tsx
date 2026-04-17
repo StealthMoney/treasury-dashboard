@@ -347,7 +347,8 @@ export default function CreditsPage() {
 			showButton:
 				loanStatus === "REVIEW" ||
 				loanStatus === "REPAID" ||
-				loanStatus === "REJECTED"
+				loanStatus === "REJECTED" ||
+				loanStatus === "APPROVED"
 					? false
 					: true,
 		},
@@ -1191,6 +1192,7 @@ export default function CreditsPage() {
 						onNextStep={handleRepayNext}
 						onPreviousStep={handleRepayPrevious}
 						onSubmit={handleRepaySubmit}
+						screenMode={isRepayOpen ? "repay" : null}
 						loading={repayLoading}
 						isSuccess={repaySuccess}
 						amount={repaySuccessResponse?.amountDue?.toLocaleString("en-US", {

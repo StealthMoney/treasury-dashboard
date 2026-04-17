@@ -33,6 +33,7 @@ export interface StepModalProps {
 	successTitle?: string
 	successMessage?: string | ReactNode
 	successButtonLabel?: string
+	screenMode?: "repay" | "credit" | "extend" | null
 	successtable?: ReactNode
 }
 
@@ -56,6 +57,7 @@ export const StepModal: React.FC<StepModalProps> = ({
 	successButtonLabel,
 	successtable,
 	repaySuccess,
+	screenMode,
 }) => {
 	const pathname = usePathname()
 
@@ -144,7 +146,7 @@ export const StepModal: React.FC<StepModalProps> = ({
 					)}
 
 					{isError && isError !== "" && (
-						<p className="text-left text-[14px] text-(--red-1) mt-3">{isError}</p>
+						<p className="mt-3 text-left text-[14px] text-(--red-1)">{isError}</p>
 					)}
 				</div>
 
@@ -168,9 +170,11 @@ export const StepModal: React.FC<StepModalProps> = ({
 							? successButtonLabel || "Close"
 							: pathname.match("/report")
 								? "Generate Report"
-								: isLastStep
+								: isLastStep && !screenMode
 									? "Submit"
-									: "Continue"}
+									: isLastStep && screenMode === "repay"
+										? "I have paid"
+										: "Continue"}
 
 						{loading && <Spinner />}
 					</button>
