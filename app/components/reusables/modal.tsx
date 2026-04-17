@@ -25,6 +25,8 @@ export interface StepModalProps {
 	onPreviousStep: () => void
 	onSubmit?: () => void
 	isSuccess?: boolean
+	amount?: string
+	isError?: string
 	imagePath?: string
 	loading?: boolean
 	repaySuccess?: boolean
@@ -44,7 +46,9 @@ export const StepModal: React.FC<StepModalProps> = ({
 	onNextStep,
 	onPreviousStep,
 	onSubmit,
+	amount,
 	isSuccess,
+	isError,
 	imagePath,
 	loading,
 	successTitle,
@@ -109,10 +113,8 @@ export const StepModal: React.FC<StepModalProps> = ({
 									<div className="flex w-full flex-col items-center justify-center">
 										<p className="text-center text-[14px] text-(--text-1)">
 											Your credit payment of{" "}
-											<span className="text-foreground font-semibold">
-												₦100,852,500.00
-											</span>{" "}
-											has been completed successfully
+											<span className="text-foreground font-semibold">₦{amount}</span> has
+											been completed successfully
 										</p>
 									</div>
 								)}
@@ -139,6 +141,10 @@ export const StepModal: React.FC<StepModalProps> = ({
 							)}
 							<div>{currentStepConfig.content}</div>
 						</>
+					)}
+
+					{isError && isError !== "" && (
+						<p className="text-left text-[14px] text-(--red-1) mt-3">{isError}</p>
 					)}
 				</div>
 

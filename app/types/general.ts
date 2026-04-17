@@ -89,3 +89,23 @@ export type NameInquiryResponse = {
 	responseCode: string
 	successful: boolean
 }
+
+export interface InitiateLoanRepaymentDetails {
+	accountNumber: string
+	accountName: string
+	bankName: string
+	narration: string
+	repaymentReference: string
+	currency: string
+	amount: number
+	interest: number
+	amountDue: number
+	loanDueDate: string
+}
+
+export interface RepaymentRecord {
+	amountPaid: number
+	repaymentReference: string
+	repaymentStatus: string
+	repaymentDate: string
+}

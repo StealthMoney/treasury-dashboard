@@ -12,6 +12,7 @@ interface CurrencyInputProps {
 	balance?: number
 	showmax: boolean
 	error?: string
+	disabled?: boolean
 }
 
 export const CurrencyInput: React.FC<CurrencyInputProps> = ({
@@ -27,6 +28,7 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
 	balance,
 	showmax = false,
 	error,
+	disabled,
 }) => {
 	const formatDisplay = (raw: string) => {
 		const digits = raw.replace(/\D/g, "")
@@ -54,6 +56,7 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
 			)}
 			<div className="flex">
 				<input
+					disabled={disabled}
 					type="text"
 					inputMode="numeric"
 					value={displayValue}
@@ -62,6 +65,7 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
 					className="flex-1 rounded-tl-lg rounded-bl-lg border border-(--grey-1) bg-(--grey-4) px-4 py-3 text-(--text-1) focus:outline-none"
 				/>
 				<select
+					title="currency"
 					value={currency}
 					onChange={(e) => onCurrencyChange(e.target.value as "NGN" | "USD")}
 					className="bg-background cursor-pointer rounded-tr-lg rounded-br-lg border border-(--grey-1) px-4 py-3 font-medium focus:outline-none">
