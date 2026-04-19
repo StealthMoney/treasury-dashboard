@@ -4,6 +4,8 @@ import { useState, useRef, ChangeEvent } from "react"
 import { TextField } from "../components/reusables/general_inputs"
 import { KYBStepWrapper } from "../components/reusables/kybstepwraper"
 import Image from "next/image"
+import { useProfile } from "../contexts/user_provider"
+import PageSkeleton from "../components/reusables/page_skeleton"
 
 interface ProfileTabProps {
 	onSave?: (data: ProfileData) => void
@@ -18,11 +20,13 @@ interface ProfileData {
 }
 
 export function ProfileTab({ onSave }: ProfileTabProps) {
+	const { user, loading } = useProfile()
+
 	const [data, setData] = useState<ProfileData>({
-		firstName: "John",
-		lastName: "Doe",
-		emailAddress: "john@example.com",
-		phoneNumber: "08012345678",
+		firstName: user?.firstName || "",
+		lastName: user?.lastName || "",
+		emailAddress: user?.email || "",
+		phoneNumber: "",
 	})
 
 	const [logoPreview, setLogoPreview] = useState<string | null>(null)
@@ -86,6 +90,16 @@ export function ProfileTab({ onSave }: ProfileTabProps) {
 			onSave?.(data)
 			alert("Profile saved successfully!")
 		}
+	}
+
+	if (loading) {
+		return (
+			<div className="bg-background min-h-screen w-full px-6">
+				<div className="w-full overflow-x-auto md:max-w-[80%]">
+					<PageSkeleton />
+				</div>
+			</div>
+		)
 	}
 
 	return (

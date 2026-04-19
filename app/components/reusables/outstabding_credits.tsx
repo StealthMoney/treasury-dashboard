@@ -15,6 +15,8 @@ export default function OutstandingCredits({
 	dueDate = "17 Jun 2026",
 	daysLeft = "45 days left",
 }: OutstandingCreditsProps) {
+	console.log(principal)
+
 	return (
 		<div className="space-y-2 rounded-2xl bg-(--grey-4) p-2 text-center">
 			<div className="bg-background rounded-2xl py-8">

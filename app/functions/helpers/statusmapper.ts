@@ -1,6 +1,7 @@
 import { LoanApplicationUI, StatusItem } from "@/app/types/general"
+import { formatDateWithSuffix } from "./formatted_date"
 
-type LoanStatus = "REVIEW" | "APPROVED" | "REJECTED" | "DISBURSED"
+type LoanStatus = "REVIEW" | "APPROVED" | "REJECTED" | "DISBURSED" | "REPAID"
 
 export const buildLoanUI = (
 	creditHistoryData: LoanApplicationUI[],
@@ -23,6 +24,7 @@ export const buildLoanUI = (
 		APPROVED: "Loan Approved",
 		REJECTED: "Loan Failed",
 		DISBURSED: "Credit Disbursed",
+		REPAID: "Credit Repaid",
 	}
 
 	const imageMap: Record<LoanStatus, string> = {
@@ -30,6 +32,7 @@ export const buildLoanUI = (
 		APPROVED: "/images/success.svg",
 		REJECTED: "/images/failed.svg",
 		DISBURSED: "/images/success.svg",
+		REPAID: "/images/success.svg",
 	}
 
 	const steps = [
@@ -88,10 +91,14 @@ export const buildLoanUI = (
 			maximumFractionDigits: 2,
 		})} ${loan.currency} was not approved.`,
 
-		DISBURSED: `Your loan of $${Number(loan.loanAmount).toLocaleString("en-NG", {
+		DISBURSED: `Your loan of ${Number(loan.loanAmount).toLocaleString("en-NG", {
 			minimumFractionDigits: 2,
 			maximumFractionDigits: 2,
-		})} ${loan.currency} has been successfully disbursed.\nKindly repay by `,
+		})} ${loan.currency} has been successfully disbursed. Kindly repay by ${formatDateWithSuffix(loan.loanDueDate)}`,
+		REPAID: `Your loan of ${Number(loan.loanAmount).toLocaleString("en-NG", {
+			minimumFractionDigits: 2,
+			maximumFractionDigits: 2,
+		})} ${loan.currency} has been sucessfully repaid.`,
 	}
 
 	const statusItemsMap: Record<LoanStatus, StatusItem[]> = {
@@ -115,6 +122,14 @@ export const buildLoanUI = (
 			{ text: "Step 2: Review", status: "completed" },
 			{ text: "Step 3: Approval", status: "completed" },
 			{ text: "Step 4: Disbursed", status: "completed" },
+			{ text: "Step 5: Repayment", status: "current", suffix: "(Not Paid)" },
+		],
+		REPAID: [
+			{ text: "Step 1: Submitted", status: "completed" },
+			{ text: "Step 2: Review", status: "completed" },
+			{ text: "Step 3: Approval", status: "completed" },
+			{ text: "Step 4: Disbursed", status: "completed" },
+			{ text: "Step 4: Repaid", status: "completed" },
 		],
 	}
 

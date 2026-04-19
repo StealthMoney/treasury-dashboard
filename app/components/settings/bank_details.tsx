@@ -175,7 +175,7 @@ export function BankAccountDetailTab() {
 						Business Payout Details {bankDetails.length > 1 ? "1" : ""}
 					</h2>
 
-					<div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:gap-3">
+					{/* <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:gap-3">
 						<button
 							onClick={handleEditToggle}
 							className="order-2 flex items-center justify-center gap-1.5 rounded-lg border border-(--grey-1) px-4 py-2 text-sm font-medium transition-colors hover:bg-(--grey-4) sm:order-1">
@@ -192,7 +192,7 @@ export function BankAccountDetailTab() {
 							<AiOutlinePlus className="h-4 w-4" />
 							<span className="sm:inline">Add Bank Details</span>
 						</button>
-					</div>
+					</div> */}
 				</div>
 
 				{bankDetails.map((detail, index) => (
@@ -220,7 +220,7 @@ export function BankAccountDetailTab() {
 					</div>
 				))}
 
-				{isEditing && (
+				{/* {isEditing && (
 					<div className="mt-8 flex justify-center px-2">
 						<button
 							onClick={handleSave}
@@ -229,9 +229,9 @@ export function BankAccountDetailTab() {
 							{isSaving ? "Saving..." : "Save Changes"}
 						</button>
 					</div>
-				)}
+				)} */}
 
-				{!isEditing && (
+				{/* {!isEditing && (
 					<div className="flex justify-center px-2 pt-4">
 						<button
 							disabled
@@ -239,7 +239,7 @@ export function BankAccountDetailTab() {
 							Save Changes
 						</button>
 					</div>
-				)}
+				)} */}
 			</div>
 		</KYBStepWrapper>
 	)

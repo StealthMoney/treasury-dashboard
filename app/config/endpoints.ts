@@ -16,6 +16,7 @@ const endpoints = (params?: string | number, params2?: string | number) => {
 		logout: `${envURL}/logout`,
 		"forgot-password": `${envURL}/account/reset-password/init`,
 		"reset-password": `${envURL}/account/reset-password/finish`,
+		"change-passowrd": `${envURL}/account/change-password`,
 	}
 
 	const credit = {

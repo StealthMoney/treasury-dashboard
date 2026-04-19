@@ -38,6 +38,7 @@ import { useCreditHistory, useCreditTypes } from "../hooks/use_credit_history"
 import PageSkeleton from "../components/reusables/page_skeleton"
 import { formatDateWithSuffix } from "../functions/helpers/formatted_date"
 import { getDaysLeft } from "../functions/helpers/days_left"
+import { CopyableText } from "../components/reusables/copyable_text"
 
 interface ActiveLoan {
 	id: string
@@ -92,9 +93,7 @@ const creditHistoryColumns = [
 		header: "Credit ID",
 		accessor: (row: LoanApplication) => (
 			<>
-				<p className="text-xs font-semibold text-gray-900 sm:text-sm">
-					{row.loanTypeId}
-				</p>
+				<CopyableText text={row.reference} />
 				<p className="text-xs text-gray-500">
 					{row.loanStartDate ? formatDateWithSuffix(row.loanStartDate) : ""}
 				</p>
@@ -119,7 +118,9 @@ const creditHistoryColumns = [
 		accessor: (row: LoanApplication) => (
 			<>
 				<p className="text-xs font-semibold text-gray-900 sm:text-sm">
-					{row.interest}
+					{Number(row.interest).toLocaleString("en-Us", {
+						maximumFractionDigits: 2,
+					})}
 				</p>
 				<p className="text-xs text-gray-500">{row.currency}</p>
 			</>
@@ -571,7 +572,10 @@ export default function CreditsPage() {
 
 	useEffect(() => {
 		if (creditHistoryData.length > 0) {
-			setRepayAmount(creditHistoryData[0].loanAmount.toString())
+			const value =
+				Number(creditHistoryData[0].loanAmount) +
+				Number(creditHistoryData[0]?.interest)
+			setRepayAmount(value.toString())
 		}
 	}, [creditHistoryData])
 
@@ -786,21 +790,33 @@ export default function CreditsPage() {
 			content: (
 				<div className="space-y-6">
 					<OutstandingCredits
-						total={creditHistoryData[0]?.loanAmount.toLocaleString("en-US", {
-							maximumSignificantDigits: 2,
+						total={(
+							Number(creditHistoryData?.[0]?.loanAmount ?? 0) +
+							Number(creditHistoryData?.[0]?.interest ?? 0)
+						).toLocaleString("en-US", {
+							minimumFractionDigits: 2,
+							maximumFractionDigits: 2,
 						})}
-						principal={creditHistoryData[0]?.loanAmount?.toLocaleString("en-US", {
-							maximumSignificantDigits: 2,
+						principal={(
+							Number(creditHistoryData?.[0]?.loanAmount ?? 0) +
+							Number(creditHistoryData?.[0]?.interest ?? 0)
+						).toLocaleString("en-US", {
+							minimumFractionDigits: 2,
+							maximumFractionDigits: 2,
 						})}
-						interest={creditHistoryData[0]?.interest?.toLocaleString("en-US", {
-							maximumSignificantDigits: 2,
-						})}
+						interest={Number(creditHistoryData?.[0]?.interest ?? 0).toLocaleString(
+							"en-US",
+							{
+								minimumFractionDigits: 2,
+								maximumFractionDigits: 2,
+							}
+						)}
 						dueDate={formatDateWithSuffix(
-							creditHistoryData[0]?.loanDueDate?.toString()
+							creditHistoryData?.[0]?.loanDueDate?.toString()
 						)}
 						daysLeft={getDaysLeft(
-							creditHistoryData[0]?.loanStartDate,
-							creditHistoryData[0]?.loanDueDate
+							creditHistoryData?.[0]?.loanStartDate,
+							creditHistoryData?.[0]?.loanDueDate
 						)}
 					/>
 
@@ -855,7 +871,7 @@ export default function CreditsPage() {
 						header="Bank Details:"
 						messages={{
 							col1: "Bank Name",
-							message1: { text: "Paystack - Titan" },
+							message1: { text: String(repaySuccessResponse?.bankName) },
 
 							col2: "Account Number",
 							message2: {
@@ -972,6 +988,7 @@ export default function CreditsPage() {
 						<span className="text-foreground text-[14px] font-semibold">
 							{Number(borrowAmount).toLocaleString("en-US", {
 								minimumFractionDigits: 2,
+								maximumFractionDigits: 2,
 							})}{" "}
 							{borrowCurrency}
 						</span>
@@ -991,7 +1008,11 @@ export default function CreditsPage() {
 					<div className="flex justify-between border-b border-(--grey-1) py-3">
 						<span className="text-[14px] text-(--text-1)">Interests:</span>
 						<span className="text-foreground text-[14px] font-semibold">
-							{(interestRate ?? 0) * (Number(borrowAmount) ?? 0)} NGN
+							{((interestRate ?? 0) * (Number(borrowAmount) ?? 0)).toLocaleString(
+								"en-US",
+								{ maximumFractionDigits: 2, minimumFractionDigits: 2 }
+							)}{" "}
+							NGN
 						</span>
 					</div>
 				</div>
@@ -1185,7 +1206,7 @@ export default function CreditsPage() {
 					<StepModal
 						isOpen={isRepayOpen}
 						onClose={() => setIsRepayOpen(false)}
-						title="Repay credit"
+						title="Repay Credit"
 						subtitle="Repay your outstanding credit"
 						steps={repaySteps}
 						currentStep={repayStep}
@@ -1215,11 +1236,10 @@ export default function CreditsPage() {
 										: "N/A",
 									col3: "Method:",
 									message3: "Bank Transfer",
-									col4: " Outstanding Balance:",
+									col4: " Amount Paid:",
 									message4: (
-										creditHistoryData[0]?.loanAmount +
-										creditHistoryData[0]?.interest -
-										(finalRepayResponse?.amountPaid || 0)
+										Number(creditHistoryData[0]?.loanAmount) +
+										Number(creditHistoryData[0]?.interest)
 									).toLocaleString("en-US", { maximumFractionDigits: 2 }),
 								}}
 							/>

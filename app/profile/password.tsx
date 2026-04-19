@@ -4,6 +4,10 @@ import { useState } from "react"
 import { PasswordField } from "../components/reusables/general_inputs"
 import { AiOutlineCheck } from "react-icons/ai"
 import { KYBStepWrapper } from "../components/reusables/kybstepwraper"
+import { changePassword } from "../server/change_password"
+import { showToast } from "../functions/helpers/notify_user"
+import { FeedbackModal } from "../components/reusables/feedback_modal"
+import { Spinner } from "../components/reusables/spinner"
 
 interface PasswordCriteria {
 	minChars: boolean
@@ -25,6 +29,11 @@ export function PasswordSettingTab() {
 		lowercase: false,
 		numbers: false,
 	})
+
+	const [passwordSettingsLoading, setPasswordSettingsLoading] =
+		useState<boolean>(false)
+
+	const [changeError, setChangeError] = useState<string>("")
 
 	const checkPasswordCriteria = (password: string) => {
 		setCriteria({
@@ -68,19 +77,41 @@ export function PasswordSettingTab() {
 		checkPasswordCriteria(value)
 	}
 
-	const handleSave = () => {
+	const handleSave = async () => {
 		if (validateForm()) {
-			alert("Password changed successfully!")
-			setOldPassword("")
-			setNewPassword("")
-			setConfirmPassword("")
-			setCriteria({
-				minChars: false,
-				uppercase: false,
-				special: false,
-				lowercase: false,
-				numbers: false,
-			})
+			const payload = {
+				currentPassword: oldPassword,
+				newPassword,
+			}
+
+			setPasswordSettingsLoading(true)
+			try {
+				const response = await changePassword(JSON.stringify(payload))
+
+				if (response.success) {
+					setChangeError("")
+					showToast(response.data || "Password change successful", "success", 1)
+					setOldPassword("")
+					setNewPassword("")
+					setConfirmPassword("")
+					setCriteria({
+						minChars: false,
+						uppercase: false,
+						special: false,
+						lowercase: false,
+						numbers: false,
+					})
+				} else {
+					setChangeError(response.error ?? "Something went wrong")
+				}
+			} catch (err) {
+				console.error(err)
+				setChangeError(
+					err instanceof Error ? err.message.toString() : "something went wrong"
+				)
+			} finally {
+				setPasswordSettingsLoading(false)
+			}
 		}
 	}
 
@@ -97,7 +128,13 @@ export function PasswordSettingTab() {
 								id="oldPassword"
 								placeholder="Password"
 								value={oldPassword}
-								onChange={setOldPassword}
+								onChange={(val) => {
+									setOldPassword(val)
+									setErrors((prev) => ({
+										...prev,
+										oldPassword: !val.trim() ? "Old password is required" : "",
+									}))
+								}}
 								error={errors.oldPassword}
 							/>
 						</div>
@@ -111,7 +148,19 @@ export function PasswordSettingTab() {
 									id="newPassword"
 									placeholder="Password"
 									value={newPassword}
-									onChange={handleNewPasswordChange}
+									onChange={(val) => {
+										handleNewPasswordChange(val)
+										setErrors((prev) => ({
+											...prev,
+											newPassword: !val.trim()
+												? "New password is required"
+												: val.length < 10
+													? "Password must be at least 10 characters"
+													: val === oldPassword
+														? "New password must be different from old password"
+														: "",
+										}))
+									}}
 									error={errors.newPassword}
 								/>
 							</div>
@@ -122,7 +171,17 @@ export function PasswordSettingTab() {
 									id="confirmPassword"
 									placeholder="Password"
 									value={confirmPassword}
-									onChange={setConfirmPassword}
+									onChange={(val) => {
+										setConfirmPassword(val)
+										setErrors((prev) => ({
+											...prev,
+											confirmPassword: !val.trim()
+												? "Please confirm your password"
+												: val !== newPassword
+													? "Passwords do not match"
+													: "",
+										}))
+									}}
 									error={errors.confirmPassword}
 								/>
 							</div>
@@ -188,11 +247,25 @@ export function PasswordSettingTab() {
 				<div className="flex justify-center pt-4">
 					<button
 						onClick={handleSave}
-						className="bg-foreground text-background rounded-lg px-8 py-3 font-medium transition-colors hover:cursor-pointer">
-						Save Changes
+						className="bg-foreground text-background flex items-center justify-center gap-x-3 rounded-lg px-8 py-3 font-medium transition-colors hover:cursor-pointer">
+						Save Changes {passwordSettingsLoading && <Spinner />}
 					</button>
 				</div>
 			</div>
+
+			<FeedbackModal
+				isOpen={!!changeError}
+				onClose={() => setChangeError("")}
+				title="Something went wrong"
+				description={changeError}
+				buttonCount={1}
+				buttons={[
+					{
+						label: "Close",
+						onClick: () => setChangeError(""),
+					},
+				]}
+			/>
 		</KYBStepWrapper>
 	)
 }

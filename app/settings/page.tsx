@@ -16,7 +16,7 @@ export default function ProfileManagement() {
 		{ id: "profile", label: "Business Profile" },
 		{ id: "team", label: "Team" },
 		{ id: "bankdetails", label: "Bank Details" },
-		{ id: "preference", label: "Preference" },
+		// { id: "preference", label: "Preference" },
 	]
 
 	const renderTabContent = () => {

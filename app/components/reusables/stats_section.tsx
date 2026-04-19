@@ -44,7 +44,7 @@ export const StatsSection = ({
 				const isLast = index === stats.length - 1
 				const ui = uiConfig.find((c) => c.index === index)
 				return (
-					<div key={index} className="flex lg:flex-1 lg:items-center">
+					<div key={index} className="flex lg:flex-1 lg:items-start">
 						{/* Card */}
 						<div
 							className={`flex-1 ${ui?.showButton ? "lg:flex lg:items-center" : ""}`}>

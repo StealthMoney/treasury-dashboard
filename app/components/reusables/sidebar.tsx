@@ -12,7 +12,6 @@ import { Spinner } from "./spinner"
 import { FeedbackModal } from "./feedback_modal"
 import { filterLinks } from "@/app/functions/helpers/available_links"
 import { useProfile } from "@/app/contexts/user_provider"
-import { NavLink } from "@/app/types/general"
 
 export default function Sidebar({
 	open,
