@@ -1,12 +1,15 @@
-export const getDaysLeft = (startDate: string, DueDate: string): string => {
-	if (!startDate || !DueDate) return "N/A"
-	const diff =
-		(new Date(DueDate).getTime() - new Date(startDate).getTime()) /
-		(1000 * 60 * 60 * 24)
+export const getDaysLeft = (dueDate: string): string => {
+	if (!dueDate) return "N/A"
 
+	const now = new Date().getTime()
+	const due = new Date(dueDate).getTime()
+
+	const diff = (due - now) / (1000 * 60 * 60 * 24)
 	const days = Math.ceil(diff)
 
 	if (!Number.isFinite(days)) return "N/A"
 
-	return `${days} ${days === 1 ? "day" : "days"}`
+	if (days < 0) return "Overdue"
+
+	return `${days} ${days === 1 ? "day" : "days"} left`
 }

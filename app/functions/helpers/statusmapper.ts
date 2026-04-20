@@ -39,6 +39,7 @@ export const buildLoanUI = (
 		{ text: "Step 1: Submitted" },
 		{ text: "Step 2: Review" },
 		{ text: "Step 3: Approval" },
+		{ text: "Step 4: Repaid" },
 	]
 
 	let currentStep = 0
@@ -64,6 +65,10 @@ export const buildLoanUI = (
 				currentStep = 2
 				steps[2].text = "Step 3: Approved"
 				break
+			case "REPAID":
+				currentStep = 3
+				steps[2].text = "Step 4: Repaid"
+				break
 
 			default:
 				currentStep = 0
@@ -71,15 +76,13 @@ export const buildLoanUI = (
 	}
 
 	const messageMap: Record<LoanStatus, string> = {
-		REVIEW: `Your request for ${Number(loan.loanAmount).toLocaleString("en-NG", {
-			minimumFractionDigits: 0,
+		REVIEW: `Your request for ${Number(loan.loanAmount).toLocaleString("en-US", {
 			maximumFractionDigits: 2,
 		})} ${loan.currency} is being reviewed.\nThis usually takes 24-48 hours.`,
 
 		APPROVED: `Your loan request for $${Number(loan.loanAmount).toLocaleString(
-			"en-NG",
+			"en-US",
 			{
-				minimumFractionDigits: 0,
 				maximumFractionDigits: 2,
 			}
 		)} ${loan.currency} has been approved.\nFunds will be processed soon.`,
@@ -87,16 +90,13 @@ export const buildLoanUI = (
 		REJECTED: `Unfortunately, your loan request for $${Number(
 			loan.loanAmount
 		).toLocaleString("en-NG", {
-			minimumFractionDigits: 0,
 			maximumFractionDigits: 2,
 		})} ${loan.currency} was not approved.`,
 
 		DISBURSED: `Your loan of ${Number(loan.loanAmount).toLocaleString("en-NG", {
-			minimumFractionDigits: 2,
 			maximumFractionDigits: 2,
 		})} ${loan.currency} has been successfully disbursed. Kindly repay by ${formatDateWithSuffix(loan.loanDueDate)}`,
 		REPAID: `Your loan of ${Number(loan.loanAmount).toLocaleString("en-NG", {
-			minimumFractionDigits: 2,
 			maximumFractionDigits: 2,
 		})} ${loan.currency} has been sucessfully repaid.`,
 	}

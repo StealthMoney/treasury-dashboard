@@ -80,7 +80,7 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
 					{description}{" "}
 					<span className="text-foreground font-semibold">
 						{balance?.toLocaleString("en-US", {
-							minimumFractionDigits: 2,
+							maximumFractionDigits: 2,
 						})}{" "}
 					</span>
 					{assetName && <span className="ml-2">{assetName}</span>}

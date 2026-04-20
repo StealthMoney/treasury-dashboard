@@ -187,6 +187,7 @@ export function ProfileTab({ onSave }: ProfileTabProps) {
 
 				<div className="flex justify-center pt-4">
 					<button
+						disabled
 						onClick={handleSave}
 						className="rounded-lg bg-black px-8 py-3 font-medium text-white transition-colors hover:bg-black/90">
 						Save Changes

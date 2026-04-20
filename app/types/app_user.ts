@@ -1,3 +1,9 @@
+export interface BankDetails {
+	bankName: string
+	accountName: string
+	accountNumber: string
+}
+
 export interface AppuserProps {
 	userId: number
 	login: string
@@ -16,4 +22,6 @@ export interface AppuserProps {
 	profileMenu: string[]
 
 	langKey: string | null
+
+	bankDetails: BankDetails | null
 }

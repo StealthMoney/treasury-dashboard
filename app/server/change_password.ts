@@ -3,7 +3,9 @@ import { getAuthHeaders } from "../functions/auth_header"
 import endpoints from "../config/endpoints"
 import { Result } from "../types/general"
 
-export const changePassword = async (body: string): Promise<Result<string>> => {
+export const changePassword = async (
+	body: string
+): Promise<Result<{ message: string }>> => {
 	try {
 		const session = await getAuthHeaders()
 

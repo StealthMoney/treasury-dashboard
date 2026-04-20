@@ -43,7 +43,55 @@ export interface LoanApplication {
 	interest: number
 }
 
-export type LoanStatusUI = "REVIEW" | "APPROVED" | "REJECTED" | "DISBURSED"
+export interface Pageable {
+	pageNumber: number
+	pageSize: number
+	sort: Sort
+	offset: number
+	paged: boolean
+	unpaged: boolean
+}
+
+export interface Sort {
+	empty: boolean
+	sorted: boolean
+	unsorted: boolean
+}
+
+export interface PaginatedLoans {
+	content: LoanApplication[]
+	pageable: Pageable
+	last: boolean
+	totalPages: number
+	totalElements: number
+	first: boolean
+	size: number
+	number: number
+	sort: Sort
+	numberOfElements: number
+	empty: boolean
+}
+
+export interface PaginatedLoanApplicationResponse {
+	content: LoanApplication[]
+	pageable: Pageable
+	last: boolean
+	totalPages: number
+	totalElements: number
+	first: boolean
+	size: number
+	number: number
+	sort: Sort
+	numberOfElements: number
+	empty: boolean
+}
+
+export type LoanStatusUI =
+	| "REVIEW"
+	| "APPROVED"
+	| "REJECTED"
+	| "DISBURSED"
+	| "REPAID"
 export interface LoanApplicationUI {
 	loanTypeId: number
 	loanStatus: LoanStatusUI

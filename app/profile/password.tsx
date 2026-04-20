@@ -90,7 +90,11 @@ export function PasswordSettingTab() {
 
 				if (response.success) {
 					setChangeError("")
-					showToast(response.data || "Password change successful", "success", 1)
+					showToast(
+						response.data?.message || "Password change successful",
+						"success",
+						1
+					)
 					setOldPassword("")
 					setNewPassword("")
 					setConfirmPassword("")
@@ -114,6 +118,17 @@ export function PasswordSettingTab() {
 			}
 		}
 	}
+
+	const isCriteriaValid = Object.values(criteria).every(Boolean)
+
+	const canSave =
+		!!oldPassword &&
+		!!newPassword &&
+		!!confirmPassword &&
+		isCriteriaValid &&
+		newPassword === confirmPassword &&
+		newPassword !== oldPassword &&
+		!passwordSettingsLoading
 
 	return (
 		<KYBStepWrapper title="Password Settings">
@@ -246,8 +261,9 @@ export function PasswordSettingTab() {
 
 				<div className="flex justify-center pt-4">
 					<button
+						disabled={!canSave}
 						onClick={handleSave}
-						className="bg-foreground text-background flex items-center justify-center gap-x-3 rounded-lg px-8 py-3 font-medium transition-colors hover:cursor-pointer">
+						className={`bg-foreground text-background flex items-center justify-center gap-x-3 rounded-lg px-8 py-3 font-medium transition-colors ${!canSave ? "cursor-not-allowed" : "cursor-pointer"}`}>
 						Save Changes {passwordSettingsLoading && <Spinner />}
 					</button>
 				</div>

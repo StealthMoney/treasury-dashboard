@@ -31,7 +31,7 @@ export default function Sidebar({
 		{ logo: <PiHandCoins />, text: "Credit", href: "/credit" },
 		{ logo: <TbFileAnalytics />, text: "Report", href: "/report" },
 		{ logo: <RiUser3Line />, text: "Profile", href: "/profile" },
-		{ logo: <CiSettings />, text: "Setting", href: "/settings" },
+		{ logo: <CiSettings />, text: "Settings", href: "/settings" },
 	]
 
 	const filteredLinks = filterLinks(user, navLinks)

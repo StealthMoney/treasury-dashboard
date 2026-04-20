@@ -5,9 +5,9 @@ import endpoints from "../config/endpoints"
 import {
 	Result,
 	LoanType,
-	LoanApplication,
 	InitiateLoanRepaymentDetails,
 	RepaymentRecord,
+	PaginatedLoanApplicationResponse,
 } from "../types/general"
 
 export const requestNewCredit = async (
@@ -60,7 +60,7 @@ export const requestNewCredit = async (
 }
 
 export const getCreditHistory = async (): Promise<
-	Result<LoanApplication[]>
+	Result<PaginatedLoanApplicationResponse>
 > => {
 	try {
 		const session = await getAuthHeaders()
@@ -95,7 +95,7 @@ export const getCreditHistory = async (): Promise<
 
 		const response = await res.json()
 
-		return { success: true, data: response as LoanApplication[] }
+		return { success: true, data: response as PaginatedLoanApplicationResponse }
 	} catch (err) {
 		console.error("Something went wrong", err)
 		return {

@@ -30,6 +30,7 @@ import {
 	LoanApplicationUI,
 	LoanStatus,
 	LoanType,
+	PaginatedLoanApplicationResponse,
 	RepaymentRecord,
 } from "../types/general"
 import { useCreditStats } from "../hooks"
@@ -39,6 +40,7 @@ import PageSkeleton from "../components/reusables/page_skeleton"
 import { formatDateWithSuffix } from "../functions/helpers/formatted_date"
 import { getDaysLeft } from "../functions/helpers/days_left"
 import { CopyableText } from "../components/reusables/copyable_text"
+import { getDueDate } from "../functions/helpers/get_due_date"
 
 interface ActiveLoan {
 	id: string
@@ -133,9 +135,7 @@ const creditHistoryColumns = [
 				<p className="text-xs font-semibold text-gray-900 sm:text-sm">
 					{row.loanDueDate ? formatDateWithSuffix(row.loanDueDate) : ""}
 				</p>
-				<p className="text-xs text-gray-500">
-					{getDaysLeft(row.loanStartDate, row.loanDueDate)}
-				</p>
+				<p className="text-xs text-gray-500">{getDaysLeft(row.loanDueDate)}</p>
 			</>
 		),
 	},
@@ -300,11 +300,12 @@ export default function CreditsPage() {
 			value: string
 		}[]
 	>([])
-	const [creditHistoryData, setCreditHistoryData] = useState<LoanApplication[]>(
-		[]
-	)
+	const [creditHistoryData, setCreditHistoryData] =
+		useState<PaginatedLoanApplicationResponse | null>(null)
 
-	const creditStatsData = useCreditStats(creditHistoryData)
+	const creditStatsData = useCreditStats(
+		creditHistoryData ? creditHistoryData.content : []
+	)
 
 	const [errors, setErrors] = useState<{
 		invoice?: string
@@ -327,10 +328,10 @@ export default function CreditsPage() {
 	const pageFetchLoading = creditHistoryLoading || creditTypesLoading
 
 	const { header, image, statusItems, message } = buildLoanUI(
-		creditHistoryData as LoanApplicationUI[]
+		creditHistoryData?.content as LoanApplicationUI[]
 	)
 
-	const loanStatus = creditHistoryData?.[0]?.loanStatus
+	const loanStatus = creditHistoryData?.content?.[0]?.loanStatus
 
 	const titleMap: Record<string, string> = {
 		REVIEW: "Your loan is being reviewed",
@@ -338,7 +339,7 @@ export default function CreditsPage() {
 		REJECTED: "Your previous loan request was rejected",
 	}
 
-	const title = titleMap[loanStatus] ?? ""
+	const title = loanStatus ? titleMap[loanStatus] : ""
 
 	const creditStatsUIConfig: StatUIConfig[] = [
 		// Example: no button here, but you could add later
@@ -431,7 +432,7 @@ export default function CreditsPage() {
 		if (repayStep === 0) {
 			setRepayLoading(true)
 			const payload = {
-				loanReference: creditHistoryData[0].reference,
+				loanReference: creditHistoryData?.content[0].reference,
 			}
 
 			try {
@@ -571,11 +572,12 @@ export default function CreditsPage() {
 	}, [data])
 
 	useEffect(() => {
-		if (creditHistoryData.length > 0) {
-			const value =
-				Number(creditHistoryData[0].loanAmount) +
-				Number(creditHistoryData[0]?.interest)
-			setRepayAmount(value.toString())
+		if (creditHistoryData?.content && creditHistoryData?.content?.length > 0) {
+			const value = (
+				Number(creditHistoryData?.content[0].loanAmount) +
+				Number(creditHistoryData?.content[0]?.interest)
+			).toString()
+			setRepayAmount(value)
 		}
 	}, [creditHistoryData])
 
@@ -791,33 +793,26 @@ export default function CreditsPage() {
 				<div className="space-y-6">
 					<OutstandingCredits
 						total={(
-							Number(creditHistoryData?.[0]?.loanAmount ?? 0) +
-							Number(creditHistoryData?.[0]?.interest ?? 0)
+							Number(creditHistoryData?.content[0]?.loanAmount ?? 0) +
+							Number(creditHistoryData?.content[0]?.interest ?? 0)
 						).toLocaleString("en-US", {
-							minimumFractionDigits: 2,
 							maximumFractionDigits: 2,
 						})}
 						principal={(
-							Number(creditHistoryData?.[0]?.loanAmount ?? 0) +
-							Number(creditHistoryData?.[0]?.interest ?? 0)
+							Number(creditHistoryData?.content[0]?.loanAmount ?? 0) +
+							Number(creditHistoryData?.content[0]?.interest ?? 0)
 						).toLocaleString("en-US", {
-							minimumFractionDigits: 2,
 							maximumFractionDigits: 2,
 						})}
-						interest={Number(creditHistoryData?.[0]?.interest ?? 0).toLocaleString(
-							"en-US",
-							{
-								minimumFractionDigits: 2,
-								maximumFractionDigits: 2,
-							}
-						)}
+						interest={Number(
+							creditHistoryData?.content[0]?.interest ?? 0
+						).toLocaleString("en-US", {
+							maximumFractionDigits: 2,
+						})}
 						dueDate={formatDateWithSuffix(
-							creditHistoryData?.[0]?.loanDueDate?.toString()
+							creditHistoryData?.content[0]?.loanDueDate?.toString() || ""
 						)}
-						daysLeft={getDaysLeft(
-							creditHistoryData?.[0]?.loanStartDate,
-							creditHistoryData?.[0]?.loanDueDate
-						)}
+						daysLeft={getDaysLeft(creditHistoryData?.content[0]?.loanDueDate || "")}
 					/>
 
 					<div className="space-y-2">
@@ -884,7 +879,7 @@ export default function CreditsPage() {
 								text: `${repayCurrency === "NGN" ? "₦" : "$"} ${Number(
 									repaySuccessResponse?.amountDue || 0
 								).toLocaleString("en-NG", {
-									minimumFractionDigits: 0,
+									maximumFractionDigits: 2,
 								})}`,
 								copy: String(repaySuccessResponse?.amountDue || 0),
 							},
@@ -987,7 +982,6 @@ export default function CreditsPage() {
 						<span className="text-[14px] text-(--text-1)">Credit Amount:</span>
 						<span className="text-foreground text-[14px] font-semibold">
 							{Number(borrowAmount).toLocaleString("en-US", {
-								minimumFractionDigits: 2,
 								maximumFractionDigits: 2,
 							})}{" "}
 							{borrowCurrency}
@@ -1002,7 +996,7 @@ export default function CreditsPage() {
 					<div className="flex justify-between border-b border-(--grey-1) py-3">
 						<span className="text-[14px] text-(--text-1)">Due Date:</span>
 						<span className="text-foreground text-[14px] font-semibold">
-							{"05-09-2026"}
+							{getDueDate(loanDuration)}
 						</span>
 					</div>
 					<div className="flex justify-between border-b border-(--grey-1) py-3">
@@ -1010,7 +1004,7 @@ export default function CreditsPage() {
 						<span className="text-foreground text-[14px] font-semibold">
 							{((interestRate ?? 0) * (Number(borrowAmount) ?? 0)).toLocaleString(
 								"en-US",
-								{ maximumFractionDigits: 2, minimumFractionDigits: 2 }
+								{ maximumFractionDigits: 2 }
 							)}{" "}
 							NGN
 						</span>
@@ -1102,7 +1096,7 @@ export default function CreditsPage() {
 
 	const shouldShowModal = borrowFundError
 
-	const tableData = creditHistoryData.map((item, index) => ({
+	const tableData = creditHistoryData?.content.map((item, index) => ({
 		...item,
 		id: index,
 	}))
@@ -1158,7 +1152,7 @@ export default function CreditsPage() {
 							<KybBanner kybStatus={kybStatus} onAction={handleUpgradeAccount} />
 						)}
 						{/* Stats Cards */}
-						{creditHistoryData.length > 0 && (
+						{creditHistoryData?.content && creditHistoryData?.content?.length > 0 && (
 							<StatsSection
 								actionDisabled={!canPerformActions}
 								stats={creditStatsData}
@@ -1169,7 +1163,7 @@ export default function CreditsPage() {
 						)}
 						{/* Active Loans Table */}
 						<Table
-							data={tableData}
+							data={tableData || []}
 							columns={creditHistoryColumns}
 							extraHeader="Credit History"
 							kybStatus={kybStatus}
@@ -1238,8 +1232,8 @@ export default function CreditsPage() {
 									message3: "Bank Transfer",
 									col4: " Amount Paid:",
 									message4: (
-										Number(creditHistoryData[0]?.loanAmount) +
-										Number(creditHistoryData[0]?.interest)
+										Number(creditHistoryData?.content[0]?.loanAmount) +
+										Number(creditHistoryData?.content[0]?.interest)
 									).toLocaleString("en-US", { maximumFractionDigits: 2 }),
 								}}
 							/>
