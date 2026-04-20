@@ -13,7 +13,7 @@ export const changePassword = async (
 			return { success: false, error: "No session found" }
 		}
 
-		const url = endpoints().auth["change-passowrd"]
+		const url = endpoints().auth["change-password"]
 
 		const res = await fetch(url, {
 			method: "POST",
