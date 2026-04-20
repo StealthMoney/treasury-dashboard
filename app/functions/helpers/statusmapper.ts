@@ -98,7 +98,7 @@ export const buildLoanUI = (
 		})} ${loan.currency} has been successfully disbursed. Kindly repay by ${formatDateWithSuffix(loan.loanDueDate)}`,
 		REPAID: `Your loan of ${Number(loan.loanAmount).toLocaleString("en-NG", {
 			maximumFractionDigits: 2,
-		})} ${loan.currency} has been sucessfully repaid.`,
+		})} ${loan.currency} has been successfully repaid.`,
 	}
 
 	const statusItemsMap: Record<LoanStatus, StatusItem[]> = {
