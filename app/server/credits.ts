@@ -59,9 +59,9 @@ export const requestNewCredit = async (
 	}
 }
 
-export const getCreditHistory = async (): Promise<
-	Result<PaginatedLoanApplicationResponse>
-> => {
+export const getCreditHistory = async (
+	param?: string
+): Promise<Result<PaginatedLoanApplicationResponse>> => {
 	try {
 		const session = await getAuthHeaders()
 
@@ -69,7 +69,7 @@ export const getCreditHistory = async (): Promise<
 			return { success: false, error: "No session found" }
 		}
 
-		const url = endpoints().credit.getcredithistory
+		const url = endpoints(param).credit.getcredithistory
 
 		const res = await fetch(url, {
 			method: "GET",

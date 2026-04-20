@@ -21,7 +21,7 @@ const endpoints = (params?: string | number, params2?: string | number) => {
 
 	const credit = {
 		requestnewcredit: `${envURL}/credit-lines`,
-		getcredithistory: `${envURL}/credit-lines`,
+		getcredithistory: `${envURL}/credit-lines?${params}`,
 		"credit-type": `${envURL}/credit-line-types`,
 		"initiate-repay": `${envURL}/repayments/initiate`,
 		"finish-repay": `${envURL}/repayments/paid`,

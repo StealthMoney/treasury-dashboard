@@ -135,7 +135,9 @@ const creditHistoryColumns = [
 				<p className="text-xs font-semibold text-gray-900 sm:text-sm">
 					{row.loanDueDate ? formatDateWithSuffix(row.loanDueDate) : ""}
 				</p>
-				<p className="text-xs text-gray-500">{getDaysLeft(row.loanDueDate)}</p>
+				<p className="text-xs text-gray-500">
+					{row.loanStatus === "REPAID" ? "" : getDaysLeft(row.loanDueDate)}
+				</p>
 			</>
 		),
 	},
@@ -322,7 +324,16 @@ export default function CreditsPage() {
 		"ACTIVE" | "PENDING_REVIEW" | "SUSPENDED" | null
 	>(null)
 
-	const { data, refetch, isLoading: creditHistoryLoading } = useCreditHistory()
+	const [currentPage, setCurrentPage] = useState(0)
+	const pageSize = creditHistoryData?.size ?? 10
+
+	const {
+		data,
+		refetch,
+		isLoading: creditHistoryLoading,
+	} = useCreditHistory({
+		page: String(currentPage),
+	})
 	const { data: creditTypes, isLoading: creditTypesLoading } = useCreditTypes()
 
 	const pageFetchLoading = creditHistoryLoading || creditTypesLoading
@@ -1169,6 +1180,14 @@ export default function CreditsPage() {
 							kybStatus={kybStatus}
 							tableButtonClick={handlBorrowFund}
 							canPerformAction={!canPerformActions}
+							pagination={{
+								currentPage: currentPage + 1,
+								totalItems: creditHistoryData?.totalElements ?? 0,
+								itemsPerPage: pageSize,
+								onPageChange: (page) => {
+									setCurrentPage(page - 1)
+								},
+							}}
 						/>
 					</div>
 
