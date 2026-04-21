@@ -20,10 +20,10 @@ interface ProfileData {
 
 export function ProfileTab({ onSave }: ProfileTabProps) {
 	const [data, setData] = useState<ProfileData>({
-		businessName: "Moneywave",
-		businessEmail: "moneywave@gmail.com",
-		businessWebsite: "moneywave.com",
-		businessEntity: "Sole Proprietorship",
+		businessName: "",
+		businessEmail: "",
+		businessWebsite: "",
+		businessEntity: "",
 	})
 
 	const [logoPreview, setLogoPreview] = useState<string | null>(null)
@@ -87,7 +87,7 @@ export function ProfileTab({ onSave }: ProfileTabProps) {
 	const handleSave = () => {
 		if (validateForm()) {
 			onSave?.(data)
-			alert("Profile saved successfully!")
+			// alert("Profile saved successfully!")
 		}
 	}
 
@@ -184,8 +184,9 @@ export function ProfileTab({ onSave }: ProfileTabProps) {
 
 				<div className="flex justify-center pt-4">
 					<button
+						disabled
 						onClick={handleSave}
-						className="rounded-lg bg-black px-8 py-3 font-medium text-white transition-colors hover:bg-black/90">
+						className="cursor-not-allowed rounded-lg bg-black px-8 py-3 font-medium text-white transition-colors hover:bg-black/90">
 						Save Changes
 					</button>
 				</div>

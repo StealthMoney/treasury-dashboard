@@ -14,7 +14,7 @@ export default function ProfileManagement() {
 
 	const tabs: Array<{ id: TabType; label: string }> = [
 		{ id: "profile", label: "Business Profile" },
-		{ id: "team", label: "Team" },
+		// { id: "team", label: "Team" },
 		{ id: "bankdetails", label: "Bank Details" },
 		// { id: "preference", label: "Preference" },
 	]
