@@ -10,7 +10,7 @@ export default function Profile() {
 	const [activeTab, setActiveTab] = useState<TabType>("profile")
 
 	const tabs: Array<{ id: TabType; label: string }> = [
-		{ id: "profile", label: "Admin Profile" },
+		{ id: "profile", label: "Profile" },
 		{ id: "password", label: "Password Setting" },
 	]
 

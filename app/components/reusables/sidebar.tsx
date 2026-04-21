@@ -12,7 +12,6 @@ import { Spinner } from "./spinner"
 import { FeedbackModal } from "./feedback_modal"
 import { filterLinks } from "@/app/functions/helpers/available_links"
 import { useProfile } from "@/app/contexts/user_provider"
-import { NavLink } from "@/app/types/general"
 
 export default function Sidebar({
 	open,
@@ -32,7 +31,7 @@ export default function Sidebar({
 		{ logo: <PiHandCoins />, text: "Credit", href: "/credit" },
 		{ logo: <TbFileAnalytics />, text: "Report", href: "/report" },
 		{ logo: <RiUser3Line />, text: "Profile", href: "/profile" },
-		{ logo: <CiSettings />, text: "Setting", href: "/settings" },
+		{ logo: <CiSettings />, text: "Settings", href: "/settings" },
 	]
 
 	const filteredLinks = filterLinks(user, navLinks)

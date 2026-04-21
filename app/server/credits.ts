@@ -5,9 +5,9 @@ import endpoints from "../config/endpoints"
 import {
 	Result,
 	LoanType,
-	LoanApplication,
 	InitiateLoanRepaymentDetails,
 	RepaymentRecord,
+	PaginatedLoanApplicationResponse,
 } from "../types/general"
 
 export const requestNewCredit = async (
@@ -59,9 +59,9 @@ export const requestNewCredit = async (
 	}
 }
 
-export const getCreditHistory = async (): Promise<
-	Result<LoanApplication[]>
-> => {
+export const getCreditHistory = async (
+	param?: string
+): Promise<Result<PaginatedLoanApplicationResponse>> => {
 	try {
 		const session = await getAuthHeaders()
 
@@ -69,7 +69,7 @@ export const getCreditHistory = async (): Promise<
 			return { success: false, error: "No session found" }
 		}
 
-		const url = endpoints().credit.getcredithistory
+		const url = endpoints(param).credit.getcredithistory
 
 		const res = await fetch(url, {
 			method: "GET",
@@ -95,7 +95,7 @@ export const getCreditHistory = async (): Promise<
 
 		const response = await res.json()
 
-		return { success: true, data: response as LoanApplication[] }
+		return { success: true, data: response as PaginatedLoanApplicationResponse }
 	} catch (err) {
 		console.error("Something went wrong", err)
 		return {
