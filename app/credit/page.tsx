@@ -592,8 +592,6 @@ export default function CreditsPage() {
 		}
 	}, [creditHistoryData])
 
-	console.log(repaySuccessResponse)
-
 	const handleModalClose = () => {
 		setBorrowFundError(false)
 		setBorrowFundErrorMessage("")
@@ -1064,13 +1062,13 @@ export default function CreditsPage() {
 			loanTypeId: Number(loanTypeId),
 
 			invoice: {
-				base64: invoiceBase64 || "",
+				content: invoiceBase64 || "",
 				contentType: invoiceFile?.type || "",
 				fileName: invoiceFile?.name || "",
 			},
 
 			bankStatement: {
-				base64: bankBase64 || "",
+				content: bankBase64 || "",
 				contentType: bankStatementFile?.type || "",
 				fileName: bankStatementFile?.name || "",
 			},
