@@ -5,6 +5,8 @@ import { TextField, SelectField } from "../reusables/general_inputs"
 import { AiOutlineCloudUpload } from "react-icons/ai"
 import { KYBStepWrapper } from "../reusables/kybstepwraper"
 import Image from "next/image"
+import { useProfile } from "@/app/contexts/user_provider"
+import PageSkeleton from "../reusables/page_skeleton"
 
 interface ProfileTabProps {
 	onSave?: (data: ProfileData) => void
@@ -19,11 +21,13 @@ interface ProfileData {
 }
 
 export function ProfileTab({ onSave }: ProfileTabProps) {
+	const { user, loading } = useProfile()
+
 	const [data, setData] = useState<ProfileData>({
-		businessName: "",
-		businessEmail: "",
-		businessWebsite: "",
-		businessEntity: "",
+		businessName: user?.businessInfo?.businessName || "",
+		businessEmail: user?.businessInfo?.email || "",
+		businessWebsite: user?.businessInfo?.website || "",
+		businessEntity: user?.businessInfo?.businessType || "",
 	})
 
 	const [logoPreview, setLogoPreview] = useState<string | null>(null)
@@ -89,6 +93,16 @@ export function ProfileTab({ onSave }: ProfileTabProps) {
 			onSave?.(data)
 			// alert("Profile saved successfully!")
 		}
+	}
+
+	if (loading) {
+		return (
+			<div className="bg-background min-h-screen w-full px-6">
+				<div className="w-full overflow-x-auto md:max-w-[80%]">
+					<PageSkeleton />
+				</div>
+			</div>
+		)
 	}
 
 	return (
@@ -174,6 +188,7 @@ export function ProfileTab({ onSave }: ProfileTabProps) {
 									"Limited Liability Company",
 									"Corporation",
 									"Non-profit",
+									"Other",
 								]}
 								placeholder="Select business entity"
 								error={errors.businessEntity}
