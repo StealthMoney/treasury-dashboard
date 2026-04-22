@@ -11,7 +11,6 @@ import {
 	splitLeft,
 	splitRight,
 } from "../components/reusables/classes"
-import Kyc_status_banner from "../components/reusables/kyc_status_banner"
 import { FaArrowLeft } from "react-icons/fa"
 import { FilePickerField } from "../components/reusables/general_inputs"
 import { uploadKybDoc } from "../server/upgrade_account"
@@ -22,6 +21,7 @@ import { useBanklists, useBankverify } from "../hooks/use_bank_list"
 import { Banklist } from "../types/general"
 import { FeedbackModal } from "../components/reusables/feedback_modal"
 import Image from "next/image"
+import { KYBReviewScreens } from "../components/reusables/kybreview"
 
 interface OwnerInfo {
 	id: string
@@ -248,6 +248,8 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 	const [chosenBankCode, setChosenBankCode] = useState<Banklist | null>(null)
 	const [enabled, setEnabled] = useState(false)
 	const [submitError, setSubmitError] = useState<string | null>(null)
+	const [isReviewMode, setIsReviewMode] = useState(false)
+	const [reviewStep, setReviewStep] = useState(1)
 	const { user } = useProfile()
 
 	const { data: banklists } = useBanklists()
@@ -483,7 +485,13 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 
 	const handleNext = () => {
 		if (validateStep(currentStep)) {
-			setCurrentStep(currentStep + 1)
+			// After step 6 is completed, enter review mode
+			if (currentStep === 6) {
+				setIsReviewMode(true)
+				setReviewStep(1)
+			} else {
+				setCurrentStep(currentStep + 1)
+			}
 		}
 	}
 
@@ -672,12 +680,16 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 	}, [formData.bankName, banklists])
 
 	useEffect(() => {
-		if (!formData.bankName || formData.bankName === "") {
+		if (user?.kybStatus === "ACTIVE" || user?.kybStatus === "PENDING_REVIEW") {
 			setEnabled(false)
+			return
+		} else if (!formData.bankName || formData.bankName === "") {
+			setEnabled(false)
+			return
 		} else {
 			setEnabled(true)
 		}
-	}, [formData.bankName])
+	}, [formData.bankName, user?.kybStatus])
 
 	useEffect(() => {
 		if (formData.bankName !== "" && formData.accountNumber !== "") {
@@ -688,6 +700,23 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 	useEffect(() => {
 		updateFormData({ accountName: verifyInfo?.data?.accountName })
 	}, [verifyInfo?.data, updateFormData])
+
+	if (isReviewMode) {
+		return (
+			<KYBReviewScreens
+				formData={formData}
+				onBack={() => {
+					setIsReviewMode(false)
+					setCurrentStep(6)
+				}}
+				onEditStep={(step: number) => {
+					setIsReviewMode(false)
+					setCurrentStep(step)
+				}}
+				onComplete={handleSubmit}
+			/>
+		)
+	}
 
 	return (
 		<div className="bg-background min-h-screen w-full px-6 py-8 md:max-w-[80%]">
@@ -723,7 +752,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 					<div className="h-full w-[42%] border-t border-t-(--grey-1)"></div>
 					<p className="text-foreground text-s[16px] font-medium tracking-widest lg:mx-2">
 						KYB STEP {currentStep}/
-						<span className="text-(--text-1) lg:w-[20%]">7</span>
+						<span className="text-(--text-1) lg:w-[20%]">6</span>
 					</p>
 					<div className="h-full w-[42%] border-t border-t-(--grey-1)"></div>
 				</div>
@@ -1664,26 +1693,6 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 									<p className="text-sm text-(--red-1)">{errors.accountName}</p>
 								)}
 							</div>
-						</div>
-					</KYBStepWrapper>
-				)}
-
-				{/* Step 7: Service of Agreement */}
-				{currentStep === 7 && (
-					<KYBStepWrapper
-						title={<p className="font-semibold text-gray-900">Notice</p>}
-						footer={
-							<div className="flex flex-col gap-4 md:flex-row">
-								<button onClick={handlePrevious} className={baseButtonWhite}>
-									Go Back
-								</button>
-								<button onClick={handleSubmit} className={baseButtonBlack}>
-									Submit {loading && <Spinner />}
-								</button>
-							</div>
-						}>
-						<div className="space-y-4">
-							<Kyc_status_banner status="pending" />
 						</div>
 					</KYBStepWrapper>
 				)}
