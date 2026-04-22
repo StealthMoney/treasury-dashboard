@@ -807,9 +807,8 @@ export default function CreditsPage() {
 						).toLocaleString("en-US", {
 							maximumFractionDigits: 2,
 						})}
-						principal={(
-							Number(creditHistoryData?.content[0]?.loanAmount ?? 0) +
-							Number(creditHistoryData?.content[0]?.interest ?? 0)
+						principal={Number(
+							creditHistoryData?.content[0]?.loanAmount ?? 0
 						).toLocaleString("en-US", {
 							maximumFractionDigits: 2,
 						})}

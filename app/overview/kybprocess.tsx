@@ -11,84 +11,15 @@ import {
 	splitLeft,
 	splitRight,
 } from "../components/reusables/classes"
-import Kyc_status_banner from "../components/reusables/kyc_status_banner"
 import { FaArrowLeft } from "react-icons/fa"
 import { FilePickerField } from "../components/reusables/general_inputs"
 import { uploadKybDoc } from "../server/upgrade_account"
-import { Spinner } from "../components/reusables/spinner"
 import { fileToBase64 } from "../functions/helpers/base64"
 import { useProfile } from "../contexts/user_provider"
 import { useBanklists, useBankverify } from "../hooks/use_bank_list"
 import { Banklist } from "../types/general"
-import { FeedbackModal } from "../components/reusables/feedback_modal"
-import Image from "next/image"
-
-interface OwnerInfo {
-	id: string
-	firstName: string
-	lastName: string
-	email: string
-	phoneNumber: string
-	dayOfBirth: string
-	monthOfBirth: string
-	yearOfBirth: string
-	idDoc1: string
-	idNumber1: string
-	idUpload: File | null
-	homeState: string
-	homeCity: string
-	homePostalCode: string
-	homeStreet: string
-	homeProofUpload: File | null
-	bvn: string
-}
-
-interface KYBFormData {
-	// Step 1
-	companyName: string
-	businessDescription: string
-	staffSize: string
-	annualSalesVolume: string
-	annualSalesVolumeCurrency: string
-	industry: string
-	businessType: string
-	cacNumber: string
-
-	// Step 2
-	businessEmail: string
-	supportEmail: string
-	disputeEmail: string
-	phoneNumber: string
-	phoneNumberCountry: string
-	website: string
-	linkedin: string
-	twitter: string
-	instagram: string
-
-	// Step 3
-	officeCountry: string
-	officeState: string
-	officeCity: string
-	officePostalCode: string
-	officeStreet: string
-
-	// Step 4 - Now an array of owners
-	owners: OwnerInfo[]
-
-	// Step 5
-	incorporationDoc: File | null
-	taxFilingDoc: File | null
-	registrationStatus: File | null
-	mouDoc: File | null
-	boardRegisterDoc: File | null
-	proofOfAddressDoc: File | null
-	supportingDoc: File[]
-
-	// Step 6
-	bankName: string
-	accountNumber: string
-	accountName: string
-}
+import { KYBReviewScreens } from "../components/reusables/kybreview"
+import { OwnerInfo, KYBFormData } from "../types/general"
 
 const initialFormData: KYBFormData = {
 	companyName: "",
@@ -247,10 +178,14 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 	const [loading, setLoading] = useState(false)
 	const [chosenBankCode, setChosenBankCode] = useState<Banklist | null>(null)
 	const [enabled, setEnabled] = useState(false)
+	const [enabledList, setEnabledList] = useState(false)
 	const [submitError, setSubmitError] = useState<string | null>(null)
+	const [isReviewMode, setIsReviewMode] = useState(false)
+	const [reviewStep, setReviewStep] = useState(1)
+	const [reviewTrack, setReviewTrack] = useState(false)
 	const { user } = useProfile()
 
-	const { data: banklists } = useBanklists()
+	const { data: banklists } = useBanklists(enabledList)
 	const { data: verifyInfo, refetch } = useBankverify(
 		enabled,
 		setEnabled,
@@ -319,171 +254,205 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 		return () => setFormData(initialFormData)
 	}, [])
 
-	const validateStep = (step: number) => {
-		const newErrors: Record<string, string> = {}
+	const getStepErrors = useCallback(
+		(step: number) => {
+			const newErrors: Record<string, string> = {}
 
-		switch (step) {
-			case 1:
-				if (!formData.companyName)
-					newErrors.companyName = "Company Name is required"
-				if (!formData.businessDescription)
-					newErrors.businessDescription = "Business Description is required"
-				if (!formData.staffSize) newErrors.staffSize = "Staff Size is required"
-				if (!formData.annualSalesVolume)
-					newErrors.annualSalesVolume = "Annual Projected Sales Volume is required"
-				else if (
-					isNaN(Number(formData.annualSalesVolume)) ||
-					Number(formData.annualSalesVolume) <= 0
-				)
-					newErrors.annualSalesVolume =
-						"Enter a valid positive number (e.g. 5000000)"
-				if (!formData.industry) newErrors.industry = "Industry is required"
-				if (!formData.businessType)
-					newErrors.businessType = "Business Type is required"
-				if (!formData.cacNumber) newErrors.cacNumber = "CAC number is required"
-				else if (!/^rc\d+$/i.test(formData.cacNumber))
-					newErrors.cacNumber = "CAC number must start with RC (e.g. RC1234567)"
-				else if (!/^rc\d{6,}$/i.test(formData.cacNumber)) {
-					newErrors.cacNumber = "CAC format invalid" // at least 6digits after rc
-				}
-				break
+			// SAME switch logic here, no setErrors
+			switch (step) {
+				case 1:
+					if (!formData.companyName)
+						newErrors.companyName = "Company Name is required"
+					if (!formData.businessDescription)
+						newErrors.businessDescription = "Business Description is required"
+					if (!formData.staffSize) newErrors.staffSize = "Staff Size is required"
+					if (!formData.annualSalesVolume)
+						newErrors.annualSalesVolume = "Annual Projected Sales Volume is required"
+					else if (
+						isNaN(Number(formData.annualSalesVolume)) ||
+						Number(formData.annualSalesVolume) <= 0
+					)
+						newErrors.annualSalesVolume =
+							"Enter a valid positive number (e.g. 5000000)"
+					if (!formData.industry) newErrors.industry = "Industry is required"
+					if (!formData.businessType)
+						newErrors.businessType = "Business Type is required"
+					if (!formData.cacNumber) newErrors.cacNumber = "CAC number is required"
+					else if (!/^rc\d+$/i.test(formData.cacNumber))
+						newErrors.cacNumber = "CAC number must start with RC (e.g. RC1234567)"
+					else if (!/^rc\d{6,}$/i.test(formData.cacNumber)) {
+						newErrors.cacNumber = "CAC format invalid"
+					}
+					break
 
-			case 2:
-				if (!formData.businessEmail)
-					newErrors.businessEmail = "Business Email is required"
-				else if (!isValidEmail(formData.businessEmail))
-					newErrors.businessEmail = "Enter a valid email (e.g. info@company.com)"
+				case 2:
+					if (!formData.businessEmail)
+						newErrors.businessEmail = "Business Email is required"
+					else if (!isValidEmail(formData.businessEmail))
+						newErrors.businessEmail = "Enter a valid email (e.g. info@company.com)"
 
-				if (!formData.phoneNumber)
-					newErrors.phoneNumber = "Phone Number is required"
-				else if (!isValidPhone(formData.phoneNumber))
-					newErrors.phoneNumber = "Include country code (e.g. +2348012345678)"
+					if (formData.disputeEmail !== "" && !isValidEmail(formData.disputeEmail))
+						newErrors.disputeEmail = "Enter a valid email (e.g. info@company.com)"
 
-				if (!formData.website) newErrors.website = "Website is required"
-				else if (!isValidWebsite(formData.website))
-					newErrors.website = "Enter a valid URL (e.g. https://company.com)"
+					if (!formData.phoneNumber)
+						newErrors.phoneNumber = "Phone Number is required"
+					else if (!isValidPhone(formData.phoneNumber))
+						newErrors.phoneNumber = "Include country code (e.g. +2348012345678)"
 
-				// optional socials – validate format only if provided
-				if (formData.linkedin && !isValidWebsite(formData.linkedin))
-					newErrors.linkedin =
-						"Enter a valid LinkedIn URL (e.g. https://linkedin.com/company/name)"
-				if (formData.twitter && !isValidWebsite(formData.twitter))
-					newErrors.twitter =
-						"Enter a valid Twitter URL (e.g. https://twitter.com/handle)"
-				if (formData.instagram && !isValidWebsite(formData.instagram))
-					newErrors.instagram =
-						"Enter a valid Instagram URL (e.g. https://instagram.com/handle)"
-				break
+					if (!formData.website) newErrors.website = "Website is required"
+					else if (!isValidWebsite(formData.website))
+						newErrors.website = "Enter a valid URL (e.g. https://company.com)"
 
-			case 3:
-				if (!formData.officeCountry) newErrors.officeCountry = "Country is required"
-				if (!formData.officeState)
-					newErrors.officeState = "State or Region is required"
-				if (!formData.officeCity) newErrors.officeCity = "City is required"
-				if (!formData.officePostalCode)
-					newErrors.officePostalCode = "Postal Code is required"
-				else if (!/^\d{5,10}$/.test(formData.officePostalCode))
-					newErrors.officePostalCode = "Enter a valid postal code (e.g. 100001)"
-				if (!formData.officeStreet)
-					newErrors.officeStreet = "Street Address is required"
-				break
+					if (formData.linkedin && !isValidWebsite(formData.linkedin))
+						newErrors.linkedin =
+							"Enter a valid LinkedIn URL (e.g. https://linkedin.com/company/name)"
+					if (formData.twitter && !isValidWebsite(formData.twitter))
+						newErrors.twitter =
+							"Enter a valid Twitter URL (e.g. https://twitter.com/handle)"
+					if (formData.instagram && !isValidWebsite(formData.instagram))
+						newErrors.instagram =
+							"Enter a valid Instagram URL (e.g. https://instagram.com/handle)"
+					break
 
-			case 4:
-				formData.owners.forEach((owner) => {
-					if (!owner.firstName)
-						newErrors[`owner_${owner.id}_firstName`] = "First Name is required"
-					if (!owner.lastName)
-						newErrors[`owner_${owner.id}_lastName`] = "Last Name is required"
-					if (!owner.email)
-						newErrors[`owner_${owner.id}_email`] = "Email is required"
-					else if (!isValidEmail(owner.email))
-						newErrors[`owner_${owner.id}_email`] =
-							"Enter a valid email (e.g. info@company.com)"
+				case 3:
+					if (!formData.officeCountry)
+						newErrors.officeCountry = "Country is required"
+					if (!formData.officeState)
+						newErrors.officeState = "State or Region is required"
+					if (!formData.officeCity) newErrors.officeCity = "City is required"
+					if (!formData.officePostalCode)
+						newErrors.officePostalCode = "Postal Code is required"
+					else if (!/^\d{5,10}$/.test(formData.officePostalCode))
+						newErrors.officePostalCode = "Enter a valid postal code (e.g. 100001)"
+					if (!formData.officeStreet)
+						newErrors.officeStreet = "Street Address is required"
+					break
 
-					if (!owner.phoneNumber)
-						newErrors[`owner_${owner.id}_phoneNumber`] = "Phone Number is required"
-					else if (!/^\+\d{7,15}$/.test(owner.phoneNumber))
-						newErrors[`owner_${owner.id}_phoneNumber`] =
-							"Include country code (e.g. +2348012345678)"
+				case 4:
+					formData.owners.forEach((owner) => {
+						if (!owner.firstName)
+							newErrors[`owner_${owner.id}_firstName`] = "First Name is required"
+						if (!owner.lastName)
+							newErrors[`owner_${owner.id}_lastName`] = "Last Name is required"
+						if (!owner.email)
+							newErrors[`owner_${owner.id}_email`] = "Email is required"
+						else if (!isValidEmail(owner.email))
+							newErrors[`owner_${owner.id}_email`] =
+								"Enter a valid email (e.g. info@company.com)"
 
-					if (!owner.bvn) newErrors[`owner_${owner.id}_bvn`] = "BVN is required"
-					else if (isNaN(Number(owner.bvn)) || owner.bvn.length !== 11)
-						newErrors[`owner_${owner.id}_bvn`] =
-							"Enter a valid 11-digit BVN (e.g. 12345678901)"
+						if (!owner.phoneNumber)
+							newErrors[`owner_${owner.id}_phoneNumber`] = "Phone Number is required"
+						else if (!/^\+\d{7,15}$/.test(owner.phoneNumber))
+							newErrors[`owner_${owner.id}_phoneNumber`] =
+								"Include country code (e.g. +2348012345678)"
 
-					if (!owner.dayOfBirth)
-						newErrors[`owner_${owner.id}_dayOfBirth`] = "Day of Birth is required"
-					if (!owner.monthOfBirth)
-						newErrors[`owner_${owner.id}_monthOfBirth`] = "Month of Birth is required"
-					if (!owner.yearOfBirth)
-						newErrors[`owner_${owner.id}_yearOfBirth`] = "Year of Birth is required"
-					if (!owner.idDoc1)
-						newErrors[`owner_${owner.id}_idDoc1`] =
-							"Identification Document is required"
-					if (!owner.idNumber1)
-						newErrors[`owner_${owner.id}_idNumber1`] =
-							"Identification Number is required"
-					if (!owner.idUpload)
-						newErrors[`owner_${owner.id}_idUpload`] =
-							"Identification Document Upload is required"
-					if (!owner.homeState)
-						newErrors[`owner_${owner.id}_homeState`] = "State or Region is required"
-					if (!owner.homeCity)
-						newErrors[`owner_${owner.id}_homeCity`] = "City is required"
-					if (!owner.homePostalCode)
-						newErrors[`owner_${owner.id}_homePostalCode`] = "Postal Code is required"
-					if (!owner.homeStreet)
-						newErrors[`owner_${owner.id}_homeStreet`] = "Street Address is required"
-					if (!owner.homeProofUpload)
-						newErrors[`owner_${owner.id}_homeProofUpload`] =
-							"Proof of Address Upload is required"
-				})
-				break
+						if (!owner.bvn) newErrors[`owner_${owner.id}_bvn`] = "BVN is required"
+						else if (isNaN(Number(owner.bvn)) || owner.bvn.length !== 11)
+							newErrors[`owner_${owner.id}_bvn`] =
+								"Enter a valid 11-digit BVN (e.g. 12345678901)"
 
-			case 5:
-				// Required docs (marked with *)
-				if (!formData.incorporationDoc)
-					newErrors.incorporationDoc = "Certification of Incorporation is required"
-				if (!formData.registrationStatus)
-					newErrors.registrationStatus = "Status of Registration is required"
-				if (!formData.mouDoc)
-					newErrors.mouDoc = "Memorandum of Understanding is required"
-				if (!formData.boardRegisterDoc)
-					newErrors.boardRegisterDoc = "Register of Board of Directors is required"
-				if (!formData.proofOfAddressDoc)
-					newErrors.proofOfAddressDoc = "Proof of Address is required"
-				if (!formData.taxFilingDoc)
-					newErrors.taxFilingDoc = "Tax Document is required"
-				break
+						if (!owner.dayOfBirth)
+							newErrors[`owner_${owner.id}_dayOfBirth`] = "Day of Birth is required"
+						if (!owner.monthOfBirth)
+							newErrors[`owner_${owner.id}_monthOfBirth`] =
+								"Month of Birth is required"
+						if (!owner.yearOfBirth)
+							newErrors[`owner_${owner.id}_yearOfBirth`] = "Year of Birth is required"
+						if (!owner.idDoc1)
+							newErrors[`owner_${owner.id}_idDoc1`] =
+								"Identification Document is required"
+						if (!owner.idNumber1)
+							newErrors[`owner_${owner.id}_idNumber1`] =
+								"Identification Number is required"
+						if (!owner.idUpload)
+							newErrors[`owner_${owner.id}_idUpload`] =
+								"Identification Document Upload is required"
+						if (!owner.homeState)
+							newErrors[`owner_${owner.id}_homeState`] = "State or Region is required"
+						if (!owner.homeCity)
+							newErrors[`owner_${owner.id}_homeCity`] = "City is required"
+						if (!owner.homePostalCode)
+							newErrors[`owner_${owner.id}_homePostalCode`] = "Postal Code is required"
+						if (!owner.homeStreet)
+							newErrors[`owner_${owner.id}_homeStreet`] = "Street Address is required"
+						if (!owner.homeProofUpload)
+							newErrors[`owner_${owner.id}_homeProofUpload`] =
+								"Proof of Address Upload is required"
+					})
+					break
 
-			case 6:
-				if (!formData.bankName) newErrors.bankName = "Bank Name is required"
-				if (!formData.accountNumber)
-					newErrors.accountNumber = "Account Number is required"
-				else if (!isValidAccountNumber(formData.accountNumber))
-					newErrors.accountNumber =
-						"Enter a valid 10-digit account number (e.g. 0123456789)"
-				if (!formData.accountName)
-					newErrors.accountName = "Account Name is required"
-				else if (
-					!verifyInfo ||
-					verifyInfo?.responseCode !== "000" ||
-					!verifyInfo?.successful
-				)
-					newErrors.accountName = "Could not validate given bank details"
-				break
+				case 5:
+					if (!formData.incorporationDoc)
+						newErrors.incorporationDoc = "Certification of Incorporation is required"
+					if (!formData.registrationStatus)
+						newErrors.registrationStatus = "Status of Registration is required"
+					if (!formData.mouDoc)
+						newErrors.mouDoc = "Memorandum of Understanding is required"
+					if (!formData.boardRegisterDoc)
+						newErrors.boardRegisterDoc = "Register of Board of Directors is required"
+					if (!formData.proofOfAddressDoc)
+						newErrors.proofOfAddressDoc = "Proof of Address is required"
+					if (!formData.taxFilingDoc)
+						newErrors.taxFilingDoc = "Tax Document is required"
+					break
 
-			default:
-				break
+				case 6:
+					if (!formData.bankName) newErrors.bankName = "Bank Name is required"
+					if (!formData.accountNumber)
+						newErrors.accountNumber = "Account Number is required"
+					else if (!isValidAccountNumber(formData.accountNumber))
+						newErrors.accountNumber =
+							"Enter a valid 10-digit account number (e.g. 0123456789)"
+					if (!formData.accountName)
+						newErrors.accountName = "Account Name is required"
+					else if (
+						!verifyInfo ||
+						verifyInfo?.responseCode !== "000" ||
+						!verifyInfo?.successful
+					)
+						newErrors.accountName = "Could not validate given bank details"
+					break
+
+				default:
+					break
+			}
+
+			return newErrors
+		},
+		[formData, verifyInfo]
+	)
+
+	const validateStep = useCallback(
+		(step: number) => {
+			const newErrors = getStepErrors(step)
+			setErrors(newErrors)
+			return Object.keys(newErrors).length === 0
+		},
+		[getStepErrors]
+	)
+
+	const validateAllSteps = useCallback((): boolean => {
+		for (let step = 1; step <= 6; step++) {
+			const errors = getStepErrors(step)
+
+			if (Object.keys(errors).length > 0) {
+				return false
+			}
 		}
 
-		setErrors(newErrors)
-		return Object.keys(newErrors).length === 0
-	}
+		return true
+	}, [getStepErrors])
 
 	const handleNext = () => {
+		const reviewMode = validateAllSteps()
 		if (validateStep(currentStep)) {
-			setCurrentStep(currentStep + 1)
+			// After step 6 is completed or if all step is filled, enter review mode
+			if (currentStep === 6 || reviewMode) {
+				setIsReviewMode(true)
+				setReviewStep(currentStep)
+			} else {
+				setCurrentStep(currentStep + 1)
+			}
 		}
 	}
 
@@ -656,6 +625,9 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 				setSubmitError(result.error || "Failed to submit KYB documents.")
 			}
 		} catch (err) {
+			setSubmitError(
+				"Something went wrong submitting documents, contact support if issue persists"
+			)
 			console.error("KYB submission failed:", err)
 		} finally {
 			setLoading(false)
@@ -672,12 +644,17 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 	}, [formData.bankName, banklists])
 
 	useEffect(() => {
-		if (!formData.bankName || formData.bankName === "") {
-			setEnabled(false)
-		} else {
-			setEnabled(true)
+		const isRestrictedStatus =
+			user?.kybStatus === "ACTIVE" || user?.kybStatus === "PENDING_REVIEW"
+
+		const hasBankName = !!formData.bankName?.trim()
+
+		if (!isRestrictedStatus) {
+			setEnabledList(true)
+			return
 		}
-	}, [formData.bankName])
+		setEnabled(hasBankName)
+	}, [formData.bankName, user?.kybStatus])
 
 	useEffect(() => {
 		if (formData.bankName !== "" && formData.accountNumber !== "") {
@@ -688,6 +665,32 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 	useEffect(() => {
 		updateFormData({ accountName: verifyInfo?.data?.accountName })
 	}, [verifyInfo?.data, updateFormData])
+
+	useEffect(() => {
+		const reviewMode = validateAllSteps()
+		setReviewTrack(reviewMode)
+	}, [validateAllSteps])
+
+	if (isReviewMode) {
+		return (
+			<KYBReviewScreens
+				step={reviewStep}
+				formData={formData}
+				onBack={() => {
+					setIsReviewMode(false)
+					setCurrentStep(6)
+				}}
+				onEditStep={(step: number) => {
+					setIsReviewMode(false)
+					setCurrentStep(step)
+				}}
+				err={submitError}
+				setErr={setSubmitError}
+				loading={loading}
+				onComplete={handleSubmit}
+			/>
+		)
+	}
 
 	return (
 		<div className="bg-background min-h-screen w-full px-6 py-8 md:max-w-[80%]">
@@ -723,7 +726,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 					<div className="h-full w-[42%] border-t border-t-(--grey-1)"></div>
 					<p className="text-foreground text-s[16px] font-medium tracking-widest lg:mx-2">
 						KYB STEP {currentStep}/
-						<span className="text-(--text-1) lg:w-[20%]">7</span>
+						<span className="text-(--text-1) lg:w-[20%]">6</span>
 					</p>
 					<div className="h-full w-[42%] border-t border-t-(--grey-1)"></div>
 				</div>
@@ -735,7 +738,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 						footer={
 							<div className="flex items-center justify-center gap-4 pt-6">
 								<button onClick={handleNext} className={`${baseButtonBlack} py-3`}>
-									Proceed to Company Contact
+									{reviewTrack ? "Continue Review" : "Proceed to Company Contact"}
 								</button>
 							</div>
 						}>
@@ -888,7 +891,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 									Go Back
 								</button>
 								<button onClick={handleNext} className={baseButtonBlack}>
-									Proceed to Office Address
+									{reviewTrack ? "Continue Review" : "Proceed to Office Address"}
 								</button>
 							</div>
 						}>
@@ -1013,7 +1016,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 									Go Back
 								</button>
 								<button onClick={handleNext} className={baseButtonBlack}>
-									Proceed to Owner&apos;s Information
+									{reviewTrack ? "Continue Review" : "Proceed to Owner's Information"}
 								</button>
 							</div>
 						}>
@@ -1116,7 +1119,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 									Go Back
 								</button>
 								<button onClick={handleNext} className={baseButtonBlack}>
-									Proceed to Company Documents
+									{reviewTrack ? "Continue Review" : "Proceed to Company Documents"}
 								</button>
 							</div>
 						}>
@@ -1499,7 +1502,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 									Go Back
 								</button>
 								<button onClick={handleNext} className={baseButtonBlack}>
-									Proceed to Bank Details
+									{reviewTrack ? "Continue Review" : "Proceed to Bank Details"}
 								</button>
 							</div>
 						}>
@@ -1613,7 +1616,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 									Go Back
 								</button>
 								<button onClick={handleNext} className={baseButtonBlack}>
-									Proceed to Submit
+									Proceed to Review
 								</button>
 							</div>
 						}>
@@ -1667,51 +1670,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 						</div>
 					</KYBStepWrapper>
 				)}
-
-				{/* Step 7: Service of Agreement */}
-				{currentStep === 7 && (
-					<KYBStepWrapper
-						title={<p className="font-semibold text-gray-900">Notice</p>}
-						footer={
-							<div className="flex flex-col gap-4 md:flex-row">
-								<button onClick={handlePrevious} className={baseButtonWhite}>
-									Go Back
-								</button>
-								<button onClick={handleSubmit} className={baseButtonBlack}>
-									Submit {loading && <Spinner />}
-								</button>
-							</div>
-						}>
-						<div className="space-y-4">
-							<Kyc_status_banner status="pending" />
-						</div>
-					</KYBStepWrapper>
-				)}
 			</div>
-
-			<FeedbackModal
-				isOpen={!!submitError}
-				onClose={() => setSubmitError(null)}
-				icon={
-					<Image
-						src="/images/failed.svg"
-						className="h-24 w-24"
-						width={50}
-						height={50}
-						alt="icon"
-					/>
-				}
-				title="Submission Failed"
-				description={submitError ?? "An unexpected error occurred."}
-				buttonCount={1}
-				buttons={[
-					{
-						label: "Close",
-						variant: "outline",
-						onClick: () => setSubmitError(null),
-					},
-				]}
-			/>
 		</div>
 	)
 }

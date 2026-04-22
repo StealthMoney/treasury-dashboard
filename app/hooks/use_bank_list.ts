@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { useEffect } from "react"
 
-export const useBanklists = () => {
+export const useBanklists = (enabled: boolean) => {
 	return useQuery({
 		queryKey: ["bank_lists"],
 		queryFn: async () => {
@@ -12,6 +12,7 @@ export const useBanklists = () => {
 
 			return data
 		},
+		enabled,
 	})
 }
 

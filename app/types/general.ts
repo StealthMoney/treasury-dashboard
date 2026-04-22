@@ -1,3 +1,70 @@
+export interface KYBFormData {
+	// Step 1
+	companyName: string
+	businessDescription: string
+	staffSize: string
+	annualSalesVolume: string
+	annualSalesVolumeCurrency: string
+	industry: string
+	businessType: string
+	cacNumber: string
+
+	// Step 2
+	businessEmail: string
+	supportEmail: string
+	disputeEmail: string
+	phoneNumber: string
+	phoneNumberCountry: string
+	website: string
+	linkedin: string
+	twitter: string
+	instagram: string
+
+	// Step 3
+	officeCountry: string
+	officeState: string
+	officeCity: string
+	officePostalCode: string
+	officeStreet: string
+
+	// Step 4 - Now an array of owners
+	owners: OwnerInfo[]
+
+	// Step 5
+	incorporationDoc: File | null
+	taxFilingDoc: File | null
+	registrationStatus: File | null
+	mouDoc: File | null
+	boardRegisterDoc: File | null
+	proofOfAddressDoc: File | null
+	supportingDoc: File[]
+
+	// Step 6
+	bankName: string
+	accountNumber: string
+	accountName: string
+}
+
+export interface OwnerInfo {
+	id: string
+	firstName: string
+	lastName: string
+	email: string
+	phoneNumber: string
+	dayOfBirth: string
+	monthOfBirth: string
+	yearOfBirth: string
+	idDoc1: string
+	idNumber1: string
+	idUpload: File | null
+	homeState: string
+	homeCity: string
+	homePostalCode: string
+	homeStreet: string
+	homeProofUpload: File | null
+	bvn: string
+}
+
 // types/result.ts
 export type Result<T> =
 	| { success: true; data: T }
