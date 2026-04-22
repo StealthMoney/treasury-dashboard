@@ -626,9 +626,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 			}
 		} catch (err) {
 			setSubmitError(
-				err instanceof Error
-					? err.message
-					: "Something went wrong submitting documents"
+				"Something went wrong submitting documents, contact support if issue persists"
 			)
 			console.error("KYB submission failed:", err)
 		} finally {
@@ -651,8 +649,11 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 
 		const hasBankName = !!formData.bankName?.trim()
 
-		setEnabledList(!isRestrictedStatus && hasBankName)
-		setEnabled(!isRestrictedStatus && hasBankName)
+		if (!isRestrictedStatus) {
+			setEnabledList(true)
+			return
+		}
+		setEnabled(hasBankName)
 	}, [formData.bankName, user?.kybStatus])
 
 	useEffect(() => {
