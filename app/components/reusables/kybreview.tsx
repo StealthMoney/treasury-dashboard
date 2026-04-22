@@ -1,70 +1,24 @@
 "use client"
 
-import { useState } from "react"
-import { FaArrowLeft, FaFilePdf, FaImage } from "react-icons/fa"
+import { SetStateAction, useEffect, useState, Dispatch } from "react"
+import { FaArrowLeft } from "react-icons/fa"
 import { KYBStepWrapper } from "./kybstepwraper"
 import { baseButtonBlack, baseButtonWhite } from "./classes"
-
-interface OwnerInfo {
-	id: string
-	firstName: string
-	lastName: string
-	email: string
-	phoneNumber: string
-	dayOfBirth: string
-	monthOfBirth: string
-	yearOfBirth: string
-	idDoc1: string
-	idNumber1: string
-	idUpload: File | null
-	homeState: string
-	homeCity: string
-	homePostalCode: string
-	homeStreet: string
-	homeProofUpload: File | null
-	bvn: string
-}
-
-interface KYBFormData {
-	companyName: string
-	businessDescription: string
-	staffSize: string
-	annualSalesVolume: string
-	annualSalesVolumeCurrency: string
-	industry: string
-	businessType: string
-	cacNumber: string
-	businessEmail: string
-	supportEmail: string
-	disputeEmail: string
-	phoneNumber: string
-	phoneNumberCountry: string
-	website: string
-	linkedin: string
-	twitter: string
-	instagram: string
-	officeCountry: string
-	officeState: string
-	officeCity: string
-	officePostalCode: string
-	officeStreet: string
-	owners: OwnerInfo[]
-	incorporationDoc: File | null
-	taxFilingDoc: File | null
-	registrationStatus: File | null
-	mouDoc: File | null
-	boardRegisterDoc: File | null
-	proofOfAddressDoc: File | null
-	supportingDoc: File[]
-	bankName: string
-	accountNumber: string
-	accountName: string
-}
+import { Spinner } from "./spinner"
+import { ReviewRow, DocumentReviewRow } from "./review_generals"
+import { KYBFormData } from "@/app/types/general"
+import OwnerAccordion from "./owner_accordion"
+import Image from "next/image"
+import { FeedbackModal } from "./feedback_modal"
 
 interface KYBReviewScreensProps {
+	step: number
 	formData: KYBFormData
 	onBack: () => void
 	onEditStep: (step: number) => void
+	loading: boolean
+	err: string | null
+	setErr: Dispatch<SetStateAction<string | null>>
 	onComplete: () => void
 }
 
@@ -77,64 +31,14 @@ const REVIEW_TABS = [
 	{ id: 6, label: "Bank Account Details" },
 ]
 
-// Helper function to detect file type
-const getFileIcon = (file: File | null) => {
-	if (!file) return null
-	const isPdf =
-		file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")
-	const isImage =
-		file.type.startsWith("image/") ||
-		/\.(jpg|jpeg|png|gif|webp)$/i.test(file.name)
-
-	if (isPdf) return <FaFilePdf className="h-4 w-4 text-(--red-1)" />
-	if (isImage) return <FaImage className="h-4 w-4 text-blue-500" />
-	return <FaFilePdf className="h-4 w-4 text-(--red-1)" />
-}
-
-// Review row component for consistent display
-function ReviewRow({
-	label,
-	value,
-}: {
-	label: string
-	value: string | React.ReactNode
-}) {
-	return (
-		<div className="flex flex-col gap-1 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
-			<p className="text-[14px] font-medium text-(--text-1)">{label}</p>
-			<p className="text-foreground text-[14px] wrap-break-words sm:max-w-[60%] sm:text-right">
-				{value}
-			</p>
-		</div>
-	)
-}
-
-function DocumentReviewRow({
-	label,
-	file,
-}: {
-	label: string
-	file: File | null
-}) {
-	return (
-		<div className="flex flex-col gap-1 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
-			<p className="text-[14px] font-medium text-(--text-1)">{label}</p>
-			{file ? (
-				<div className="flex items-center gap-2 sm:max-w-[60%]">
-					<p className="text-foreground text-[14px] break-all">{file.name}</p>
-					{getFileIcon(file)}
-				</div>
-			) : (
-				<p className="text-foreground text-[14px]">-</p>
-			)}
-		</div>
-	)
-}
-
 export function KYBReviewScreens({
+	step,
 	formData,
 	onBack,
 	onEditStep,
+	loading,
+	err,
+	setErr,
 	onComplete,
 }: KYBReviewScreensProps) {
 	const [activeTab, setActiveTab] = useState(1)
@@ -144,6 +48,10 @@ export function KYBReviewScreens({
 			setActiveTab(activeTab + 1)
 		}
 	}
+
+	useEffect(() => {
+		setActiveTab(step)
+	}, [step])
 
 	return (
 		<div className="bg-background min-h-screen w-full px-4 py-6 sm:px-6 sm:py-8 md:max-w-[80%]">
@@ -271,50 +179,7 @@ export function KYBReviewScreens({
 
 				{activeTab === 4 && (
 					<KYBStepWrapper title="Owner's Info Review">
-						<div className="space-y-8">
-							{formData.owners.map((owner, index) => (
-								<div key={owner.id}>
-									<div className="mb-6 flex items-center justify-between">
-										<div>
-											<p className="text-foreground text-[16px] font-semibold">
-												{owner.firstName} {owner.lastName}
-											</p>
-											<p className="text-[12px] text-(--text-1)">
-												Owner {formData.owners.length - index}
-											</p>
-										</div>
-									</div>
-
-									<div className="space-y-4">
-										<ReviewRow
-											label="Full Name:"
-											value={`${owner.firstName} ${owner.lastName}`}
-										/>
-										<ReviewRow
-											label="Date of Birth:"
-											value={`${owner.dayOfBirth} ${getMonthName(
-												Number(owner.monthOfBirth)
-											)} ${owner.yearOfBirth}`}
-										/>
-										<ReviewRow label="Identification Document:" value={owner.idDoc1} />
-										<ReviewRow label="Identification Number:" value={owner.idNumber1} />
-										<DocumentReviewRow label="Document:" file={owner.idUpload} />
-										<ReviewRow label="State of Origin:" value={owner.homeState} />
-										<ReviewRow label="City:" value={owner.homeCity} />
-										<ReviewRow label="Postal Code:" value={owner.homePostalCode} />
-										<ReviewRow label="Street Address:" value={owner.homeStreet} />
-										<DocumentReviewRow
-											label="Proof of Address:"
-											file={owner.homeProofUpload}
-										/>
-									</div>
-
-									{index < formData.owners.length - 1 && (
-										<div className="my-8 border-t border-(--grey-2)" />
-									)}
-								</div>
-							))}
-						</div>
+						<OwnerAccordion owners={formData.owners} />
 					</KYBStepWrapper>
 				)}
 
@@ -346,7 +211,7 @@ export function KYBReviewScreens({
 						/>
 						{formData.supportingDoc.length > 0 && (
 							<>
-								<div className="my-6 border-t border-(--grey-2)" />
+								<div className="my-6" />
 								<p className="text-foreground mb-4 text-[14px] font-semibold">
 									Supporting Documents
 								</p>
@@ -379,7 +244,7 @@ export function KYBReviewScreens({
 					<div className="flex flex-col gap-4 md:flex-row md:gap-4">
 						{activeTab === REVIEW_TABS.length ? (
 							<button onClick={onComplete} className={`${baseButtonBlack} py-3`}>
-								Submit
+								Submit {loading && <Spinner />}
 							</button>
 						) : (
 							<button onClick={handleNext} className={`${baseButtonBlack} py-3`}>
@@ -389,26 +254,30 @@ export function KYBReviewScreens({
 					</div>
 				</div>
 			</div>
+
+			<FeedbackModal
+				isOpen={!!err}
+				onClose={() => setErr(null)}
+				icon={
+					<Image
+						src="/images/failed.svg"
+						className="h-24 w-24"
+						width={50}
+						height={50}
+						alt="icon"
+					/>
+				}
+				title="Submission Failed"
+				description={err ?? "An unexpected error occurred."}
+				buttonCount={1}
+				buttons={[
+					{
+						label: "Close",
+						variant: "outline",
+						onClick: () => setErr(null),
+					},
+				]}
+			/>
 		</div>
 	)
-}
-
-// Helper function to get month name
-function getMonthName(month: number): string {
-	const months = [
-		"",
-		"January",
-		"February",
-		"March",
-		"April",
-		"May",
-		"June",
-		"July",
-		"August",
-		"September",
-		"October",
-		"November",
-		"December",
-	]
-	return months[month] || ""
 }
