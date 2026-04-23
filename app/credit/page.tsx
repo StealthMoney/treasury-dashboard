@@ -975,7 +975,7 @@ export default function CreditsPage() {
 						placeholder="Amount to borrow"
 						showmax={false}
 						currency={borrowCurrency}
-						message={"You can only borrow up to half of your invoice"}
+						message={"You can only borrow up to one million naira (₦1,000,000)"}
 						label={`Enter Loan Amount (${borrowCurrency === "NGN" ? "₦" : "$"})`}
 						error={errors.borrowAmount}
 					/>
@@ -1199,6 +1199,7 @@ export default function CreditsPage() {
 						onPreviousStep={handleBorrowPrevious}
 						onSubmit={handleBorrowSubmit}
 						isSuccess={isSuccess}
+						amount={borrowAmount}
 						loading={loading}
 						imagePath={image}
 						successTitle={header}

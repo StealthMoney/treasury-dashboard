@@ -66,6 +66,13 @@ export const StepModal: React.FC<StepModalProps> = ({
 	const isLastStep = currentStep === steps.length - 1
 	const currentStepConfig = steps[currentStep]
 
+	console.log(amount, "amount")
+
+	const stripped = amount?.split(" ")[0]
+	const amountValue = Number(stripped)
+
+	console.log(amountValue, stripped, amount)
+
 	return (
 		<div className="fixed inset-0 z-50">
 			{/* Overlay */}
@@ -161,11 +168,11 @@ export const StepModal: React.FC<StepModalProps> = ({
 						</button>
 					)}
 					<button
-						disabled={loading}
+						disabled={loading || amountValue > 1000000}
 						onClick={
 							isSuccess ? onClose : isLastStep ? onSubmit || onNextStep : onNextStep
 						}
-						className={`bg-foreground text-background hover:bg-foreground/85 flex flex-1 cursor-pointer items-center justify-center gap-x-3 rounded-lg px-4 py-3 transition`}>
+						className={`bg-foreground text-background hover:bg-foreground/85 flex flex-1 ${loading || amountValue > 1000000 ? "cursor-not-allowed" : "cursor-pointer"} items-center justify-center gap-x-3 rounded-lg px-4 py-3 transition`}>
 						{isSuccess
 							? successButtonLabel || "Close"
 							: pathname.match("/report")
