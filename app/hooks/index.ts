@@ -25,9 +25,12 @@ export const useCreditStats = (creditHistoryData: LoanApplication[]) => {
 		return [
 			{
 				label: "Active Loans",
-				value: `₦ ${firstLoan.loanAmount.toLocaleString(undefined, {
-					maximumFractionDigits: 2,
-				})}`,
+				value: `₦ ${(firstLoan.loanAmount + firstLoan.interest).toLocaleString(
+					"en-US",
+					{
+						maximumFractionDigits: 2,
+					}
+				)}`,
 				footer: firstLoan.loanStartDate
 					? formatDateWithSuffix(firstLoan.loanStartDate)
 					: "N/A",
@@ -46,7 +49,7 @@ export const useCreditStats = (creditHistoryData: LoanApplication[]) => {
 			},
 			{
 				label: "Loan Interest",
-				value: `${firstLoan.interest.toLocaleString(undefined, {
+				value: `₦ ${firstLoan.interest.toLocaleString(undefined, {
 					maximumFractionDigits: 2,
 				})}`,
 				footer: "", // + or - here like +10%

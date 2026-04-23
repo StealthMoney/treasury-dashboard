@@ -123,6 +123,7 @@ export function ProfileTab({ onSave }: ProfileTabProps) {
 							<div className="space-y-2">
 								<h4 className="font-medium">Profile Picture</h4>
 								<button
+									disabled
 									type="button"
 									onClick={() => fileInputRef.current?.click()}
 									className="text-foreground/70 hover:text-foreground flex items-center gap-2 transition-colors">
@@ -132,6 +133,7 @@ export function ProfileTab({ onSave }: ProfileTabProps) {
 								{errors.logo && <p className="text-xs text-red-500">{errors.logo}</p>}
 							</div>
 							<input
+								disabled
 								ref={fileInputRef}
 								type="file"
 								accept="image/*"
@@ -146,6 +148,7 @@ export function ProfileTab({ onSave }: ProfileTabProps) {
 					<div className="space-y-4">
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 							<TextField
+								disabled
 								label="First Name"
 								id="firstName"
 								placeholder="Enter first name"
@@ -154,6 +157,7 @@ export function ProfileTab({ onSave }: ProfileTabProps) {
 								error={errors.firstName}
 							/>
 							<TextField
+								disabled
 								label="Last Name"
 								id="lastName"
 								placeholder="Enter last name"
@@ -165,6 +169,7 @@ export function ProfileTab({ onSave }: ProfileTabProps) {
 
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 							<TextField
+								disabled
 								label="Email Address"
 								id="emailAddress"
 								placeholder="Enter email"
@@ -174,6 +179,7 @@ export function ProfileTab({ onSave }: ProfileTabProps) {
 								error={errors.emailAddress}
 							/>
 							<TextField
+								disabled
 								label="Phone Number"
 								id="phoneNumber"
 								placeholder="Enter phone number"

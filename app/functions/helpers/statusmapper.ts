@@ -80,7 +80,7 @@ export const buildLoanUI = (
 			maximumFractionDigits: 2,
 		})} ${loan.currency} is being reviewed.\nThis usually takes 24-48 hours.`,
 
-		APPROVED: `Your loan request for $${Number(loan.loanAmount).toLocaleString(
+		APPROVED: `Your loan request for ${Number(loan.loanAmount).toLocaleString(
 			"en-US",
 			{
 				maximumFractionDigits: 2,
