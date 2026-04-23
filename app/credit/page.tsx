@@ -81,7 +81,7 @@ function StatusBadge({ status }: { status: LoanStatus }) {
 					: isPending
 						? "bg-yellow-100 text-yellow-600"
 						: isFailed
-							? "bg-red-100 text-red-100"
+							? "bg-red-500 text-background"
 							: ""
 			}`}>
 			{status}
