@@ -66,12 +66,8 @@ export const StepModal: React.FC<StepModalProps> = ({
 	const isLastStep = currentStep === steps.length - 1
 	const currentStepConfig = steps[currentStep]
 
-	console.log(amount, "amount")
-
 	const stripped = amount?.split(" ")[0]
 	const amountValue = Number(stripped)
-
-	console.log(amountValue, stripped, amount)
 
 	return (
 		<div className="fixed inset-0 z-50">
