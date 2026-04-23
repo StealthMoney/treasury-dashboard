@@ -116,7 +116,7 @@ export function ProfileTab({ onSave }: ProfileTabProps) {
 		{ label: "Partnership", value: "Partnership" },
 		{ label: "Corporation", value: "Corporation" },
 		{ label: "Limited Liability Company (LLC)", value: "LLC" },
-		{ label: "Other", value: "OTHER" },
+		{ label: "Other", value: "Other" },
 	]
 
 	if (loading || !user) {
