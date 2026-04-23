@@ -2,6 +2,7 @@ import { useMemo } from "react"
 import { LoanApplication } from "../types/general"
 import { StatData } from "../components/reusables/stats_section"
 import { formatDateWithSuffix } from "../functions/helpers/formatted_date"
+import { getDaysLeft } from "../functions/helpers/days_left"
 
 export const useCreditStats = (creditHistoryData: LoanApplication[]) => {
 	return useMemo(() => {
@@ -9,7 +10,7 @@ export const useCreditStats = (creditHistoryData: LoanApplication[]) => {
 
 		const firstLoan = creditHistoryData[0]
 
-		const dueDate = firstLoan.loanDueDate ? new Date(firstLoan.loanDueDate) : null
+		const dueDate = firstLoan.loanDueDate ? firstLoan.loanDueDate : null
 
 		const startDate = firstLoan.loanStartDate
 			? new Date(firstLoan.loanStartDate)
@@ -17,18 +18,19 @@ export const useCreditStats = (creditHistoryData: LoanApplication[]) => {
 
 		let daysLeft: number | string = "N/A"
 
-		if (dueDate && startDate) {
-			const diffInMs = dueDate.getTime() - startDate.getTime()
-			daysLeft = Math.ceil(diffInMs / (1000 * 60 * 60 * 24))
+		if (dueDate) {
+			daysLeft = getDaysLeft(dueDate)
 		}
 
 		return [
 			{
 				label: "Active Loans",
-				value: `₦ ${firstLoan.loanAmount.toLocaleString(undefined, {
-					minimumFractionDigits: 2,
-					maximumFractionDigits: 2,
-				})}`,
+				value: `₦ ${(firstLoan.loanAmount + firstLoan.interest).toLocaleString(
+					"en-US",
+					{
+						maximumFractionDigits: 2,
+					}
+				)}`,
 				footer: firstLoan.loanStartDate
 					? formatDateWithSuffix(firstLoan.loanStartDate)
 					: "N/A",
@@ -38,15 +40,19 @@ export const useCreditStats = (creditHistoryData: LoanApplication[]) => {
 				value: firstLoan.loanDueDate
 					? formatDateWithSuffix(firstLoan.loanDueDate)
 					: "N/A",
-				footer: typeof daysLeft === "number" ? `${daysLeft} days left` : daysLeft,
+				footer:
+					firstLoan.loanStatus === "REPAID"
+						? ""
+						: typeof daysLeft === "number"
+							? `${daysLeft} days left`
+							: daysLeft,
 			},
 			{
 				label: "Loan Interest",
-				value: `${firstLoan.interest.toLocaleString(undefined, {
-					minimumFractionDigits: 2,
+				value: `₦ ${firstLoan.interest.toLocaleString(undefined, {
 					maximumFractionDigits: 2,
 				})}`,
-				footer: "+10.00 %",
+				footer: "", // + or - here like +10%
 			},
 		] as StatData[]
 	}, [creditHistoryData])

@@ -18,18 +18,29 @@ import KybBanner from "../components/reusables/kybinfo_banner"
 import { KYBScreens } from "../overview/kybprocess"
 import { useProfile } from "../contexts/user_provider"
 import { fileToBase64 } from "../functions/helpers/base64"
-import { requestNewCredit } from "../server/credits"
+import {
+	repayCreditFinish,
+	repayCreditInitiate,
+	requestNewCredit,
+} from "../server/credits"
 import { FeedbackModal } from "../components/reusables/feedback_modal"
 import {
+	InitiateLoanRepaymentDetails,
 	LoanApplication,
 	LoanApplicationUI,
 	LoanStatus,
 	LoanType,
+	PaginatedLoanApplicationResponse,
+	RepaymentRecord,
 } from "../types/general"
 import { useCreditStats } from "../hooks"
 import { buildLoanUI } from "../functions/helpers/statusmapper"
 import { useCreditHistory, useCreditTypes } from "../hooks/use_credit_history"
 import PageSkeleton from "../components/reusables/page_skeleton"
+import { formatDateWithSuffix } from "../functions/helpers/formatted_date"
+import { getDaysLeft } from "../functions/helpers/days_left"
+import { CopyableText } from "../components/reusables/copyable_text"
+import { getDueDate } from "../functions/helpers/get_due_date"
 
 interface ActiveLoan {
 	id: string
@@ -70,7 +81,7 @@ function StatusBadge({ status }: { status: LoanStatus }) {
 					: isPending
 						? "bg-yellow-100 text-yellow-600"
 						: isFailed
-							? "bg-red-100 text-red-100"
+							? "text-background bg-red-500"
 							: ""
 			}`}>
 			{status}
@@ -84,10 +95,10 @@ const creditHistoryColumns = [
 		header: "Credit ID",
 		accessor: (row: LoanApplication) => (
 			<>
-				<p className="text-xs font-semibold text-gray-900 sm:text-sm">
-					{row.loanTypeId}
+				<CopyableText text={row.reference} />
+				<p className="text-xs text-gray-500">
+					{row.loanStartDate ? formatDateWithSuffix(row.loanStartDate) : ""}
 				</p>
-				<p className="text-xs text-gray-500">{row.loanStartDate || null}</p>
 			</>
 		),
 	},
@@ -96,7 +107,9 @@ const creditHistoryColumns = [
 		accessor: (row: LoanApplication) => (
 			<>
 				<p className="text-xs font-semibold text-gray-900 sm:text-sm">
-					{row.loanAmount}
+					{Number(row.loanAmount).toLocaleString("en-US", {
+						maximumFractionDigits: 2,
+					})}
 				</p>
 				<p className="text-xs text-gray-500">{row.currency}</p>
 			</>
@@ -107,7 +120,9 @@ const creditHistoryColumns = [
 		accessor: (row: LoanApplication) => (
 			<>
 				<p className="text-xs font-semibold text-gray-900 sm:text-sm">
-					{row.interest}
+					{Number(row.interest).toLocaleString("en-Us", {
+						maximumFractionDigits: 2,
+					})}
 				</p>
 				<p className="text-xs text-gray-500">{row.currency}</p>
 			</>
@@ -118,14 +133,10 @@ const creditHistoryColumns = [
 		accessor: (row: LoanApplication) => (
 			<>
 				<p className="text-xs font-semibold text-gray-900 sm:text-sm">
-					{row.loanDueDate}
+					{row.loanDueDate ? formatDateWithSuffix(row.loanDueDate) : ""}
 				</p>
 				<p className="text-xs text-gray-500">
-					{Math.ceil(
-						(new Date(row.loanDueDate).getTime() -
-							new Date(row.loanStartDate).getTime()) /
-							(1000 * 60 * 60 * 24)
-					) || "N/A"}
+					{row.loanStatus === "REPAID" ? "" : getDaysLeft(row.loanDueDate)}
 				</p>
 			</>
 		),
@@ -142,12 +153,6 @@ const creditHistoryColumns = [
 	//     </button>
 	//   ),
 	// },
-]
-
-export const creditStatsUIConfig: StatUIConfig[] = [
-	// Example: no button here, but you could add later
-	{ index: 2, footerClass: "text-(--green-1) font-semibold" },
-	{ index: 0, showButton: true },
 ]
 
 export const activeLoansColumns = [
@@ -268,8 +273,14 @@ export default function CreditsPage() {
 	const [isRepayOpen, setIsRepayOpen] = useState(false)
 	const [repayStep, setRepayStep] = useState(0)
 	const [repaySuccess, setRepaySuccess] = useState(false)
-	const [repayAmount, setRepayAmount] = useState("50000000")
+	const [repayAmount, setRepayAmount] = useState("")
 	const [repayCurrency, setRepayCurrency] = useState<"USD" | "NGN">("NGN")
+	const [repayLoading, setRepayLoading] = useState(false)
+	const [repayError, setRepayError] = useState("")
+	const [repaySuccessResponse, setRepaySuccessResponse] =
+		useState<InitiateLoanRepaymentDetails | null>(null)
+	const [finalRepayResponse, setFinalRepayResponse] =
+		useState<RepaymentRecord | null>(null)
 
 	// Extend Credit Date Modal State
 	const [isExtendOpen, setIsExtendOpen] = useState(false)
@@ -279,23 +290,30 @@ export default function CreditsPage() {
 		"14"
 	)
 
-	const [borrowAmount, setBorrowAmount] = useState("10000")
+	const [borrowAmount, setBorrowAmount] = useState("")
 	const [borrowCurrency, setBorrowCurrency] = useState<"USD" | "NGN">("NGN")
 
 	const [invoiceFile, setInvoiceFile] = useState<File | null>(null)
 	const [bankStatementFile, setBankStatementFile] = useState<File | null>(null)
 	const [loanTypeId, setLoanTypeId] = useState<number | null>(null)
-	const [loadDurationInDays, setLoanDurationInDays] = useState<number[]>([])
-	const [creditHistoryData, setCreditHistoryData] = useState<LoanApplication[]>(
-		[]
-	)
+	const [loadDurationInDays, setLoanDurationInDays] = useState<
+		{
+			label: string
+			value: string
+		}[]
+	>([])
+	const [creditHistoryData, setCreditHistoryData] =
+		useState<PaginatedLoanApplicationResponse | null>(null)
 
-	const creditStatsData = useCreditStats(creditHistoryData)
+	const creditStatsData = useCreditStats(
+		creditHistoryData ? creditHistoryData.content : []
+	)
 
 	const [errors, setErrors] = useState<{
 		invoice?: string
 		bankStatement?: string
 		duration?: string
+		borrowAmount?: string
 	}>({})
 
 	const [loanDuration, setLoanDuration] = useState("")
@@ -306,16 +324,25 @@ export default function CreditsPage() {
 		"ACTIVE" | "PENDING_REVIEW" | "SUSPENDED" | null
 	>(null)
 
-	const { data, refetch, isLoading: creditHistoryLoading } = useCreditHistory()
+	const [currentPage, setCurrentPage] = useState(0)
+	const pageSize = creditHistoryData?.size ?? 10
+
+	const {
+		data,
+		refetch,
+		isLoading: creditHistoryLoading,
+	} = useCreditHistory({
+		page: String(currentPage),
+	})
 	const { data: creditTypes, isLoading: creditTypesLoading } = useCreditTypes()
 
 	const pageFetchLoading = creditHistoryLoading || creditTypesLoading
 
 	const { header, image, statusItems, message } = buildLoanUI(
-		creditHistoryData as LoanApplicationUI[]
+		creditHistoryData?.content as LoanApplicationUI[]
 	)
 
-	const loanStatus = creditHistoryData?.[0]?.loanStatus
+	const loanStatus = creditHistoryData?.content?.[0]?.loanStatus
 
 	const titleMap: Record<string, string> = {
 		REVIEW: "Your loan is being reviewed",
@@ -323,7 +350,22 @@ export default function CreditsPage() {
 		REJECTED: "Your previous loan request was rejected",
 	}
 
-	const title = titleMap[loanStatus] ?? ""
+	const title = loanStatus ? titleMap[loanStatus] : ""
+
+	const creditStatsUIConfig: StatUIConfig[] = [
+		// Example: no button here, but you could add later
+		{ index: 2, footerClass: "text-(--green-1) font-semibold" },
+		{
+			index: 0,
+			showButton:
+				loanStatus === "REVIEW" ||
+				loanStatus === "REPAID" ||
+				loanStatus === "REJECTED" ||
+				loanStatus === "APPROVED"
+					? false
+					: true,
+		},
+	]
 
 	const validateStep1 = () => {
 		const newErrors: typeof errors = {}
@@ -343,6 +385,27 @@ export default function CreditsPage() {
 		setErrors(newErrors)
 
 		return Object.keys(newErrors).length === 0
+	}
+
+	const validateStep2 = () => {
+		const newErrors: typeof errors = {}
+
+		const amount = Number(borrowAmount)
+
+		if (!borrowAmount || borrowAmount.trim() === "") {
+			newErrors.borrowAmount = "Enter an amount to borrow"
+		} else if (isNaN(amount) || amount <= 0) {
+			newErrors.borrowAmount = "Amount must be greater than 0"
+		}
+
+		setErrors(newErrors)
+
+		return Object.keys(newErrors).length === 0
+	}
+
+	const onBorrowChange = (val: string) => {
+		setBorrowAmount(val)
+		validateStep2()
 	}
 
 	useEffect(() => {
@@ -376,7 +439,34 @@ export default function CreditsPage() {
 		setRepaySuccess(false)
 	}
 
-	const handleRepayNext = () => {
+	const handleRepayNext = async () => {
+		if (repayStep === 0) {
+			setRepayLoading(true)
+			const payload = {
+				loanReference: creditHistoryData?.content[0].reference,
+			}
+
+			try {
+				const repay = await repayCreditInitiate(JSON.stringify(payload))
+				if (repay.success) {
+					setRepayLoading(false)
+					setRepayStep(repayStep + 1)
+					setRepayError("")
+					setRepaySuccessResponse(repay.data)
+				} else {
+					setRepayError(repay.error)
+					return
+				}
+			} catch (err) {
+				console.error(err)
+				setRepayError(
+					err instanceof Error ? err.message.toString() : "something went wrong"
+				)
+			} finally {
+				setRepayError("")
+				setRepayLoading(false)
+			}
+		}
 		if (repayStep < repaySteps.length - 1) {
 			setRepayStep(repayStep + 1)
 		}
@@ -388,13 +478,32 @@ export default function CreditsPage() {
 		}
 	}
 
-	const handleRepaySubmit = () => {
-		const formData = {
-			amountRepaid: repayAmount,
-			currency: repayCurrency,
+	const handleRepaySubmit = async () => {
+		const payload = {
+			referenceNumber: repaySuccessResponse?.repaymentReference,
 		}
-		console.log("Repay Loan Submitted:", formData)
-		setRepaySuccess(true)
+
+		setRepayLoading(true)
+
+		try {
+			const finalRepay = await repayCreditFinish(JSON.stringify(payload))
+			if (!finalRepay.success) {
+				setRepayError(finalRepay.error)
+				return
+			} else {
+				setRepayLoading(false)
+				setFinalRepayResponse(finalRepay.data)
+				setRepaySuccess(true)
+			}
+		} catch (err) {
+			console.error(err)
+			setRepayError(
+				err instanceof Error ? err.message.toString() : "something went wrong"
+			)
+		} finally {
+			setRepayError("")
+			setRepayLoading(false)
+		}
 	}
 
 	const handleExtendClick = () => {
@@ -434,7 +543,7 @@ export default function CreditsPage() {
 	const handleKybComplete = () => {
 		setIsKybVerified(user?.kybStatus === "ACTIVE" || false)
 		setShowKybScreens(false)
-		setKybStatus(user?.kybStatus || null)
+		setKybStatus("PENDING_REVIEW")
 	}
 
 	useEffect(() => {
@@ -446,11 +555,12 @@ export default function CreditsPage() {
 	}, [user])
 
 	useEffect(() => {
-		if (creditTypes) {
-			setLoanDurationInDays(
-				creditTypes.map((item: LoanType) => item.durationInDays)
-			)
-		}
+		setLoanDurationInDays(
+			(creditTypes || []).map((item: LoanType) => ({
+				label: `${item.durationInDays} days ${(item.interestRate * 100).toFixed(0)}%`,
+				value: String(item.durationInDays),
+			}))
+		)
 	}, [creditTypes])
 
 	useEffect(() => {
@@ -471,6 +581,16 @@ export default function CreditsPage() {
 			setCreditHistoryData(data)
 		}
 	}, [data])
+
+	useEffect(() => {
+		if (creditHistoryData?.content && creditHistoryData?.content?.length > 0) {
+			const value = (
+				Number(creditHistoryData?.content[0].loanAmount) +
+				Number(creditHistoryData?.content[0]?.interest)
+			).toString()
+			setRepayAmount(value)
+		}
+	}, [creditHistoryData])
 
 	const handleModalClose = () => {
 		setBorrowFundError(false)
@@ -680,7 +800,28 @@ export default function CreditsPage() {
 			title: "REPAY CREDIT",
 			content: (
 				<div className="space-y-6">
-					<OutstandingCredits />
+					<OutstandingCredits
+						total={(
+							Number(creditHistoryData?.content[0]?.loanAmount ?? 0) +
+							Number(creditHistoryData?.content[0]?.interest ?? 0)
+						).toLocaleString("en-US", {
+							maximumFractionDigits: 2,
+						})}
+						principal={Number(
+							creditHistoryData?.content[0]?.loanAmount ?? 0
+						).toLocaleString("en-US", {
+							maximumFractionDigits: 2,
+						})}
+						interest={Number(
+							creditHistoryData?.content[0]?.interest ?? 0
+						).toLocaleString("en-US", {
+							maximumFractionDigits: 2,
+						})}
+						dueDate={formatDateWithSuffix(
+							creditHistoryData?.content[0]?.loanDueDate?.toString() || ""
+						)}
+						daysLeft={getDaysLeft(creditHistoryData?.content[0]?.loanDueDate || "")}
+					/>
 
 					<div className="space-y-2">
 						<label className="text-foreground text-[14px] font-medium">
@@ -692,11 +833,12 @@ export default function CreditsPage() {
 							onCurrencyChange={setRepayCurrency}
 							placeholder="Amount to repay"
 							description="Minimum amount to be paid:"
-							balance={500000}
+							balance={Number(repayAmount)}
 							showmax={false}
 							currency={repayCurrency}
 							// minamount={50000000}
 							label=""
+							disabled={true}
 						/>
 					</div>
 
@@ -717,13 +859,13 @@ export default function CreditsPage() {
 							Transfer{" "}
 							<span className="text-foreground font-semibold">
 								{repayCurrency === "NGN" ? "₦" : "$"}
-								{Number(repayAmount || 0).toLocaleString("en-NG", {
+								{Number(repaySuccessResponse?.amountDue || 0).toLocaleString("en-NG", {
 									minimumFractionDigits: 0,
 								})}
 							</span>{" "}
 							to{" "}
 							<span className="text-foreground font-semibold">
-								Stealthtech Solutions
+								{repaySuccessResponse?.accountName}
 							</span>
 						</p>
 					</div>
@@ -732,22 +874,22 @@ export default function CreditsPage() {
 						header="Bank Details:"
 						messages={{
 							col1: "Bank Name",
-							message1: { text: "Paystack - Titan" },
+							message1: { text: String(repaySuccessResponse?.bankName) },
 
 							col2: "Account Number",
 							message2: {
-								text: process.env.NEXT_PUBLIC_ACCOUNT_DETAILS || "",
-								copy: process.env.NEXT_PUBLIC_ACCOUNT_DETAILS || "",
+								text: repaySuccessResponse?.accountNumber || "",
+								copy: repaySuccessResponse?.accountNumber || "",
 							},
 
 							col3: "Amount",
 							message3: {
 								text: `${repayCurrency === "NGN" ? "₦" : "$"} ${Number(
-									repayAmount || 0
+									repaySuccessResponse?.amountDue || 0
 								).toLocaleString("en-NG", {
-									minimumFractionDigits: 0,
+									maximumFractionDigits: 2,
 								})}`,
-								copy: repayAmount,
+								copy: String(repaySuccessResponse?.amountDue || 0),
 							},
 						}}
 					/>
@@ -757,15 +899,8 @@ export default function CreditsPage() {
 							When making your bank transfer, kindly use this as narration:
 						</p>
 						<p className="text-foreground text-[14px] font-semibold">
-							Monlwave_for_stealth_treasury
+							{repaySuccessResponse?.narration}
 						</p>
-					</div>
-
-					<div className="rounded-lg p-4 text-center">
-						<p className="text-[12px] text-(--text-1)">
-							This account is for this transaction only and expires in
-						</p>
-						<p className="text-foreground mt-1 text-[18px] font-bold">30:00</p>
 					</div>
 				</div>
 			),
@@ -816,10 +951,7 @@ export default function CreditsPage() {
 							setLoanDuration(value)
 							setErrors((prev) => ({ ...prev, duration: undefined }))
 						}}
-						options={loadDurationInDays.map((item) => ({
-							label: item.toString(),
-							value: item.toString(),
-						}))}
+						options={loadDurationInDays}
 						placeholder="Select duration"
 						error={errors.duration}
 					/>
@@ -838,13 +970,14 @@ export default function CreditsPage() {
 				<div className="space-y-6">
 					<CurrencyInput
 						value={borrowAmount}
-						onChange={setBorrowAmount}
+						onChange={(value) => onBorrowChange(value)}
 						onCurrencyChange={setBorrowCurrency}
 						placeholder="Amount to borrow"
 						showmax={false}
 						currency={borrowCurrency}
-						message={"You can only borrow up to half of your invoice"}
+						message={"You can only borrow up to one million naira (₦1,000,000)"}
 						label={`Enter Loan Amount (${borrowCurrency === "NGN" ? "₦" : "$"})`}
+						error={errors.borrowAmount}
 					/>
 				</div>
 			),
@@ -857,7 +990,7 @@ export default function CreditsPage() {
 						<span className="text-[14px] text-(--text-1)">Credit Amount:</span>
 						<span className="text-foreground text-[14px] font-semibold">
 							{Number(borrowAmount).toLocaleString("en-US", {
-								minimumFractionDigits: 2,
+								maximumFractionDigits: 2,
 							})}{" "}
 							{borrowCurrency}
 						</span>
@@ -871,13 +1004,17 @@ export default function CreditsPage() {
 					<div className="flex justify-between border-b border-(--grey-1) py-3">
 						<span className="text-[14px] text-(--text-1)">Due Date:</span>
 						<span className="text-foreground text-[14px] font-semibold">
-							{"05-09-2026"}
+							{getDueDate(loanDuration)}
 						</span>
 					</div>
 					<div className="flex justify-between border-b border-(--grey-1) py-3">
 						<span className="text-[14px] text-(--text-1)">Interests:</span>
 						<span className="text-foreground text-[14px] font-semibold">
-							{((interestRate ?? 0) / 100) * (Number(borrowAmount) ?? 0)} NGN
+							{((interestRate ?? 0) * (Number(borrowAmount) ?? 0)).toLocaleString(
+								"en-US",
+								{ maximumFractionDigits: 2 }
+							)}{" "}
+							NGN
 						</span>
 					</div>
 				</div>
@@ -889,6 +1026,11 @@ export default function CreditsPage() {
 		// only validate on step 0
 		if (borrowStep === 0) {
 			const isValid = validateStep1()
+			if (!isValid) return
+		}
+
+		if (borrowStep === 1) {
+			const isValid = validateStep2()
 			if (!isValid) return
 		}
 
@@ -919,13 +1061,13 @@ export default function CreditsPage() {
 			loanTypeId: Number(loanTypeId),
 
 			invoice: {
-				base64: invoiceBase64 || "",
+				content: invoiceBase64 || "",
 				contentType: invoiceFile?.type || "",
 				fileName: invoiceFile?.name || "",
 			},
 
 			bankStatement: {
-				base64: bankBase64 || "",
+				content: bankBase64 || "",
 				contentType: bankStatementFile?.type || "",
 				fileName: bankStatementFile?.name || "",
 			},
@@ -962,7 +1104,7 @@ export default function CreditsPage() {
 
 	const shouldShowModal = borrowFundError
 
-	const tableData = creditHistoryData.map((item, index) => ({
+	const tableData = creditHistoryData?.content.map((item, index) => ({
 		...item,
 		id: index,
 	}))
@@ -1018,7 +1160,7 @@ export default function CreditsPage() {
 							<KybBanner kybStatus={kybStatus} onAction={handleUpgradeAccount} />
 						)}
 						{/* Stats Cards */}
-						{creditHistoryData.length > 0 && (
+						{creditHistoryData?.content && creditHistoryData?.content?.length > 0 && (
 							<StatsSection
 								actionDisabled={!canPerformActions}
 								stats={creditStatsData}
@@ -1029,12 +1171,20 @@ export default function CreditsPage() {
 						)}
 						{/* Active Loans Table */}
 						<Table
-							data={tableData}
+							data={tableData || []}
 							columns={creditHistoryColumns}
 							extraHeader="Credit History"
 							kybStatus={kybStatus}
 							tableButtonClick={handlBorrowFund}
 							canPerformAction={!canPerformActions}
+							pagination={{
+								currentPage: currentPage + 1,
+								totalItems: creditHistoryData?.totalElements ?? 0,
+								itemsPerPage: pageSize,
+								onPageChange: (page) => {
+									setCurrentPage(page - 1)
+								},
+							}}
 						/>
 					</div>
 
@@ -1049,6 +1199,7 @@ export default function CreditsPage() {
 						onPreviousStep={handleBorrowPrevious}
 						onSubmit={handleBorrowSubmit}
 						isSuccess={isSuccess}
+						amount={borrowAmount}
 						loading={loading}
 						imagePath={image}
 						successTitle={header}
@@ -1060,20 +1211,26 @@ export default function CreditsPage() {
 								showAsList={true}
 							/>
 						}
-						successButtonLabel="Go to Credit"
+						successButtonLabel="Go to Credit Overview"
 					/>
 
 					<StepModal
 						isOpen={isRepayOpen}
 						onClose={() => setIsRepayOpen(false)}
-						title="Repay credit"
+						title="Repay Credit"
 						subtitle="Repay your outstanding credit"
 						steps={repaySteps}
 						currentStep={repayStep}
 						onNextStep={handleRepayNext}
 						onPreviousStep={handleRepayPrevious}
 						onSubmit={handleRepaySubmit}
+						screenMode={isRepayOpen ? "repay" : null}
+						loading={repayLoading}
 						isSuccess={repaySuccess}
+						amount={repaySuccessResponse?.amountDue?.toLocaleString("en-US", {
+							maximumFractionDigits: 2,
+						})}
+						isError={repayError}
 						repaySuccess={repaySuccess}
 						successTitle="Repayment successful"
 						successMessage=""
@@ -1083,13 +1240,18 @@ export default function CreditsPage() {
 								header="Meta:"
 								messages={{
 									col1: "Transaction ID:",
-									message1: "TRX-839203",
+									message1: finalRepayResponse?.repaymentReference || "",
 									col2: "Date:",
-									message2: "24th Mar, 2026.12:23 PM",
+									message2: finalRepayResponse?.repaymentDate
+										? formatDateWithSuffix(finalRepayResponse?.repaymentDate)
+										: "N/A",
 									col3: "Method:",
 									message3: "Bank Transfer",
-									col4: " Outstanding Balance:",
-									message4: "0.00",
+									col4: " Amount Paid:",
+									message4: (
+										Number(creditHistoryData?.content[0]?.loanAmount) +
+										Number(creditHistoryData?.content[0]?.interest)
+									).toLocaleString("en-US", { maximumFractionDigits: 2 }),
 								}}
 							/>
 						}

@@ -1,15 +1,17 @@
 import { useQuery } from "@tanstack/react-query"
 
-export const useCreditHistory = () => {
+export const useCreditHistory = (params?: Record<string, string>) => {
 	return useQuery({
-		queryKey: ["credit-history"],
+		queryKey: ["credit-history", params?.page],
 		queryFn: async () => {
-			const res = await fetch("/api/credit")
+			const queryString = params
+				? `?${new URLSearchParams(params).toString()}`
+				: ""
+
+			const res = await fetch(`/api/credit${queryString}`)
 			const data = await res.json()
 
 			if (!res.ok) throw new Error(data.error)
-
-			console.log(data, "new")
 
 			return data
 		},

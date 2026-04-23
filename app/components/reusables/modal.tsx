@@ -25,12 +25,15 @@ export interface StepModalProps {
 	onPreviousStep: () => void
 	onSubmit?: () => void
 	isSuccess?: boolean
+	amount?: string
+	isError?: string
 	imagePath?: string
 	loading?: boolean
 	repaySuccess?: boolean
 	successTitle?: string
 	successMessage?: string | ReactNode
 	successButtonLabel?: string
+	screenMode?: "repay" | "credit" | "extend" | null
 	successtable?: ReactNode
 }
 
@@ -44,7 +47,9 @@ export const StepModal: React.FC<StepModalProps> = ({
 	onNextStep,
 	onPreviousStep,
 	onSubmit,
+	amount,
 	isSuccess,
+	isError,
 	imagePath,
 	loading,
 	successTitle,
@@ -52,6 +57,7 @@ export const StepModal: React.FC<StepModalProps> = ({
 	successButtonLabel,
 	successtable,
 	repaySuccess,
+	screenMode,
 }) => {
 	const pathname = usePathname()
 
@@ -59,6 +65,9 @@ export const StepModal: React.FC<StepModalProps> = ({
 
 	const isLastStep = currentStep === steps.length - 1
 	const currentStepConfig = steps[currentStep]
+
+	const stripped = amount?.split(" ")[0]
+	const amountValue = Number(stripped)
 
 	return (
 		<div className="fixed inset-0 z-50">
@@ -109,10 +118,8 @@ export const StepModal: React.FC<StepModalProps> = ({
 									<div className="flex w-full flex-col items-center justify-center">
 										<p className="text-center text-[14px] text-(--text-1)">
 											Your credit payment of{" "}
-											<span className="text-foreground font-semibold">
-												₦100,852,500.00
-											</span>{" "}
-											has been completed successfully
+											<span className="text-foreground font-semibold">₦{amount}</span> has
+											been completed successfully
 										</p>
 									</div>
 								)}
@@ -140,6 +147,10 @@ export const StepModal: React.FC<StepModalProps> = ({
 							<div>{currentStepConfig.content}</div>
 						</>
 					)}
+
+					{isError && isError !== "" && (
+						<p className="mt-3 text-left text-[14px] text-(--red-1)">{isError}</p>
+					)}
 				</div>
 
 				{/* Footer */}
@@ -153,18 +164,20 @@ export const StepModal: React.FC<StepModalProps> = ({
 						</button>
 					)}
 					<button
-						disabled={loading}
+						disabled={loading || amountValue > 1000000}
 						onClick={
 							isSuccess ? onClose : isLastStep ? onSubmit || onNextStep : onNextStep
 						}
-						className={`bg-foreground text-background hover:bg-foreground/85 flex flex-1 cursor-pointer items-center justify-center gap-x-3 rounded-lg px-4 py-3 transition`}>
+						className={`bg-foreground text-background hover:bg-foreground/85 flex flex-1 ${loading || amountValue > 1000000 ? "cursor-not-allowed" : "cursor-pointer"} items-center justify-center gap-x-3 rounded-lg px-4 py-3 transition`}>
 						{isSuccess
 							? successButtonLabel || "Close"
 							: pathname.match("/report")
 								? "Generate Report"
-								: isLastStep
+								: isLastStep && !screenMode
 									? "Submit"
-									: "Continue"}
+									: isLastStep && screenMode === "repay"
+										? "I have paid"
+										: "Continue"}
 
 						{loading && <Spinner />}
 					</button>

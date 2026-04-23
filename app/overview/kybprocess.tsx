@@ -11,81 +11,15 @@ import {
 	splitLeft,
 	splitRight,
 } from "../components/reusables/classes"
-import Kyc_status_banner from "../components/reusables/kyc_status_banner"
 import { FaArrowLeft } from "react-icons/fa"
 import { FilePickerField } from "../components/reusables/general_inputs"
 import { uploadKybDoc } from "../server/upgrade_account"
-import { Spinner } from "../components/reusables/spinner"
 import { fileToBase64 } from "../functions/helpers/base64"
-
-interface OwnerInfo {
-	id: string
-	firstName: string
-	lastName: string
-	email: string
-	phoneNumber: string
-	dayOfBirth: string
-	monthOfBirth: string
-	yearOfBirth: string
-	idDoc1: string
-	idNumber1: string
-	idUpload: File | null
-	homeState: string
-	homeCity: string
-	homePostalCode: string
-	homeStreet: string
-	homeProofUpload: File | null
-	bvn: string
-}
-
-interface KYBFormData {
-	// Step 1
-	companyName: string
-	businessDescription: string
-	staffSize: string
-	annualSalesVolume: string
-	annualSalesVolumeCurrency: string
-	industry: string
-	businessType: string
-	cacNumber: string
-
-	// Step 2
-	businessEmail: string
-	supportEmail: string
-	disputeEmail: string
-	phoneNumber: string
-	phoneNumberCountry: string
-	website: string
-	linkedin: string
-	twitter: string
-	instagram: string
-
-	// Step 3
-	officeCountry: string
-	officeState: string
-	officeCity: string
-	officePostalCode: string
-	officeStreet: string
-
-	// Step 4 - Now an array of owners
-	owners: OwnerInfo[]
-
-	// Step 5
-	incorporationDoc: File | null
-	taxFilingDoc: File | null
-	registrationStatus: File | null
-	mouDoc: File | null
-	boardRegisterDoc: File | null
-	proofOfAddressDoc: File | null
-	DueDiligenceDoc: File | null
-	amlDoc: File | null
-	supportingDoc: File[]
-
-	// Step 6
-	bankName: string
-	accountNumber: string
-	accountName: string
-}
+import { useProfile } from "../contexts/user_provider"
+import { useBanklists, useBankverify } from "../hooks/use_bank_list"
+import { Banklist } from "../types/general"
+import { KYBReviewScreens } from "../components/reusables/kybreview"
+import { OwnerInfo, KYBFormData } from "../types/general"
 
 const initialFormData: KYBFormData = {
 	companyName: "",
@@ -137,8 +71,6 @@ const initialFormData: KYBFormData = {
 	mouDoc: null,
 	boardRegisterDoc: null,
 	proofOfAddressDoc: null,
-	DueDiligenceDoc: null,
-	amlDoc: null,
 	supportingDoc: [],
 	bankName: "",
 	accountNumber: "",
@@ -181,7 +113,7 @@ function MultiFilePickerField({
 	return (
 		<div>
 			<p className="mb-2 text-[14px] text-(--text-1)" aria-label={label}>
-				{label} *
+				{label}
 			</p>
 			<input
 				title="file-picker"
@@ -244,6 +176,22 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 	const [formData, setFormData] = useState<KYBFormData>(initialFormData)
 	const [errors, setErrors] = useState<Record<string, string>>({})
 	const [loading, setLoading] = useState(false)
+	const [chosenBankCode, setChosenBankCode] = useState<Banklist | null>(null)
+	const [enabled, setEnabled] = useState(false)
+	const [enabledList, setEnabledList] = useState(false)
+	const [submitError, setSubmitError] = useState<string | null>(null)
+	const [isReviewMode, setIsReviewMode] = useState(false)
+	const [reviewStep, setReviewStep] = useState(1)
+	const [reviewTrack, setReviewTrack] = useState(false)
+	const { user } = useProfile()
+
+	const { data: banklists } = useBanklists(enabledList)
+	const { data: verifyInfo, refetch } = useBankverify(
+		enabled,
+		setEnabled,
+		formData.accountNumber,
+		chosenBankCode?.nipBankCode || ""
+	)
 
 	const updateFormData = useCallback((updates: Partial<KYBFormData>) => {
 		setFormData((prev) => ({ ...prev, ...updates }))
@@ -306,177 +254,205 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 		return () => setFormData(initialFormData)
 	}, [])
 
-	const validateStep = (step: number) => {
-		const newErrors: Record<string, string> = {}
+	const getStepErrors = useCallback(
+		(step: number) => {
+			const newErrors: Record<string, string> = {}
 
-		switch (step) {
-			case 1:
-				if (!formData.companyName)
-					newErrors.companyName = "Company Name is required"
-				if (!formData.businessDescription)
-					newErrors.businessDescription = "Business Description is required"
-				if (!formData.staffSize) newErrors.staffSize = "Staff Size is required"
-				if (!formData.annualSalesVolume)
-					newErrors.annualSalesVolume = "Annual Projected Sales Volume is required"
-				else if (
-					isNaN(Number(formData.annualSalesVolume)) ||
-					Number(formData.annualSalesVolume) <= 0
-				)
-					newErrors.annualSalesVolume =
-						"Enter a valid positive number (e.g. 5000000)"
-				if (!formData.industry) newErrors.industry = "Industry is required"
-				if (!formData.businessType)
-					newErrors.businessType = "Business Type is required"
-				if (!formData.cacNumber) newErrors.cacNumber = "CAC number is required"
-				else if (!/^rc\d+$/i.test(formData.cacNumber))
-					newErrors.cacNumber = "CAC number must start with RC (e.g. RC1234567)"
-				break
+			// SAME switch logic here, no setErrors
+			switch (step) {
+				case 1:
+					if (!formData.companyName)
+						newErrors.companyName = "Company Name is required"
+					if (!formData.businessDescription)
+						newErrors.businessDescription = "Business Description is required"
+					if (!formData.staffSize) newErrors.staffSize = "Staff Size is required"
+					if (!formData.annualSalesVolume)
+						newErrors.annualSalesVolume = "Annual Projected Sales Volume is required"
+					else if (
+						isNaN(Number(formData.annualSalesVolume)) ||
+						Number(formData.annualSalesVolume) <= 0
+					)
+						newErrors.annualSalesVolume =
+							"Enter a valid positive number (e.g. 5000000)"
+					if (!formData.industry) newErrors.industry = "Industry is required"
+					if (!formData.businessType)
+						newErrors.businessType = "Business Type is required"
+					if (!formData.cacNumber) newErrors.cacNumber = "CAC number is required"
+					else if (!/^rc\d+$/i.test(formData.cacNumber))
+						newErrors.cacNumber = "CAC number must start with RC (e.g. RC1234567)"
+					else if (!/^rc\d{6,}$/i.test(formData.cacNumber)) {
+						newErrors.cacNumber = "CAC format invalid"
+					}
+					break
 
-			case 2:
-				if (!formData.businessEmail)
-					newErrors.businessEmail = "Business Email is required"
-				else if (!isValidEmail(formData.businessEmail))
-					newErrors.businessEmail = "Enter a valid email (e.g. info@company.com)"
+				case 2:
+					if (!formData.businessEmail)
+						newErrors.businessEmail = "Business Email is required"
+					else if (!isValidEmail(formData.businessEmail))
+						newErrors.businessEmail = "Enter a valid email (e.g. info@company.com)"
 
-				if (!formData.supportEmail)
-					newErrors.supportEmail = "Support Email is required"
-				else if (!isValidEmail(formData.supportEmail))
-					newErrors.supportEmail = "Enter a valid email (e.g. support@company.com)"
+					if (formData.disputeEmail !== "" && !isValidEmail(formData.disputeEmail))
+						newErrors.disputeEmail = "Enter a valid email (e.g. info@company.com)"
 
-				if (!formData.disputeEmail)
-					newErrors.disputeEmail = "Dispute Email is required"
-				else if (!isValidEmail(formData.disputeEmail))
-					newErrors.disputeEmail = "Enter a valid email (e.g. disputes@company.com)"
+					if (!formData.phoneNumber)
+						newErrors.phoneNumber = "Phone Number is required"
+					else if (!isValidPhone(formData.phoneNumber))
+						newErrors.phoneNumber = "Include country code (e.g. +2348012345678)"
 
-				if (!formData.phoneNumber)
-					newErrors.phoneNumber = "Phone Number is required"
-				else if (!isValidPhone(formData.phoneNumber))
-					newErrors.phoneNumber = "Include country code (e.g. +2348012345678)"
+					if (!formData.website) newErrors.website = "Website is required"
+					else if (!isValidWebsite(formData.website))
+						newErrors.website = "Enter a valid URL (e.g. https://company.com)"
 
-				if (!formData.website) newErrors.website = "Website is required"
-				else if (!isValidWebsite(formData.website))
-					newErrors.website = "Enter a valid URL (e.g. https://company.com)"
+					if (formData.linkedin && !isValidWebsite(formData.linkedin))
+						newErrors.linkedin =
+							"Enter a valid LinkedIn URL (e.g. https://linkedin.com/company/name)"
+					if (formData.twitter && !isValidWebsite(formData.twitter))
+						newErrors.twitter =
+							"Enter a valid Twitter URL (e.g. https://twitter.com/handle)"
+					if (formData.instagram && !isValidWebsite(formData.instagram))
+						newErrors.instagram =
+							"Enter a valid Instagram URL (e.g. https://instagram.com/handle)"
+					break
 
-				// optional socials – validate format only if provided
-				if (formData.linkedin && !isValidWebsite(formData.linkedin))
-					newErrors.linkedin =
-						"Enter a valid LinkedIn URL (e.g. https://linkedin.com/company/name)"
-				if (formData.twitter && !isValidWebsite(formData.twitter))
-					newErrors.twitter =
-						"Enter a valid Twitter URL (e.g. https://twitter.com/handle)"
-				if (formData.instagram && !isValidWebsite(formData.instagram))
-					newErrors.instagram =
-						"Enter a valid Instagram URL (e.g. https://instagram.com/handle)"
-				break
+				case 3:
+					if (!formData.officeCountry)
+						newErrors.officeCountry = "Country is required"
+					if (!formData.officeState)
+						newErrors.officeState = "State or Region is required"
+					if (!formData.officeCity) newErrors.officeCity = "City is required"
+					if (!formData.officePostalCode)
+						newErrors.officePostalCode = "Postal Code is required"
+					else if (!/^\d{5,10}$/.test(formData.officePostalCode))
+						newErrors.officePostalCode = "Enter a valid postal code (e.g. 100001)"
+					if (!formData.officeStreet)
+						newErrors.officeStreet = "Street Address is required"
+					break
 
-			case 3:
-				if (!formData.officeCountry) newErrors.officeCountry = "Country is required"
-				if (!formData.officeState)
-					newErrors.officeState = "State or Region is required"
-				if (!formData.officeCity) newErrors.officeCity = "City is required"
-				if (!formData.officePostalCode)
-					newErrors.officePostalCode = "Postal Code is required"
-				else if (!/^\d{5,10}$/.test(formData.officePostalCode))
-					newErrors.officePostalCode = "Enter a valid postal code (e.g. 100001)"
-				if (!formData.officeStreet)
-					newErrors.officeStreet = "Street Address is required"
-				break
+				case 4:
+					formData.owners.forEach((owner) => {
+						if (!owner.firstName)
+							newErrors[`owner_${owner.id}_firstName`] = "First Name is required"
+						if (!owner.lastName)
+							newErrors[`owner_${owner.id}_lastName`] = "Last Name is required"
+						if (!owner.email)
+							newErrors[`owner_${owner.id}_email`] = "Email is required"
+						else if (!isValidEmail(owner.email))
+							newErrors[`owner_${owner.id}_email`] =
+								"Enter a valid email (e.g. info@company.com)"
 
-			case 4:
-				formData.owners.forEach((owner) => {
-					if (!owner.firstName)
-						newErrors[`owner_${owner.id}_firstName`] = "First Name is required"
-					if (!owner.lastName)
-						newErrors[`owner_${owner.id}_lastName`] = "Last Name is required"
-					if (!owner.email)
-						newErrors[`owner_${owner.id}_email`] = "Email is required"
-					else if (!isValidEmail(owner.email))
-						newErrors[`owner_${owner.id}_email`] =
-							"Enter a valid email (e.g. info@company.com)"
+						if (!owner.phoneNumber)
+							newErrors[`owner_${owner.id}_phoneNumber`] = "Phone Number is required"
+						else if (!/^\+\d{7,15}$/.test(owner.phoneNumber))
+							newErrors[`owner_${owner.id}_phoneNumber`] =
+								"Include country code (e.g. +2348012345678)"
 
-					if (!owner.phoneNumber)
-						newErrors[`owner_${owner.id}_phoneNumber`] = "Phone Number is required"
-					else if (!/^\+\d{7,15}$/.test(owner.phoneNumber))
-						newErrors[`owner_${owner.id}_phoneNumber`] =
-							"Include country code (e.g. +2348012345678)"
+						if (!owner.bvn) newErrors[`owner_${owner.id}_bvn`] = "BVN is required"
+						else if (isNaN(Number(owner.bvn)) || owner.bvn.length !== 11)
+							newErrors[`owner_${owner.id}_bvn`] =
+								"Enter a valid 11-digit BVN (e.g. 12345678901)"
 
-					if (!owner.bvn) newErrors[`owner_${owner.id}_bvn`] = "BVN is required"
-					else if (isNaN(Number(owner.bvn)) || owner.bvn.length !== 11)
-						newErrors[`owner_${owner.id}_bvn`] =
-							"Enter a valid 11-digit BVN (e.g. 12345678901)"
+						if (!owner.dayOfBirth)
+							newErrors[`owner_${owner.id}_dayOfBirth`] = "Day of Birth is required"
+						if (!owner.monthOfBirth)
+							newErrors[`owner_${owner.id}_monthOfBirth`] =
+								"Month of Birth is required"
+						if (!owner.yearOfBirth)
+							newErrors[`owner_${owner.id}_yearOfBirth`] = "Year of Birth is required"
+						if (!owner.idDoc1)
+							newErrors[`owner_${owner.id}_idDoc1`] =
+								"Identification Document is required"
+						if (!owner.idNumber1)
+							newErrors[`owner_${owner.id}_idNumber1`] =
+								"Identification Number is required"
+						if (!owner.idUpload)
+							newErrors[`owner_${owner.id}_idUpload`] =
+								"Identification Document Upload is required"
+						if (!owner.homeState)
+							newErrors[`owner_${owner.id}_homeState`] = "State or Region is required"
+						if (!owner.homeCity)
+							newErrors[`owner_${owner.id}_homeCity`] = "City is required"
+						if (!owner.homePostalCode)
+							newErrors[`owner_${owner.id}_homePostalCode`] = "Postal Code is required"
+						if (!owner.homeStreet)
+							newErrors[`owner_${owner.id}_homeStreet`] = "Street Address is required"
+						if (!owner.homeProofUpload)
+							newErrors[`owner_${owner.id}_homeProofUpload`] =
+								"Proof of Address Upload is required"
+					})
+					break
 
-					if (!owner.dayOfBirth)
-						newErrors[`owner_${owner.id}_dayOfBirth`] = "Day of Birth is required"
-					if (!owner.monthOfBirth)
-						newErrors[`owner_${owner.id}_monthOfBirth`] = "Month of Birth is required"
-					if (!owner.yearOfBirth)
-						newErrors[`owner_${owner.id}_yearOfBirth`] = "Year of Birth is required"
-					if (!owner.idDoc1)
-						newErrors[`owner_${owner.id}_idDoc1`] =
-							"Identification Document is required"
-					if (!owner.idNumber1)
-						newErrors[`owner_${owner.id}_idNumber1`] =
-							"Identification Number is required"
-					if (!owner.idUpload)
-						newErrors[`owner_${owner.id}_idUpload`] =
-							"Identification Document Upload is required"
-					if (!owner.homeState)
-						newErrors[`owner_${owner.id}_homeState`] = "State or Region is required"
-					if (!owner.homeCity)
-						newErrors[`owner_${owner.id}_homeCity`] = "City is required"
-					if (!owner.homePostalCode)
-						newErrors[`owner_${owner.id}_homePostalCode`] = "Postal Code is required"
-					if (!owner.homeStreet)
-						newErrors[`owner_${owner.id}_homeStreet`] = "Street Address is required"
-					if (!owner.homeProofUpload)
-						newErrors[`owner_${owner.id}_homeProofUpload`] =
-							"Proof of Address Upload is required"
-				})
-				break
+				case 5:
+					if (!formData.incorporationDoc)
+						newErrors.incorporationDoc = "Certification of Incorporation is required"
+					if (!formData.registrationStatus)
+						newErrors.registrationStatus = "Status of Registration is required"
+					if (!formData.mouDoc)
+						newErrors.mouDoc = "Memorandum of Understanding is required"
+					if (!formData.boardRegisterDoc)
+						newErrors.boardRegisterDoc = "Register of Board of Directors is required"
+					if (!formData.proofOfAddressDoc)
+						newErrors.proofOfAddressDoc = "Proof of Address is required"
+					if (!formData.taxFilingDoc)
+						newErrors.taxFilingDoc = "Tax Document is required"
+					break
 
-			case 5:
-				// Required docs (marked with *)
-				if (!formData.incorporationDoc)
-					newErrors.incorporationDoc = "Certification of Incorporation is required"
-				if (!formData.registrationStatus)
-					newErrors.registrationStatus = "Status of Registration is required"
-				if (!formData.mouDoc)
-					newErrors.mouDoc = "Memorandum of Understanding is required"
-				if (!formData.boardRegisterDoc)
-					newErrors.boardRegisterDoc = "Register of Board of Directors is required"
-				if (!formData.proofOfAddressDoc)
-					newErrors.proofOfAddressDoc = "Proof of Address is required"
-				if (!formData.amlDoc)
-					newErrors.amlDoc = "AML Policy and Procedures document is required"
-				if (!formData.DueDiligenceDoc)
-					newErrors.DueDiligenceDoc = "Customer Due Diligence Doc is required"
-				if (!formData.supportingDoc || formData.supportingDoc.length === 0)
-					newErrors.supportingDoc = "Supporting Document is required"
-				// taxFilingDoc is optional – no validation
-				break
+				case 6:
+					if (!formData.bankName) newErrors.bankName = "Bank Name is required"
+					if (!formData.accountNumber)
+						newErrors.accountNumber = "Account Number is required"
+					else if (!isValidAccountNumber(formData.accountNumber))
+						newErrors.accountNumber =
+							"Enter a valid 10-digit account number (e.g. 0123456789)"
+					if (!formData.accountName)
+						newErrors.accountName = "Account Name is required"
+					else if (
+						!verifyInfo ||
+						verifyInfo?.responseCode !== "000" ||
+						!verifyInfo?.successful
+					)
+						newErrors.accountName = "Could not validate given bank details"
+					break
 
-			case 6:
-				if (!formData.bankName) newErrors.bankName = "Bank Name is required"
-				if (!formData.accountNumber)
-					newErrors.accountNumber = "Account Number is required"
-				else if (!isValidAccountNumber(formData.accountNumber))
-					newErrors.accountNumber =
-						"Enter a valid 10-digit account number (e.g. 0123456789)"
-				if (!formData.accountName)
-					newErrors.accountName = "Account Name is required"
-				break
+				default:
+					break
+			}
 
-			default:
-				break
+			return newErrors
+		},
+		[formData, verifyInfo]
+	)
+
+	const validateStep = useCallback(
+		(step: number) => {
+			const newErrors = getStepErrors(step)
+			setErrors(newErrors)
+			return Object.keys(newErrors).length === 0
+		},
+		[getStepErrors]
+	)
+
+	const validateAllSteps = useCallback((): boolean => {
+		for (let step = 1; step <= 6; step++) {
+			const errors = getStepErrors(step)
+
+			if (Object.keys(errors).length > 0) {
+				return false
+			}
 		}
 
-		setErrors(newErrors)
-		return Object.keys(newErrors).length === 0
-	}
+		return true
+	}, [getStepErrors])
 
 	const handleNext = () => {
+		const reviewMode = validateAllSteps()
 		if (validateStep(currentStep)) {
-			setCurrentStep(currentStep + 1)
+			// After step 6 is completed or if all step is filled, enter review mode
+			if (currentStep === 6 || reviewMode) {
+				setIsReviewMode(true)
+				setReviewStep(currentStep)
+			} else {
+				setCurrentStep(currentStep + 1)
+			}
 		}
 	}
 
@@ -558,10 +534,6 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 					formData.proofOfAddressDoc &&
 						toDoc(formData.proofOfAddressDoc, "PROOF_OF_ADDRESS"),
 
-					formData.DueDiligenceDoc && toDoc(formData.DueDiligenceDoc, "OTHER"),
-
-					formData.amlDoc && toDoc(formData.amlDoc, "OTHER"),
-
 					...formData.supportingDoc.map((file) => toDoc(file, "OTHER")),
 				].filter(Boolean) as Promise<DocPayload>[]
 			)
@@ -642,23 +614,82 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 				},
 			}
 
-			console.log(payload, "FINAL PAYLOAD")
-
 			const result = await uploadKybDoc(JSON.stringify(payload))
-
-			console.log(result, "SUCCESS")
 
 			if (result.success) {
 				setCurrentStep(1)
 				setFormData(initialFormData)
 				localStorage.removeItem("profile_cache")
 				onComplete()
+			} else {
+				setSubmitError(result.error || "Failed to submit KYB documents.")
 			}
 		} catch (err) {
+			setSubmitError(
+				"Something went wrong submitting documents, contact support if issue persists"
+			)
 			console.error("KYB submission failed:", err)
 		} finally {
 			setLoading(false)
 		}
+	}
+
+	useEffect(() => {
+		const chosen = banklists?.data?.find((item: Banklist) => {
+			if (item.bankName === formData.bankName) {
+				return item.nipBankCode
+			}
+		})
+		setChosenBankCode(chosen)
+	}, [formData.bankName, banklists])
+
+	useEffect(() => {
+		const isRestrictedStatus =
+			user?.kybStatus === "ACTIVE" || user?.kybStatus === "PENDING_REVIEW"
+
+		const hasBankName = !!formData.bankName?.trim()
+
+		if (!isRestrictedStatus) {
+			setEnabledList(true)
+			return
+		}
+		setEnabled(hasBankName)
+	}, [formData.bankName, user?.kybStatus])
+
+	useEffect(() => {
+		if (formData.bankName !== "" && formData.accountNumber !== "") {
+			refetch()
+		}
+	}, [formData.bankName, formData.accountName, formData.accountNumber, refetch])
+
+	useEffect(() => {
+		updateFormData({ accountName: verifyInfo?.data?.accountName })
+	}, [verifyInfo?.data, updateFormData])
+
+	useEffect(() => {
+		const reviewMode = validateAllSteps()
+		setReviewTrack(reviewMode)
+	}, [validateAllSteps])
+
+	if (isReviewMode) {
+		return (
+			<KYBReviewScreens
+				step={reviewStep}
+				formData={formData}
+				onBack={() => {
+					setIsReviewMode(false)
+					setCurrentStep(6)
+				}}
+				onEditStep={(step: number) => {
+					setIsReviewMode(false)
+					setCurrentStep(step)
+				}}
+				err={submitError}
+				setErr={setSubmitError}
+				loading={loading}
+				onComplete={handleSubmit}
+			/>
+		)
 	}
 
 	return (
@@ -695,7 +726,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 					<div className="h-full w-[42%] border-t border-t-(--grey-1)"></div>
 					<p className="text-foreground text-s[16px] font-medium tracking-widest lg:mx-2">
 						KYB STEP {currentStep}/
-						<span className="text-(--text-1) lg:w-[20%]">7</span>
+						<span className="text-(--text-1) lg:w-[20%]">6</span>
 					</p>
 					<div className="h-full w-[42%] border-t border-t-(--grey-1)"></div>
 				</div>
@@ -707,7 +738,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 						footer={
 							<div className="flex items-center justify-center gap-4 pt-6">
 								<button onClick={handleNext} className={`${baseButtonBlack} py-3`}>
-									Proceed to Company Contact
+									{reviewTrack ? "Continue Review" : "Proceed to Company Contact"}
 								</button>
 							</div>
 						}>
@@ -762,12 +793,18 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 								<div className="flex w-full flex-col">
 									<div className="flex w-full">
 										<input
-											type="number"
+											type="text"
 											placeholder="Annual Projected Sales Volume*"
-											value={formData.annualSalesVolume}
-											onChange={(e) =>
-												updateFormData({ annualSalesVolume: e.target.value })
+											value={
+												formData.annualSalesVolume
+													? Number(formData.annualSalesVolume).toLocaleString("en-US")
+													: ""
 											}
+											onChange={(e) => {
+												// Strip all non-digit characters before storing
+												const raw = e.target.value.replace(/[^0-9]/g, "")
+												updateFormData({ annualSalesVolume: raw })
+											}}
 											className={splitLeft}
 										/>
 										<select
@@ -800,6 +837,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 										<option value="Finance">Finance</option>
 										<option value="Retail">Retail</option>
 										<option value="Manufacturing">Manufacturing</option>
+										<option value="Other">Other</option>
 									</select>
 									{errors.industry && (
 										<p className="text-sm text-(--red-1)">{errors.industry}</p>
@@ -817,6 +855,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 										<option value="Partnership">Partnership</option>
 										<option value="Corporation">Corporation</option>
 										<option value="LLC">LLC</option>
+										<option value="Other">Other</option>
 									</select>
 									{errors.businessType && (
 										<p className="text-sm text-(--red-1)">{errors.businessType}</p>
@@ -852,7 +891,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 									Go Back
 								</button>
 								<button onClick={handleNext} className={baseButtonBlack}>
-									Proceed to Office Address
+									{reviewTrack ? "Continue Review" : "Proceed to Office Address"}
 								</button>
 							</div>
 						}>
@@ -873,7 +912,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 							<div className="w-full">
 								<input
 									type="email"
-									placeholder="Support Email* (e.g. support@company.com)"
+									placeholder="Support Email (e.g. support@company.com)"
 									value={formData.supportEmail}
 									onChange={(e) => updateFormData({ supportEmail: e.target.value })}
 									className={baseInput}
@@ -888,7 +927,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 							<div className="w-full">
 								<input
 									type="email"
-									placeholder="Dispute Email* (e.g. disputes@company.com)"
+									placeholder="Dispute Email (e.g. disputes@company.com)"
 									value={formData.disputeEmail}
 									onChange={(e) => updateFormData({ disputeEmail: e.target.value })}
 									className={baseInput}
@@ -977,38 +1016,32 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 									Go Back
 								</button>
 								<button onClick={handleNext} className={baseButtonBlack}>
-									Proceed to Owner&apos;s Information
+									{reviewTrack ? "Continue Review" : "Proceed to Owner's Information"}
 								</button>
 							</div>
 						}>
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 							<div className="flex flex-col">
-								<select
-									title="office country"
+								<input
+									title="country"
+									placeholder="Country"
 									value={formData.officeCountry}
 									onChange={(e) => updateFormData({ officeCountry: e.target.value })}
-									className={baseSelect}>
-									<option value="">Country*</option>
-									<option value="Nigeria">Nigeria</option>
-									<option value="Ghana">Ghana</option>
-									<option value="Kenya">Kenya</option>
-								</select>
+									className={baseInput}
+								/>
 								{errors.officeCountry && (
 									<p className="text-sm text-(--red-1)">{errors.officeCountry}</p>
 								)}
 							</div>
 
 							<div className="flex flex-col">
-								<select
-									title="office state"
+								<input
+									title="Office state"
+									placeholder="State"
 									value={formData.officeState}
 									onChange={(e) => updateFormData({ officeState: e.target.value })}
-									className={baseSelect}>
-									<option value="">State or Region*</option>
-									<option value="Lagos">Lagos</option>
-									<option value="Abuja">Abuja</option>
-									<option value="Kano">Kano</option>
-								</select>
+									className={baseInput}
+								/>
 								{errors.officeState && (
 									<p className="text-sm text-(--red-1)">{errors.officeState}</p>
 								)}
@@ -1017,16 +1050,13 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 							<div className="flex flex-col">
-								<select
-									title="office city"
+								<input
+									type="text"
+									placeholder="City*"
 									value={formData.officeCity}
 									onChange={(e) => updateFormData({ officeCity: e.target.value })}
-									className={baseSelect}>
-									<option value="">City*</option>
-									<option value="Ikeja">Ikeja</option>
-									<option value="Victoria Island">Victoria Island</option>
-									<option value="Lekki">Lekki</option>
-								</select>
+									className={baseInput}
+								/>
 								{errors.officeCity && (
 									<p className="text-sm text-(--red-1)">{errors.officeCity}</p>
 								)}
@@ -1067,18 +1097,18 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 						title={
 							<div className="flex items-center justify-between rounded-lg">
 								<p className="text-foreground text-[14px] font-semibold">
-									Owner(s) Information
+									Director(s) Information
 								</p>
 
 								<div className="flex flex-col items-center gap-x-2 md:flex-row">
 									<small className="hidden text-(--text-1) md:flex">
-										Multiple Owners?
+										Multiple Directors?
 									</small>
 									<button
 										onClick={addOwner}
 										className="bg-foreground text-background hover:bg-foreground/85 flex cursor-pointer items-center gap-2 rounded px-3 py-2 text-sm transition">
 										<HiPlus className="h-4 w-4" />
-										Add Owner
+										Add Director
 									</button>
 								</div>
 							</div>
@@ -1089,7 +1119,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 									Go Back
 								</button>
 								<button onClick={handleNext} className={baseButtonBlack}>
-									Proceed to Company Documents
+									{reviewTrack ? "Continue Review" : "Proceed to Company Documents"}
 								</button>
 							</div>
 						}>
@@ -1100,7 +1130,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 									className="space-y-6 border-b border-(--grey-1) pb-8 last:border-0">
 									<div className="flex items-center justify-between">
 										<p className="font-semibold text-gray-900">
-											Owner {formData.owners.length - index}
+											Director {formData.owners.length - index}
 										</p>
 										{formData.owners.length > 1 && (
 											<button
@@ -1129,7 +1159,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 											<div className="flex flex-col">
 												<input
 													title="first name"
-													placeholder="firstname"
+													placeholder="First name"
 													value={owner.firstName}
 													onChange={(e) =>
 														updateOwner(owner.id, { firstName: e.target.value })
@@ -1146,7 +1176,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 											<div className="flex flex-col">
 												<input
 													title="last name"
-													placeholder="lastname"
+													placeholder="Last name"
 													value={owner.lastName}
 													onChange={(e) =>
 														updateOwner(owner.id, { lastName: e.target.value })
@@ -1165,7 +1195,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 												<input
 													title="email"
 													value={owner.email}
-													placeholder="email"
+													placeholder="Email"
 													onChange={(e) => updateOwner(owner.id, { email: e.target.value })}
 													className={baseInput}
 												/>
@@ -1179,7 +1209,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 											<div className="flex flex-col">
 												<input
 													title="phone number"
-													placeholder="phone number"
+													placeholder="Phone number"
 													value={owner.phoneNumber}
 													onChange={(e) =>
 														updateOwner(owner.id, {
@@ -1199,9 +1229,9 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 										<div className="grid grid-cols-1 gap-4">
 											<div className="flex flex-col">
 												<input
-													title="bvn"
+													title="BVN"
 													value={owner.bvn}
-													placeholder="bvn"
+													placeholder="BVN"
 													onChange={(e) => updateOwner(owner.id, { bvn: e.target.value })}
 													className={baseInput}
 												/>
@@ -1348,17 +1378,15 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 
 										<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 											<div className="flex flex-col">
-												<select
-													title="state"
+												<input
+													type="text"
+													placeholder="State"
 													value={owner.homeState}
 													onChange={(e) =>
 														updateOwner(owner.id, { homeState: e.target.value })
 													}
-													className={baseInput}>
-													<option value="">State or Region*</option>
-													<option value="Lagos">Lagos</option>
-													<option value="Abuja">Abuja</option>
-												</select>
+													className={baseInput}
+												/>
 												{errors[`owner_${owner.id}_homeState`] && (
 													<p className="text-sm text-(--red-1)">
 														{errors[`owner_${owner.id}_homeState`]}
@@ -1367,17 +1395,15 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 											</div>
 
 											<div className="flex flex-col">
-												<select
-													title="city"
+												<input
+													type="text"
+													placeholder="City"
 													value={owner.homeCity}
 													onChange={(e) =>
 														updateOwner(owner.id, { homeCity: e.target.value })
 													}
-													className={baseSelect}>
-													<option value="">City*</option>
-													<option value="Ikeja">Ikeja</option>
-													<option value="Victoria Island">Victoria Island</option>
-												</select>
+													className={baseInput}
+												/>
 												{errors[`owner_${owner.id}_homeCity`] && (
 													<p className="text-sm text-(--red-1)">
 														{errors[`owner_${owner.id}_homeCity`]}
@@ -1388,19 +1414,17 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 
 										<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 											<div className="flex flex-col">
-												<select
-													title="postal code"
+												<input
+													type="text"
+													placeholder="Postal code"
 													value={owner.homePostalCode}
 													onChange={(e) =>
 														updateOwner(owner.id, {
 															homePostalCode: e.target.value,
 														})
 													}
-													className={baseSelect}>
-													<option value="">Postal Code*</option>
-													<option value="100001">100001</option>
-													<option value="100002">100002</option>
-												</select>
+													className={baseInput}
+												/>
 												{errors[`owner_${owner.id}_homePostalCode`] && (
 													<p className="text-sm text-(--red-1)">
 														{errors[`owner_${owner.id}_homePostalCode`]}
@@ -1478,7 +1502,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 									Go Back
 								</button>
 								<button onClick={handleNext} className={baseButtonBlack}>
-									Proceed to Bank Details
+									{reviewTrack ? "Continue Review" : "Proceed to Bank Details"}
 								</button>
 							</div>
 						}>
@@ -1505,10 +1529,12 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 									required
 								/>
 								<FilePickerField
-									label="Tax Filing Document (Optional)"
+									label="Tax Filing Document"
 									file={formData.taxFilingDoc}
 									onFileChange={(file) => updateFormData({ taxFilingDoc: file })}
 									onFileRemove={() => updateFormData({ taxFilingDoc: null })}
+									error={errors.taxFilingDoc}
+									required
 								/>
 								<FilePickerField
 									label="Status of Registration"
@@ -1559,38 +1585,6 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 							/>
 						</div>
 
-						{/* AML Document */}
-						<div>
-							<div className="relative my-6 flex items-center justify-center">
-								<div className="absolute inset-x-0 top-1/2 border-t border-(--grey-1)" />
-								<span className="bg-background text-foreground relative px-4 text-[16px] font-medium uppercase">
-									AML DOCUMENT
-								</span>
-							</div>
-							<p className="mb-4 text-[14px] text-(--text-1)">
-								Please upload your AML (Anti-Money Laundering) compliance document. This
-								is required to ensure regulatory compliance.
-							</p>
-							<div className="space-y-3">
-								<FilePickerField
-									label="Customer Due Diligence"
-									file={formData.DueDiligenceDoc}
-									onFileChange={(file) => updateFormData({ DueDiligenceDoc: file })}
-									onFileRemove={() => updateFormData({ DueDiligenceDoc: null })}
-									error={errors.DueDiligenceDoc}
-									required
-								/>
-								<FilePickerField
-									label="AML Policy and Procedures"
-									file={formData.amlDoc}
-									onFileChange={(file) => updateFormData({ amlDoc: file })}
-									onFileRemove={() => updateFormData({ amlDoc: null })}
-									error={errors.amlDoc}
-									required
-								/>
-							</div>
-						</div>
-
 						{/* Supporting Documents */}
 						<div>
 							<div className="relative my-6 flex items-center justify-center">
@@ -1603,7 +1597,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 								Upload other supporting documents
 							</p>
 							<MultiFilePickerField
-								label="Supporting Document"
+								label="Supporting Document (Optional)"
 								files={formData.supportingDoc}
 								onFilesChange={(files) => updateFormData({ supportingDoc: files })}
 								error={errors.supportingDoc}
@@ -1622,7 +1616,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 									Go Back
 								</button>
 								<button onClick={handleNext} className={baseButtonBlack}>
-									Proceed to Submit
+									Proceed to Review
 								</button>
 							</div>
 						}>
@@ -1637,10 +1631,11 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 							onChange={(e) => updateFormData({ bankName: e.target.value })}
 							className={`${baseSelect} w-full`}>
 							<option value="">Bank Name*</option>
-							<option value="First Bank">First Bank</option>
-							<option value="GTBank">GTBank</option>
-							<option value="Access Bank">Access Bank</option>
-							<option value="Zenith Bank">Zenith Bank</option>
+							{banklists?.data?.map((item: Banklist, index: number) => (
+								<option key={index} value={item.bankName}>
+									{item.bankName}
+								</option>
+							))}
 						</select>
 						{errors.bankName && (
 							<p className="-mt-6 ml-1 text-sm text-(--red-1)">{errors.bankName}</p>
@@ -1664,34 +1659,14 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 								<input
 									type="text"
 									placeholder="Account Name*"
-									value={formData.accountName}
-									onChange={(e) => updateFormData({ accountName: e.target.value })}
-									className={baseInput}
+									disabled
+									value={verifyInfo?.data?.accountName}
+									className={`${baseInput} cursor-not-allowed bg-gray-200!`}
 								/>
 								{errors.accountName && (
 									<p className="text-sm text-(--red-1)">{errors.accountName}</p>
 								)}
 							</div>
-						</div>
-					</KYBStepWrapper>
-				)}
-
-				{/* Step 7: Service of Agreement */}
-				{currentStep === 7 && (
-					<KYBStepWrapper
-						title={<p className="font-semibold text-gray-900">Notice</p>}
-						footer={
-							<div className="flex flex-col gap-4 md:flex-row">
-								<button onClick={handlePrevious} className={baseButtonWhite}>
-									Go Back
-								</button>
-								<button onClick={handleSubmit} className={baseButtonBlack}>
-									Submit {loading && <Spinner />}
-								</button>
-							</div>
-						}>
-						<div className="space-y-4">
-							<Kyc_status_banner status="pending" />
 						</div>
 					</KYBStepWrapper>
 				)}

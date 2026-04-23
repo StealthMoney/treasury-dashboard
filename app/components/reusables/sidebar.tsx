@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { PiHandCoins } from "react-icons/pi"
 import { TbFileAnalytics } from "react-icons/tb"
-import { CiSettings, CiLogout } from "react-icons/ci"
+import { CiSettings, CiLogout, CiHeadphones } from "react-icons/ci"
 import { RiUser3Line } from "react-icons/ri"
 import { signOut } from "next-auth/react"
 import { useState, useEffect } from "react"
@@ -12,7 +12,6 @@ import { Spinner } from "./spinner"
 import { FeedbackModal } from "./feedback_modal"
 import { filterLinks } from "@/app/functions/helpers/available_links"
 import { useProfile } from "@/app/contexts/user_provider"
-import { NavLink } from "@/app/types/general"
 
 export default function Sidebar({
 	open,
@@ -98,11 +97,19 @@ export default function Sidebar({
 					})}
 				</div>
 
-				<button
-					onClick={() => setShowLogoutModal(true)}
-					className="mb-6 flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-(--red-1) transition-colors">
-					<CiLogout /> Logout {loading && <Spinner />}
-				</button>
+				<div className="mb-6 flex flex-col gap-2">
+					<Link
+						href="mailto:info@stealthtreasury.com"
+						className="text-foreground flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 transition-opacity">
+						<CiHeadphones /> Support
+					</Link>
+
+					<button
+						onClick={() => setShowLogoutModal(true)}
+						className="mb-6 flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-(--red-1) transition-colors">
+						<CiLogout /> Logout {loading && <Spinner />}
+					</button>
+				</div>
 			</aside>
 		</>
 	)

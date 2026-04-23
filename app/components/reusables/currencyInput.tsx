@@ -11,6 +11,8 @@ interface CurrencyInputProps {
 	assetName?: string
 	balance?: number
 	showmax: boolean
+	error?: string
+	disabled?: boolean
 }
 
 export const CurrencyInput: React.FC<CurrencyInputProps> = ({
@@ -25,6 +27,8 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
 	assetName = false,
 	balance,
 	showmax = false,
+	error,
+	disabled,
 }) => {
 	const formatDisplay = (raw: string) => {
 		const digits = raw.replace(/\D/g, "")
@@ -52,6 +56,7 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
 			)}
 			<div className="flex">
 				<input
+					disabled={disabled}
 					type="text"
 					inputMode="numeric"
 					value={displayValue}
@@ -60,6 +65,7 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
 					className="flex-1 rounded-tl-lg rounded-bl-lg border border-(--grey-1) bg-(--grey-4) px-4 py-3 text-(--text-1) focus:outline-none"
 				/>
 				<select
+					title="currency"
 					value={currency}
 					onChange={(e) => onCurrencyChange(e.target.value as "NGN" | "USD")}
 					className="bg-background cursor-pointer rounded-tr-lg rounded-br-lg border border-(--grey-1) px-4 py-3 font-medium focus:outline-none">
@@ -67,13 +73,14 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
 					{/* <option value="USD">USD</option> */}
 				</select>
 			</div>
+			{error && <p className="mt-1 text-sm text-(--red-1)">{error}</p>}
 
 			<div className="flex items-center justify-between">
 				<p className="text-sm text-(--text-1)">
 					{description}{" "}
 					<span className="text-foreground font-semibold">
 						{balance?.toLocaleString("en-US", {
-							minimumFractionDigits: 2,
+							maximumFractionDigits: 2,
 						})}{" "}
 					</span>
 					{assetName && <span className="ml-2">{assetName}</span>}

@@ -1,14 +1,12 @@
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
-
 import endpoints from "@/app/config/endpoints"
 import { NextResponse } from "next/server"
 
 export async function POST(request: Request) {
-	const url = endpoints().user.register
+	const url = endpoints().auth["reset-password"]
 
-	let userData
+	let payload
 	try {
-		userData = await request.json()
+		payload = await request.json()
 	} catch {
 		return NextResponse.json(
 			{ success: false, message: "Bad input" },
@@ -18,7 +16,7 @@ export async function POST(request: Request) {
 
 	try {
 		const res = await fetch(url, {
-			body: JSON.stringify(userData),
+			body: JSON.stringify(payload),
 			headers: {
 				"Content-Type": "application/json",
 			},
@@ -45,12 +43,16 @@ export async function POST(request: Request) {
 
 		return NextResponse.json(
 			{ success: true, message: "User created" },
-			{ status: 201 }
+			{ status: 200 }
 		)
 	} catch (error) {
-		console.error("Register route error:", error)
+		console.error("Reset password error:", error)
 		return NextResponse.json(
-			{ success: false, message: "User not created" },
+			{
+				success: false,
+				message:
+					error instanceof Error ? error.message : "Error resetting password",
+			},
 			{ status: 500 }
 		)
 	}

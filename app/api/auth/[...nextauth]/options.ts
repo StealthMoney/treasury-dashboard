@@ -4,8 +4,6 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import { NextAuthOptions, Session } from "next-auth"
 import { JWT } from "next-auth/jwt"
 import { jwtDecode } from "jwt-decode"
-
-import endpoints from "@/app/config/endpoints"
 import { DecodedJwt } from "@/app/types/jwt"
 
 // ─── Augment NextAuth types ────────────────────────────────────────────────────
@@ -30,7 +28,6 @@ declare module "next-auth/jwt" {
 		id_token?: string
 	}
 }
-// ──────────────────────────────────────────────────────────────────────────────
 
 export const authOptions: NextAuthOptions = {
 	secret: process.env.NEXTAUTH_SECRET,
@@ -49,9 +46,13 @@ export const authOptions: NextAuthOptions = {
 					placeholder: "********",
 				},
 			},
-			async authorize(credentials) {
-				const authEndpoint = endpoints().auth.login
-				const res = await fetch(authEndpoint, {
+			async authorize(credentials, req) {
+				let baseUrl = process.env.NEXTAUTH_URL
+				if (!baseUrl) {
+					const protocol = process.env.NODE_ENV === "development" ? "http" : "https"
+					baseUrl = `${protocol}:${req?.headers?.host}`
+				}
+				const res = await fetch(`${baseUrl}/api/login`, {
 					method: "POST",
 					body: JSON.stringify({
 						username: credentials?.username,
@@ -60,11 +61,7 @@ export const authOptions: NextAuthOptions = {
 					headers: { "Content-Type": "application/json" },
 				})
 
-				console.log("AUTH STATUS:", res.status)
-				console.log("AUTH OK:", res.ok)
-
 				const user = await res.json()
-				console.log("AUTH BODY:", JSON.stringify(user))
 				return {
 					...user,
 					id: user.id_token,
@@ -94,13 +91,10 @@ export const authOptions: NextAuthOptions = {
 		async session({ session, token }: { session: Session; token: JWT }) {
 			session.accessToken = undefined
 
-			console.log(session, " is here")
-
 			if (token.id_token) {
 				const decoded: DecodedJwt = jwtDecode(token.id_token)
 				session.accessToken = token.id_token
 				session.expires = new Date(decoded.exp * 1000).toISOString()
-				console.log(decoded, "is decoded")
 
 				if (decoded.sub.includes("@")) {
 					token.email = decoded.sub

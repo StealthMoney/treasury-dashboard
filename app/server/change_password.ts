@@ -1,13 +1,11 @@
 "use server"
-
 import { getAuthHeaders } from "../functions/auth_header"
-import { AppuserProps } from "../types/app_user"
-import { Result } from "../types/general"
 import endpoints from "../config/endpoints"
+import { Result } from "../types/general"
 
-export const uploadKybDoc = async (
+export const changePassword = async (
 	body: string
-): Promise<Result<AppuserProps>> => {
+): Promise<Result<{ message: string }>> => {
 	try {
 		const session = await getAuthHeaders()
 
@@ -15,9 +13,7 @@ export const uploadKybDoc = async (
 			return { success: false, error: "No session found" }
 		}
 
-		const url = endpoints().account["upgrade-account"]
-
-		console.log(body, "is server gotten body")
+		const url = endpoints().auth["change-password"]
 
 		const res = await fetch(url, {
 			method: "POST",
@@ -25,25 +21,26 @@ export const uploadKybDoc = async (
 			body: body,
 		})
 
-		console.log(res, "at upload")
-
 		if (!res.ok) {
+			let errorMessage = "could not process request"
 			try {
 				const data = await res.json()
-				return {
-					success: false,
-					error: data.message || "Failed to upload documents",
-				}
+				errorMessage = data?.message || errorMessage
 			} catch (_) {
 				console.log(_)
+			}
+
+			return {
+				success: false,
+				error: errorMessage,
 			}
 		}
 
 		const response = await res.json()
 
-		return { success: true, data: response?.message || "Request successful" }
+		return { success: true, data: response }
 	} catch (err) {
-		console.error("Something went wrong", err)
+		console.error("change password error", err)
 		return {
 			success: false,
 			error: err instanceof Error ? err.message : "An unknown error occurred",

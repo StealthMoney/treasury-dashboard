@@ -44,11 +44,11 @@ export const StatsSection = ({
 				const isLast = index === stats.length - 1
 				const ui = uiConfig.find((c) => c.index === index)
 				return (
-					<div key={index} className="flex lg:flex-1 lg:items-center">
+					<div key={index} className="flex px-4 py-6 lg:flex-1 lg:items-start">
 						{/* Card */}
 						<div
 							className={`flex-1 ${ui?.showButton ? "lg:flex lg:items-center" : ""}`}>
-							<div className="bg-background rounded-lg p-4 sm:p-6">
+							<div className="bg-background rounded-lg">
 								<p className="mb-2 text-[16px] text-(--text-1)">{stat.label}</p>
 								{stat.valueRow ? (
 									<div className="mb-2 flex items-baseline gap-2">

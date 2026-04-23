@@ -5,6 +5,8 @@ import { TextField, SelectField } from "../reusables/general_inputs"
 import { AiOutlineCloudUpload } from "react-icons/ai"
 import { KYBStepWrapper } from "../reusables/kybstepwraper"
 import Image from "next/image"
+import { useProfile } from "@/app/contexts/user_provider"
+import PageSkeleton from "../reusables/page_skeleton"
 
 interface ProfileTabProps {
 	onSave?: (data: ProfileData) => void
@@ -19,11 +21,29 @@ interface ProfileData {
 }
 
 export function ProfileTab({ onSave }: ProfileTabProps) {
+	const { user, loading } = useProfile()
+
+	const mapBusinessType = (type?: string) => {
+		switch (type) {
+			case "Sole Proprietorship":
+				return "Sole Proprietorship"
+			case "Partnership":
+				return "Partnership"
+			case "Corporation":
+				return "Corporation"
+			case "LLC":
+			case "Limited Liability Company":
+				return "LLC"
+			default:
+				return "Other"
+		}
+	}
+
 	const [data, setData] = useState<ProfileData>({
-		businessName: "Moneywave",
-		businessEmail: "moneywave@gmail.com",
-		businessWebsite: "moneywave.com",
-		businessEntity: "Sole Proprietorship",
+		businessName: user?.businessInfo?.businessName || "",
+		businessEmail: user?.businessInfo?.email || "",
+		businessWebsite: user?.businessInfo?.website || "",
+		businessEntity: mapBusinessType(user?.businessInfo?.businessType) || "",
 	})
 
 	const [logoPreview, setLogoPreview] = useState<string | null>(null)
@@ -87,9 +107,29 @@ export function ProfileTab({ onSave }: ProfileTabProps) {
 	const handleSave = () => {
 		if (validateForm()) {
 			onSave?.(data)
-			alert("Profile saved successfully!")
+			// alert("Profile saved successfully!")
 		}
 	}
+
+	const BUSINESS_TYPES = [
+		{ label: "Sole Proprietorship", value: "Sole Proprietorship" },
+		{ label: "Partnership", value: "Partnership" },
+		{ label: "Corporation", value: "Corporation" },
+		{ label: "Limited Liability Company (LLC)", value: "LLC" },
+		{ label: "Other", value: "Other" },
+	]
+
+	if (loading || !user) {
+		return (
+			<div className="bg-background min-h-screen w-full px-6">
+				<div className="w-full overflow-x-auto md:max-w-[80%]">
+					<PageSkeleton />
+				</div>
+			</div>
+		)
+	}
+
+	console.log(data.businessEntity)
 
 	return (
 		<KYBStepWrapper title="Business Profile">
@@ -121,6 +161,7 @@ export function ProfileTab({ onSave }: ProfileTabProps) {
 								{errors.logo && <p className="text-xs text-red-500">{errors.logo}</p>}
 							</div>
 							<input
+								disabled
 								ref={fileInputRef}
 								type="file"
 								accept="image/*"
@@ -135,6 +176,7 @@ export function ProfileTab({ onSave }: ProfileTabProps) {
 					<div className="space-y-4">
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 							<TextField
+								disabled
 								label="Business Name"
 								id="businessName"
 								placeholder="Enter business name"
@@ -143,6 +185,7 @@ export function ProfileTab({ onSave }: ProfileTabProps) {
 								error={errors.businessName}
 							/>
 							<TextField
+								disabled
 								label="Business Email"
 								id="businessEmail"
 								placeholder="Enter business email"
@@ -155,6 +198,7 @@ export function ProfileTab({ onSave }: ProfileTabProps) {
 
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 							<TextField
+								disabled
 								label="Business Website"
 								id="businessWebsite"
 								placeholder="moneywave.com"
@@ -164,17 +208,15 @@ export function ProfileTab({ onSave }: ProfileTabProps) {
 								error={errors.businessWebsite}
 							/>
 							<SelectField
+								key={data.businessEntity}
+								disabled
 								label="Business Entity"
 								id="businessEntity"
 								value={data.businessEntity}
 								onChange={(v) => setData((prev) => ({ ...prev, businessEntity: v }))}
-								options={[
-									"Sole Proprietorship",
-									"Partnership",
-									"Limited Liability Company",
-									"Corporation",
-									"Non-profit",
-								]}
+								options={BUSINESS_TYPES.map((item) => {
+									return { label: item.label, value: item.value }
+								})}
 								placeholder="Select business entity"
 								error={errors.businessEntity}
 							/>
@@ -184,8 +226,9 @@ export function ProfileTab({ onSave }: ProfileTabProps) {
 
 				<div className="flex justify-center pt-4">
 					<button
+						disabled
 						onClick={handleSave}
-						className="rounded-lg bg-black px-8 py-3 font-medium text-white transition-colors hover:bg-black/90">
+						className="cursor-not-allowed rounded-lg bg-black px-8 py-3 font-medium text-white transition-colors hover:bg-black/90">
 						Save Changes
 					</button>
 				</div>
