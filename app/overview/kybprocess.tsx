@@ -20,6 +20,7 @@ import { useBanklists, useBankverify } from "../hooks/use_bank_list"
 import { Banklist } from "../types/general"
 import { KYBReviewScreens } from "../components/reusables/kybreview"
 import { OwnerInfo, KYBFormData } from "../types/general"
+import { useClientHeaders } from "../hooks/use_client_headers"
 
 const initialFormData: KYBFormData = {
 	companyName: "",
@@ -513,6 +514,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 		return base
 	}
 
+	const headers = useClientHeaders()
 	const handleSubmit = async () => {
 		if (!validateStep(currentStep)) return
 
@@ -614,7 +616,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 				},
 			}
 
-			const result = await uploadKybDoc(JSON.stringify(payload))
+			const result = await uploadKybDoc(headers, JSON.stringify(payload))
 
 			if (result.success) {
 				setCurrentStep(1)

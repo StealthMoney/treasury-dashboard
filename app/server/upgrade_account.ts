@@ -1,31 +1,31 @@
-"use server"
+"use client"
 
 import { getAuthHeaders } from "../functions/auth_header"
 import { AppuserProps } from "../types/app_user"
 import { Result } from "../types/general"
 import endpoints from "../config/endpoints"
 
+type AuthHeaders = {
+	Authorization: string
+	"Content-Type": string
+}
+
 export const uploadKybDoc = async (
+	session: AuthHeaders | null,
 	body: string
 ): Promise<Result<AppuserProps>> => {
 	try {
-		const session = await getAuthHeaders()
-
 		if (!session) {
 			return { success: false, error: "No session found" }
 		}
 
 		const url = endpoints().account["upgrade-account"]
 
-		console.log(body, "is server gotten body")
-
 		const res = await fetch(url, {
 			method: "POST",
 			headers: session,
 			body: body,
 		})
-
-		console.log(res, "at upload")
 
 		if (!res.ok) {
 			try {
