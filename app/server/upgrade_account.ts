@@ -1,6 +1,5 @@
 "use client"
 
-import { getAuthHeaders } from "../functions/auth_header"
 import { AppuserProps } from "../types/app_user"
 import { Result } from "../types/general"
 import endpoints from "../config/endpoints"
