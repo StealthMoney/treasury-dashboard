@@ -10,6 +10,7 @@ import { KYBFormData } from "@/app/types/general"
 import OwnerAccordion from "./owner_accordion"
 import Image from "next/image"
 import { FeedbackModal } from "./feedback_modal"
+import { showToast } from "@/app/functions/helpers/notify_user"
 
 interface KYBReviewScreensProps {
 	step: number
@@ -17,6 +18,7 @@ interface KYBReviewScreensProps {
 	onBack: () => void
 	onEditStep: (step: number) => void
 	loading: boolean
+	isOnline: boolean
 	err: string | null
 	setErr: Dispatch<SetStateAction<string | null>>
 	onComplete: () => void
@@ -37,6 +39,7 @@ export function KYBReviewScreens({
 	onBack,
 	onEditStep,
 	loading,
+	isOnline,
 	err,
 	setErr,
 	onComplete,
@@ -243,7 +246,10 @@ export function KYBReviewScreens({
 
 					<div className="flex flex-col gap-4 md:flex-row md:gap-4">
 						{activeTab === REVIEW_TABS.length ? (
-							<button onClick={onComplete} className={`${baseButtonBlack} py-3`}>
+							<button
+								disabled={loading || !isOnline}
+								onClick={onComplete}
+								className={`${baseButtonBlack} py-3`}>
 								Submit {loading && <Spinner />}
 							</button>
 						) : (

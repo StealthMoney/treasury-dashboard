@@ -60,6 +60,7 @@ export default function OwnerAccordion({ owners }: { owners: OwnerInfo[] }) {
 									label="Full Name:"
 									value={`${owner.firstName} ${owner.lastName}`}
 								/>
+								<ReviewRow label="Email:" value={`${owner.email}`} />
 								<ReviewRow
 									label="Date of Birth:"
 									value={`${owner.dayOfBirth} ${getMonthName(Number(owner.monthOfBirth))} ${owner.yearOfBirth}`}

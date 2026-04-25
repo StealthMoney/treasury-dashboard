@@ -5,6 +5,24 @@ import { formatDateWithSuffix } from "../functions/helpers/formatted_date"
 import { getDaysLeft } from "../functions/helpers/days_left"
 
 export const useCreditStats = (creditHistoryData: LoanApplication[]) => {
+	const getLoanLabel = (status: string) => {
+		switch (status) {
+			case "DISBURSED":
+				return "Active Loan"
+			case "APPROVED":
+				return "Approved Loan"
+			case "REJECTED":
+				return "Rejected Loan"
+			case "OVERDUE":
+				return "Overdue Loan"
+			case "REPAID":
+				return "Repaid Loan"
+			case "REVIEW":
+				return "Reviewing Loan"
+			default:
+				return "Loan"
+		}
+	}
 	return useMemo(() => {
 		if (!creditHistoryData || creditHistoryData.length === 0) return []
 
@@ -24,7 +42,7 @@ export const useCreditStats = (creditHistoryData: LoanApplication[]) => {
 
 		return [
 			{
-				label: "Active Loans",
+				label: getLoanLabel(firstLoan.loanStatus),
 				value: `₦ ${(firstLoan.loanAmount + firstLoan.interest).toLocaleString(
 					"en-US",
 					{
