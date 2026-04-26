@@ -20,6 +20,9 @@ import { useBanklists, useBankverify } from "../hooks/use_bank_list"
 import { Banklist } from "../types/general"
 import { KYBReviewScreens } from "../components/reusables/kybreview"
 import { OwnerInfo, KYBFormData } from "../types/general"
+import { useClientHeaders } from "../hooks/use_client_headers"
+import { useNetworkStatus } from "../hooks/network_detector"
+import { showToast } from "../functions/helpers/notify_user"
 
 const initialFormData: KYBFormData = {
 	companyName: "",
@@ -184,6 +187,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 	const [reviewStep, setReviewStep] = useState(1)
 	const [reviewTrack, setReviewTrack] = useState(false)
 	const { user } = useProfile()
+	const { isSlow, isOnline } = useNetworkStatus()
 
 	const { data: banklists } = useBanklists(enabledList)
 	const { data: verifyInfo, refetch } = useBankverify(
@@ -513,8 +517,14 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 		return base
 	}
 
+	const headers = useClientHeaders()
 	const handleSubmit = async () => {
 		if (!validateStep(currentStep)) return
+
+		if (!isOnline) {
+			showToast("You are offline, check your internet connection.", "warning", 1)
+			return
+		}
 
 		try {
 			setLoading(true)
@@ -614,7 +624,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 				},
 			}
 
-			const result = await uploadKybDoc(JSON.stringify(payload))
+			const result = await uploadKybDoc(headers, JSON.stringify(payload))
 
 			if (result.success) {
 				setCurrentStep(1)
@@ -633,6 +643,16 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 			setLoading(false)
 		}
 	}
+
+	useEffect(() => {
+		if (!isOnline) {
+			showToast("You are offline, check your internet connection.", "warning", 1)
+		}
+
+		if (isOnline && isSlow) {
+			showToast("Weak network detected", "warning", 1)
+		}
+	}, [isOnline, isSlow])
 
 	useEffect(() => {
 		const chosen = banklists?.data?.find((item: Banklist) => {
@@ -687,6 +707,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 				err={submitError}
 				setErr={setSubmitError}
 				loading={loading}
+				isOnline={isOnline}
 				onComplete={handleSubmit}
 			/>
 		)
