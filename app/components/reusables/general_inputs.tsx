@@ -4,6 +4,8 @@ import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai"
 import React, { useState, ChangeEvent, useRef } from "react"
 import { HiX } from "react-icons/hi"
 import { InputFieldProps, TextFieldProps } from "@/app/types/inputs"
+import { getFileIcon } from "./review_generals"
+import { FaRegTrashAlt } from "react-icons/fa"
 
 type SelectOption = string | { label: string; value: string }
 
@@ -273,6 +275,101 @@ export function InputField({
 				)}
 			</div>
 			{error && <p className="mt-1 text-xs text-(--red-1)">{error}</p>}
+		</div>
+	)
+}
+
+export function MultiFileInvoicePickerField({
+	label,
+	hint,
+	files,
+	onFilesChange,
+	error,
+}: {
+	label: string
+	hint?: string
+	files: File[] | null
+	onFilesChange: (files: File[]) => void
+	error?: string
+}) {
+	const inputRef = useRef<HTMLInputElement>(null)
+
+	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		if (files) {
+			const picked: File[] = Array.from(e.target.files ?? [])
+			const merged: File[] = [
+				...files,
+				...picked.filter((p) => !files.some((f) => f.name === p.name)),
+			]
+			onFilesChange(merged)
+			e.target.value = ""
+		}
+	}
+
+	const removeFile = (fileName: string) => {
+		if (files) onFilesChange(files.filter((f) => f.name !== fileName))
+	}
+
+	return (
+		<div>
+			<p className="text-foreground block text-sm font-medium">
+				{label}
+				{hint && <span className="font-normal text-(--text-1)"> ({hint})</span>}
+			</p>
+
+			<input
+				title="file-picker"
+				ref={inputRef}
+				type="file"
+				accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+				multiple
+				className="hidden"
+				onChange={handleFileChange}
+			/>
+
+			<div
+				onClick={() => inputRef.current?.click()}
+				className="cursor-pointer rounded-lg border-2 border-dashed border-(--grey-1) bg-(--grey-4) p-4 text-center transition hover:border-(--grey-2)">
+				<span className="text-[14px] text-(--text-1)">+ &nbsp;Choose file</span>
+			</div>
+
+			{files && files.length > 0 && (
+				<div className="mt-2 flex flex-wrap gap-1.5">
+					{files.map((file, idx) => (
+						<div
+							key={idx}
+							className="group inline-flex max-w-40 items-center gap-1.5 rounded-2xl border border-(--grey-1) px-2 py-1.5">
+							{getFileIcon(file, false)}
+
+							<span className="min-w-0 flex-1 truncate text-[12px] text-(--text-1)">
+								{file.name}
+							</span>
+
+							<div
+								onClick={(e) => {
+									e.stopPropagation()
+									removeFile(file.name)
+								}}
+								className={[
+									"flex shrink-0 cursor-pointer items-center justify-center",
+									"rounded-full border border-[#FFC2C2] bg-[#FFF0F0]",
+									"h-5.5 w-5.5",
+									"opacity-0 transition-opacity group-hover:opacity-100",
+									"[@media(hover:none)]:opacity-100",
+								].join(" ")}>
+								<button
+									title="Remove file"
+									type="button"
+									className="flex cursor-pointer items-center justify-center">
+									<FaRegTrashAlt className="h-2.5 w-2.5 text-(--red-1)" />
+								</button>
+							</div>
+						</div>
+					))}
+				</div>
+			)}
+
+			{error && <p className="mt-1 text-sm text-(--red-1)">{error}</p>}
 		</div>
 	)
 }

@@ -10,6 +10,7 @@ import { CurrencyInput } from "../components/reusables/currencyInput"
 import Success_table from "../components/reusables/success_table"
 import {
 	FilePickerField,
+	MultiFileInvoicePickerField,
 	SelectField,
 } from "../components/reusables/general_inputs"
 import Message_table from "../components/reusables/message_table"
@@ -41,6 +42,7 @@ import { formatDateWithSuffix } from "../functions/helpers/formatted_date"
 import { getDaysLeft } from "../functions/helpers/days_left"
 import { CopyableText } from "../components/reusables/copyable_text"
 import { getDueDate } from "../functions/helpers/get_due_date"
+import Link from "next/link"
 
 interface ActiveLoan {
 	id: string
@@ -293,7 +295,8 @@ export default function CreditsPage() {
 	const [borrowAmount, setBorrowAmount] = useState("")
 	const [borrowCurrency, setBorrowCurrency] = useState<"USD" | "NGN">("NGN")
 
-	const [invoiceFile, setInvoiceFile] = useState<File | null>(null)
+	const [invoiceFile, setInvoiceFile] = useState<File[]>([])
+	const [accept, setAceept] = useState(false)
 	const [bankStatementFile, setBankStatementFile] = useState<File | null>(null)
 	const [loanTypeId, setLoanTypeId] = useState<number | null>(null)
 	const [loadDurationInDays, setLoanDurationInDays] = useState<
@@ -314,6 +317,7 @@ export default function CreditsPage() {
 		bankStatement?: string
 		duration?: string
 		borrowAmount?: string
+		acceptTerms?: string
 	}>({})
 
 	const [loanDuration, setLoanDuration] = useState("")
@@ -372,6 +376,8 @@ export default function CreditsPage() {
 
 		if (!invoiceFile) {
 			newErrors.invoice = "Invoice is required"
+		} else if (invoiceFile.length < 3) {
+			newErrors.invoice = "Please add at up to 3 invoices in your selection"
 		}
 
 		if (!bankStatementFile) {
@@ -396,6 +402,17 @@ export default function CreditsPage() {
 			newErrors.borrowAmount = "Enter an amount to borrow"
 		} else if (isNaN(amount) || amount <= 0) {
 			newErrors.borrowAmount = "Amount must be greater than 0"
+		}
+
+		setErrors(newErrors)
+
+		return Object.keys(newErrors).length === 0
+	}
+	const validateStep3 = () => {
+		const newErrors: typeof errors = {}
+
+		if (!accept) {
+			newErrors.acceptTerms = "You must accept our lending terms to proceed"
 		}
 
 		setErrors(newErrors)
@@ -912,18 +929,14 @@ export default function CreditsPage() {
 			title: "UPLOAD DOCUMENTS",
 			content: (
 				<div className="space-y-6">
-					<FilePickerField
-						label={
-							<span className="text-foreground">
-								Invoice (<span className="text-(--text-1)">Upcoming invoice</span>)
-							</span>
-						}
-						file={invoiceFile}
-						onFileChange={(file) => {
-							setInvoiceFile(file)
+					<MultiFileInvoicePickerField
+						label="Invoice"
+						hint="Upload your 3 most recent invoices"
+						files={invoiceFile}
+						onFilesChange={(files) => {
+							setInvoiceFile(files)
 							setErrors((prev) => ({ ...prev, invoice: undefined }))
 						}}
-						onFileRemove={() => setInvoiceFile(null)}
 						error={errors.invoice}
 					/>
 
@@ -995,18 +1008,21 @@ export default function CreditsPage() {
 							{borrowCurrency}
 						</span>
 					</div>
+
 					<div className="flex justify-between border-b border-(--grey-1) py-3">
 						<span className="text-[14px] text-(--text-1)">Duration:</span>
 						<span className="text-foreground text-[14px] font-semibold">
 							{loanDuration} Days
 						</span>
 					</div>
+
 					<div className="flex justify-between border-b border-(--grey-1) py-3">
 						<span className="text-[14px] text-(--text-1)">Due Date:</span>
 						<span className="text-foreground text-[14px] font-semibold">
 							{getDueDate(loanDuration)}
 						</span>
 					</div>
+
 					<div className="flex justify-between border-b border-(--grey-1) py-3">
 						<span className="text-[14px] text-(--text-1)">Interests:</span>
 						<span className="text-foreground text-[14px] font-semibold">
@@ -1016,6 +1032,38 @@ export default function CreditsPage() {
 							)}{" "}
 							NGN
 						</span>
+					</div>
+
+					<div className="flex flex-col gap-y-2">
+						<label className="flex cursor-pointer items-start gap-2 py-2">
+							<input
+								type="checkbox"
+								checked={accept}
+								onChange={(e) => {
+									setAceept(e.target.checked)
+									setErrors((prev) => ({
+										...prev,
+										acceptTerms: !e.target.checked
+											? "You must accept our lending terms to proceed"
+											: undefined,
+									}))
+								}}
+								className="h-4 w-4 rounded border-(--grey-1) accent-(--grey-1)"
+							/>
+
+							<span className="text-[14px] text-(--text-1)">
+								I accept the{" "}
+								<Link
+									href="/lending-agreement"
+									target="_blank"
+									className="text-foreground underline underline-offset-2 hover:opacity-80">
+									terms of lending service
+								</Link>
+							</span>
+						</label>
+						{errors.acceptTerms && errors.acceptTerms !== "" && (
+							<p className="-mt-4 text-sm text-(--red-1)">{errors.acceptTerms}</p>
+						)}
 					</div>
 				</div>
 			),
@@ -1034,6 +1082,11 @@ export default function CreditsPage() {
 			if (!isValid) return
 		}
 
+		if (borrowStep === 2) {
+			const isValid = validateStep3()
+			if (!isValid) return
+		}
+
 		if (borrowStep < borrowSteps.length - 1) {
 			setBorrowStep(borrowStep + 1)
 		}
@@ -1046,11 +1099,26 @@ export default function CreditsPage() {
 	}
 
 	const handleBorrowSubmit = async () => {
-		let invoiceBase64 = ""
+		const isValid = validateStep3()
+
+		if (!isValid) return
+
+		let invoices: { content: string; contentType: string; fileName: string }[] =
+			[]
 		let bankBase64 = ""
 
-		if (invoiceFile) {
-			invoiceBase64 = await fileToBase64(invoiceFile)
+		if (invoiceFile.length > 0) {
+			invoices = await Promise.all(
+				invoiceFile.map(async (item) => {
+					const content = await fileToBase64(item)
+
+					return {
+						content,
+						contentType: item.type,
+						fileName: item.name,
+					}
+				})
+			)
 		}
 
 		if (bankStatementFile) {
@@ -1060,11 +1128,7 @@ export default function CreditsPage() {
 		const payload = {
 			loanTypeId: Number(loanTypeId),
 
-			invoice: {
-				content: invoiceBase64 || "",
-				contentType: invoiceFile?.type || "",
-				fileName: invoiceFile?.name || "",
-			},
+			invoices,
 
 			bankStatement: {
 				content: bankBase64 || "",

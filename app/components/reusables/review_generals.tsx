@@ -21,7 +21,7 @@ export function ReviewRow({
 }
 
 // Helper function to detect file type
-export const getFileIcon = (file: File | null) => {
+export const getFileIcon = (file: File | null, colored: boolean) => {
 	if (!file) return null
 	const isPdf =
 		file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")
@@ -35,10 +35,25 @@ export const getFileIcon = (file: File | null) => {
 			"application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
 		/\.(doc|docx)$/i.test(file.name)
 
-	if (isPdf) return <FaFilePdf className="h-4 w-4 text-(--red-1)" />
-	if (isImage) return <FaImage className="h-4 w-4 text-blue-500" />
-	if (isDoc) return <FaFileWord className="h-4 w-4 text-blue-700" />
-	return <FaFile className="h-4 w-4 text-gray-500" />
+	if (isPdf)
+		return (
+			<FaFilePdf
+				className={` ${colored ? "text-(--red-1)" : "text-(--text-1)"} h-4 w-4`}
+			/>
+		)
+	if (isImage)
+		return (
+			<FaImage
+				className={` ${colored ? "text-blue-500" : "text-(--text-1)"} h-4 w-4`}
+			/>
+		)
+	if (isDoc)
+		return (
+			<FaFileWord
+				className={` ${colored ? "text-blue-700" : "text-(--text-1)"} h-4 w-4`}
+			/>
+		)
+	return <FaFile className="h-4 w-4 text-(--text-1)" />
 }
 
 export function DocumentReviewRow({
@@ -54,7 +69,7 @@ export function DocumentReviewRow({
 			{file ? (
 				<div className="flex items-center gap-2 sm:max-w-[60%]">
 					<p className="text-foreground text-[14px] break-all">{file.name}</p>
-					{getFileIcon(file)}
+					{getFileIcon(file, true)}
 				</div>
 			) : (
 				<p className="text-foreground text-[14px]">-</p>

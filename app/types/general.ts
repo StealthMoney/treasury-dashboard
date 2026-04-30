@@ -125,6 +125,15 @@ export interface Sort {
 	unsorted: boolean
 }
 
+export type DocPayload = {
+	fileBase64: string
+	fileName: string
+	contentType: string
+	identificationNumber: string
+	otherDocumentDescription?: string
+	documentType: string
+}
+
 export interface PaginatedLoans {
 	content: LoanApplication[]
 	pageable: Pageable

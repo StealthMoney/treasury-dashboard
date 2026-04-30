@@ -14,12 +14,12 @@ import {
 import { FaArrowLeft } from "react-icons/fa"
 import { FilePickerField } from "../components/reusables/general_inputs"
 import { uploadKybDoc } from "../server/upgrade_account"
-import { fileToBase64 } from "../functions/helpers/base64"
+import { toDoc } from "../functions/helpers/base64"
 import { useProfile } from "../contexts/user_provider"
 import { useBanklists, useBankverify } from "../hooks/use_bank_list"
 import { Banklist } from "../types/general"
 import { KYBReviewScreens } from "../components/reusables/kybreview"
-import { OwnerInfo, KYBFormData } from "../types/general"
+import { OwnerInfo, KYBFormData, DocPayload } from "../types/general"
 import { useClientHeaders } from "../hooks/use_client_headers"
 import { useNetworkStatus } from "../hooks/network_detector"
 import { showToast } from "../functions/helpers/notify_user"
@@ -396,8 +396,6 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 						newErrors.boardRegisterDoc = "Register of Board of Directors is required"
 					if (!formData.proofOfAddressDoc)
 						newErrors.proofOfAddressDoc = "Proof of Address is required"
-					if (!formData.taxFilingDoc)
-						newErrors.taxFilingDoc = "Tax Document is required"
 					break
 
 				case 6:
@@ -468,53 +466,6 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 		setCurrentStep(1)
 		setFormData(initialFormData)
 		onClose()
-	}
-
-	const mapDocType = (value: string): string => {
-		switch (value) {
-			case "Passport":
-				return "PASSPORT"
-			case "Driver License":
-				return "DRIVER_LICENSE"
-			case "National ID":
-				return "NATIONAL_ID"
-			case "Proof of Address":
-				return "PROOF_OF_ADDRESS"
-			case "Bank Statement":
-				return "BANK_STATEMENT"
-			case "Invoice":
-				return "INVOICE"
-			default:
-				return "OTHER"
-		}
-	}
-
-	type DocPayload = {
-		fileBase64: string
-		fileName: string
-		contentType: string
-		identificationNumber: string
-		otherDocumentDescription?: string
-		documentType: string
-	}
-
-	const toDoc = async (file: File, typeValue: string, idNumber = "") => {
-		const documentType = mapDocType(typeValue)
-
-		const base: DocPayload = {
-			fileBase64: await fileToBase64(file),
-			fileName: file.name,
-			contentType: file.type,
-			identificationNumber: idNumber,
-			documentType,
-		}
-
-		// ONLY include this for OTHER
-		if (documentType === "OTHER") {
-			base.otherDocumentDescription = file.name
-		}
-
-		return base
 	}
 
 	const headers = useClientHeaders()
