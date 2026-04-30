@@ -13,15 +13,11 @@ export const requestNewCredit = async (
 
 		const url = endpoints().credit.requestnewcredit
 
-		console.log(body)
-
 		const res = await fetch(url, {
 			method: "POST",
 			headers: session,
 			body: body,
 		})
-
-		console.log(res, "at request credit")
 
 		if (!res.ok) {
 			let errorMessage = "could not process request"

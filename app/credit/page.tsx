@@ -41,6 +41,8 @@ import { CopyableText } from "../components/reusables/copyable_text"
 import { getDueDate } from "../functions/helpers/get_due_date"
 import Link from "next/link"
 import { useClientHeaders } from "../hooks/use_client_headers"
+import { getDeviceInfo } from "../functions/helpers/get_device_info"
+import { getUserIp } from "../server/get_server_ip"
 
 interface ActiveLoan {
 	id: string
@@ -268,6 +270,8 @@ export default function CreditsPage() {
 	const [borrowFundErrorMessage, setBorrowFundErrorMessage] = useState("")
 	const [loading, setLoading] = useState(false)
 	const [interestRate, setInterestRate] = useState<number | null>(null)
+	const [deviceInfo, setDeviceInfo] = useState<string>("")
+	const [ip, setIp] = useState<string | null>(null)
 
 	// Repay Modal State
 	const [isRepayOpen, setIsRepayOpen] = useState(false)
@@ -316,6 +320,7 @@ export default function CreditsPage() {
 		duration?: string
 		borrowAmount?: string
 		acceptTerms?: string
+		deviceInfo?: string
 	}>({})
 
 	const [loanDuration, setLoanDuration] = useState("")
@@ -411,6 +416,10 @@ export default function CreditsPage() {
 
 		if (!accept) {
 			newErrors.acceptTerms = "You must accept our lending terms to proceed"
+		}
+
+		if (deviceInfo === "") {
+			newErrors.deviceInfo = "Couldn't get info, kindly refresh and try again"
 		}
 
 		setErrors(newErrors)
@@ -560,6 +569,21 @@ export default function CreditsPage() {
 		setShowKybScreens(false)
 		setKybStatus("PENDING_REVIEW")
 	}
+
+	useEffect(() => {
+		const loadDeviceData = async () => {
+			const info = getDeviceInfo()
+			const res = await getUserIp()
+
+			if (info && info !== "" && res.success) {
+				setErrors((prev) => ({ ...prev, deviceInfo: undefined }))
+				setDeviceInfo(info)
+				setIp(res.data)
+			}
+		}
+
+		loadDeviceData()
+	}, [])
 
 	useEffect(() => {
 		setIsKybVerified(user?.kybStatus === "ACTIVE" || false)
@@ -1102,6 +1126,8 @@ export default function CreditsPage() {
 
 		if (!isValid) return
 
+		setLoading(true)
+
 		let invoices: { content: string; contentType: string; fileName: string }[] =
 			[]
 		let bankBase64 = ""
@@ -1125,6 +1151,13 @@ export default function CreditsPage() {
 		}
 
 		const payload = {
+			termsAcceptance: {
+				accepted: accept,
+				agreementVersion: "1",
+				ipAddress: ip,
+				deviceInfo,
+			},
+
 			loanTypeId: Number(loanTypeId),
 
 			invoices,
@@ -1141,7 +1174,6 @@ export default function CreditsPage() {
 		}
 
 		try {
-			setLoading(true)
 			const stringifiedPayload = JSON.stringify(payload)
 
 			const creditReq = await requestNewCredit(headers, stringifiedPayload)
