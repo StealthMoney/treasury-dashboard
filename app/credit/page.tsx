@@ -294,7 +294,7 @@ export default function CreditsPage() {
 	const [borrowCurrency, setBorrowCurrency] = useState<"USD" | "NGN">("NGN")
 
 	const [invoiceFile, setInvoiceFile] = useState<File[]>([])
-	const [accept, setAceept] = useState(false)
+	const [accept, setAccept] = useState(false)
 	const [bankStatementFile, setBankStatementFile] = useState<File | null>(null)
 	const [loanTypeId, setLoanTypeId] = useState<number | null>(null)
 	const [loadDurationInDays, setLoanDurationInDays] = useState<
@@ -1038,7 +1038,7 @@ export default function CreditsPage() {
 								type="checkbox"
 								checked={accept}
 								onChange={(e) => {
-									setAceept(e.target.checked)
+									setAccept(e.target.checked)
 									setErrors((prev) => ({
 										...prev,
 										acceptTerms: !e.target.checked
