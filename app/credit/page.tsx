@@ -19,11 +19,8 @@ import KybBanner from "../components/reusables/kybinfo_banner"
 import { KYBScreens } from "../overview/kybprocess"
 import { useProfile } from "../contexts/user_provider"
 import { fileToBase64 } from "../functions/helpers/base64"
-import {
-	repayCreditFinish,
-	repayCreditInitiate,
-	requestNewCredit,
-} from "../server/credits"
+import { repayCreditFinish, repayCreditInitiate } from "../server/credits"
+import { requestNewCredit } from "../server/request_new_credit"
 import { FeedbackModal } from "../components/reusables/feedback_modal"
 import {
 	InitiateLoanRepaymentDetails,
@@ -43,6 +40,7 @@ import { getDaysLeft } from "../functions/helpers/days_left"
 import { CopyableText } from "../components/reusables/copyable_text"
 import { getDueDate } from "../functions/helpers/get_due_date"
 import Link from "next/link"
+import { useClientHeaders } from "../hooks/use_client_headers"
 
 interface ActiveLoan {
 	id: string
@@ -1054,10 +1052,10 @@ export default function CreditsPage() {
 							<span className="text-[14px] text-(--text-1)">
 								I accept the{" "}
 								<Link
-									href="/lending-agreement"
+									href="https://stealthtreasury.com/lending_agreement"
 									target="_blank"
-									className="text-foreground underline underline-offset-2 hover:opacity-80">
-									terms of lending service
+									className="text-foreground font-bold italic underline underline-offset-2">
+									(terms of lending service)
 								</Link>
 							</span>
 						</label>
@@ -1098,6 +1096,7 @@ export default function CreditsPage() {
 		}
 	}
 
+	const headers = useClientHeaders()
 	const handleBorrowSubmit = async () => {
 		const isValid = validateStep3()
 
@@ -1145,7 +1144,7 @@ export default function CreditsPage() {
 			setLoading(true)
 			const stringifiedPayload = JSON.stringify(payload)
 
-			const creditReq = await requestNewCredit(stringifiedPayload)
+			const creditReq = await requestNewCredit(headers, stringifiedPayload)
 
 			if (creditReq.success) {
 				setBorrowFundError(false)

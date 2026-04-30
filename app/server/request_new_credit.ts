@@ -1,20 +1,19 @@
 "use client"
-
-import { AppuserProps } from "../types/app_user"
-import { Result } from "../types/general"
+import { AuthHeaders, Result } from "../types/general"
 import endpoints from "../config/endpoints"
-import { AuthHeaders } from "../types/general"
 
-export const uploadKybDoc = async (
+export const requestNewCredit = async (
 	session: AuthHeaders | null,
 	body: string
-): Promise<Result<AppuserProps>> => {
+): Promise<Result<string>> => {
 	try {
 		if (!session) {
 			return { success: false, error: "No session found" }
 		}
 
-		const url = endpoints().account["upgrade-account"]
+		const url = endpoints().credit.requestnewcredit
+
+		console.log(body)
 
 		const res = await fetch(url, {
 			method: "POST",
@@ -22,15 +21,20 @@ export const uploadKybDoc = async (
 			body: body,
 		})
 
+		console.log(res, "at request credit")
+
 		if (!res.ok) {
+			let errorMessage = "could not process request"
 			try {
 				const data = await res.json()
-				return {
-					success: false,
-					error: data.message || "Failed to upload documents",
-				}
+				errorMessage = data?.message || errorMessage
 			} catch (_) {
 				console.log(_)
+			}
+
+			return {
+				success: false,
+				error: errorMessage,
 			}
 		}
 

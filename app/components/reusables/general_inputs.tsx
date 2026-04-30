@@ -334,36 +334,32 @@ export function MultiFileInvoicePickerField({
 			</div>
 
 			{files && files.length > 0 && (
-				<div className="mt-2 flex flex-wrap gap-1.5">
+				<div className="mt-2 grid grid-cols-3 gap-2">
 					{files.map((file, idx) => (
 						<div
 							key={idx}
-							className="group inline-flex max-w-40 items-center gap-1.5 rounded-2xl border border-(--grey-1) px-2 py-1.5">
+							className="group flex h-10 w-full items-center gap-2 rounded-2xl border border-(--grey-1) px-2 py-1">
 							{getFileIcon(file, false)}
 
 							<span className="min-w-0 flex-1 truncate text-[12px] text-(--text-1)">
 								{file.name}
 							</span>
 
-							<div
+							<button
+								title="Remove file"
+								type="button"
 								onClick={(e) => {
 									e.stopPropagation()
 									removeFile(file.name)
 								}}
 								className={[
-									"flex shrink-0 cursor-pointer items-center justify-center",
+									"flex h-5.5 w-5.5 shrink-0 cursor-pointer items-center justify-center",
 									"rounded-full border border-[#FFC2C2] bg-[#FFF0F0]",
-									"h-5.5 w-5.5",
 									"opacity-0 transition-opacity group-hover:opacity-100",
 									"[@media(hover:none)]:opacity-100",
 								].join(" ")}>
-								<button
-									title="Remove file"
-									type="button"
-									className="flex cursor-pointer items-center justify-center">
-									<FaRegTrashAlt className="h-2.5 w-2.5 text-(--red-1)" />
-								</button>
-							</div>
+								<FaRegTrashAlt className="h-2.5 w-2.5 text-(--red-1)" />
+							</button>
 						</div>
 					))}
 				</div>
