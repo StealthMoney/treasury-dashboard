@@ -47,8 +47,6 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
 		onChange(raw)
 	}
 
-	console.log(value, currency, balance)
-
 	return (
 		<div className="space-y-4">
 			{label && (
