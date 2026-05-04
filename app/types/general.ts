@@ -76,6 +76,11 @@ export type NavLink = {
 	logo: React.ReactNode
 }
 
+export type AuthHeaders = {
+	Authorization: string
+	"Content-Type": string
+}
+
 type InterestRateType = "FIX" | "VARIABLE"
 
 type StatusType = "ACTIVE" | "INACTIVE"
@@ -123,6 +128,15 @@ export interface Sort {
 	empty: boolean
 	sorted: boolean
 	unsorted: boolean
+}
+
+export type DocPayload = {
+	fileBase64: string
+	fileName: string
+	contentType: string
+	identificationNumber: string
+	otherDocumentDescription?: string
+	documentType: string
 }
 
 export interface PaginatedLoans {
