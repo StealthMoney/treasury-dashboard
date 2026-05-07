@@ -1501,12 +1501,11 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 									required
 								/>
 								<FilePickerField
-									label="Tax Filing Document"
+									label="Tax Filing Document (Optional)"
 									file={formData.taxFilingDoc}
 									onFileChange={(file) => updateFormData({ taxFilingDoc: file })}
 									onFileRemove={() => updateFormData({ taxFilingDoc: null })}
 									error={errors.taxFilingDoc}
-									required
 								/>
 								<FilePickerField
 									label="Status of Registration"

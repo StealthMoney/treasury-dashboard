@@ -19,11 +19,8 @@ import KybBanner from "../components/reusables/kybinfo_banner"
 import { KYBScreens } from "../overview/kybprocess"
 import { useProfile } from "../contexts/user_provider"
 import { fileToBase64 } from "../functions/helpers/base64"
-import {
-	repayCreditFinish,
-	repayCreditInitiate,
-	requestNewCredit,
-} from "../server/credits"
+import { repayCreditFinish, repayCreditInitiate } from "../server/credits"
+import { requestNewCredit } from "../server/request_new_credit"
 import { FeedbackModal } from "../components/reusables/feedback_modal"
 import {
 	InitiateLoanRepaymentDetails,
@@ -43,6 +40,9 @@ import { getDaysLeft } from "../functions/helpers/days_left"
 import { CopyableText } from "../components/reusables/copyable_text"
 import { getDueDate } from "../functions/helpers/get_due_date"
 import Link from "next/link"
+import { useClientHeaders } from "../hooks/use_client_headers"
+import { getDeviceInfo } from "../functions/helpers/get_device_info"
+import { getUserIp } from "../server/get_server_ip"
 
 interface ActiveLoan {
 	id: string
@@ -270,6 +270,8 @@ export default function CreditsPage() {
 	const [borrowFundErrorMessage, setBorrowFundErrorMessage] = useState("")
 	const [loading, setLoading] = useState(false)
 	const [interestRate, setInterestRate] = useState<number | null>(null)
+	const [deviceInfo, setDeviceInfo] = useState<string>("")
+	const [ip, setIp] = useState<string | null>(null)
 
 	// Repay Modal State
 	const [isRepayOpen, setIsRepayOpen] = useState(false)
@@ -296,7 +298,7 @@ export default function CreditsPage() {
 	const [borrowCurrency, setBorrowCurrency] = useState<"USD" | "NGN">("NGN")
 
 	const [invoiceFile, setInvoiceFile] = useState<File[]>([])
-	const [accept, setAceept] = useState(false)
+	const [accept, setAccept] = useState(false)
 	const [bankStatementFile, setBankStatementFile] = useState<File | null>(null)
 	const [loanTypeId, setLoanTypeId] = useState<number | null>(null)
 	const [loadDurationInDays, setLoanDurationInDays] = useState<
@@ -318,6 +320,7 @@ export default function CreditsPage() {
 		duration?: string
 		borrowAmount?: string
 		acceptTerms?: string
+		deviceInfo?: string
 	}>({})
 
 	const [loanDuration, setLoanDuration] = useState("")
@@ -413,6 +416,10 @@ export default function CreditsPage() {
 
 		if (!accept) {
 			newErrors.acceptTerms = "You must accept our lending terms to proceed"
+		}
+
+		if (deviceInfo === "") {
+			newErrors.deviceInfo = "Couldn't get info, kindly refresh and try again"
 		}
 
 		setErrors(newErrors)
@@ -562,6 +569,21 @@ export default function CreditsPage() {
 		setShowKybScreens(false)
 		setKybStatus("PENDING_REVIEW")
 	}
+
+	useEffect(() => {
+		const loadDeviceData = async () => {
+			const info = getDeviceInfo()
+			const res = await getUserIp()
+
+			if (info && info !== "" && res.success) {
+				setErrors((prev) => ({ ...prev, deviceInfo: undefined }))
+				setDeviceInfo(info)
+				setIp(res.data)
+			}
+		}
+
+		loadDeviceData()
+	}, [])
 
 	useEffect(() => {
 		setIsKybVerified(user?.kybStatus === "ACTIVE" || false)
@@ -1044,7 +1066,7 @@ export default function CreditsPage() {
 								type="checkbox"
 								checked={accept}
 								onChange={(e) => {
-									setAceept(e.target.checked)
+									setAccept(e.target.checked)
 									setErrors((prev) => ({
 										...prev,
 										acceptTerms: !e.target.checked
@@ -1058,10 +1080,10 @@ export default function CreditsPage() {
 							<span className="text-[14px] text-(--text-1)">
 								I accept the{" "}
 								<Link
-									href="/lending-agreement"
+									href="https://stealthtreasury.com/lending_agreement"
 									target="_blank"
-									className="text-foreground underline underline-offset-2 hover:opacity-80">
-									terms of lending service
+									className="text-foreground font-bold italic underline underline-offset-2">
+									(terms of lending service)
 								</Link>
 							</span>
 						</label>
@@ -1102,10 +1124,13 @@ export default function CreditsPage() {
 		}
 	}
 
+	const headers = useClientHeaders()
 	const handleBorrowSubmit = async () => {
 		const isValid = validateStep3()
 
 		if (!isValid) return
+
+		setLoading(true)
 
 		let invoices: { content: string; contentType: string; fileName: string }[] =
 			[]
@@ -1130,6 +1155,13 @@ export default function CreditsPage() {
 		}
 
 		const payload = {
+			termsAcceptance: {
+				accepted: accept,
+				agreementVersion: "1",
+				ipAddress: ip,
+				deviceInfo,
+			},
+
 			loanTypeId: Number(loanTypeId),
 
 			invoices,
@@ -1146,10 +1178,9 @@ export default function CreditsPage() {
 		}
 
 		try {
-			setLoading(true)
 			const stringifiedPayload = JSON.stringify(payload)
 
-			const creditReq = await requestNewCredit(stringifiedPayload)
+			const creditReq = await requestNewCredit(headers, stringifiedPayload)
 
 			if (creditReq.success) {
 				setBorrowFundError(false)

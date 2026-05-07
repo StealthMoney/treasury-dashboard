@@ -76,6 +76,11 @@ export type NavLink = {
 	logo: React.ReactNode
 }
 
+export type AuthHeaders = {
+	Authorization: string
+	"Content-Type": string
+}
+
 type InterestRateType = "FIX" | "VARIABLE"
 
 type StatusType = "ACTIVE" | "INACTIVE"
