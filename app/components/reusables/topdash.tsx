@@ -11,7 +11,7 @@ export default function Topdash({ onMenuClick }: { onMenuClick: () => void }) {
 	const pathname = usePathname()
 	const title = pathname.replace(/\//g, "")
 	const formattedTitle = title.charAt(0).toUpperCase() + title.slice(1)
-	const { user } = useProfile()
+	const { user, isKyb } = useProfile()
 
 	return (
 		<header className="bg-background fixed top-0 left-0 z-50 flex h-20 w-full border-b border-(--grey-1)">
@@ -30,7 +30,7 @@ export default function Topdash({ onMenuClick }: { onMenuClick: () => void }) {
 			</div>
 
 			<div className="flex flex-1 items-center justify-between px-6">
-				<h1>{formattedTitle}</h1>
+				<h1>{!isKyb ? formattedTitle : ""}</h1>
 
 				<div className="flex items-center gap-3">
 					<button
