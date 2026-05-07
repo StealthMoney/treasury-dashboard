@@ -5,21 +5,26 @@ import { useSession } from "next-auth/react"
 import { getProfile } from "../server/get_profile"
 import { AppuserProps } from "../types/app_user"
 import { signOut } from "next-auth/react"
+import { Dispatch, SetStateAction } from "react"
 
 type ProfileContextType = {
 	user: AppuserProps | null
 	loading: boolean
 	error: string | null
+	isKyb: boolean
 	retry: () => void
 	logout: () => void
+	setIsKyb: Dispatch<SetStateAction<boolean>>
 }
 
 const ProfileContext = createContext<ProfileContextType>({
 	user: null,
 	loading: true,
 	error: null,
+	isKyb: false,
 	retry: () => {},
 	logout: () => {},
+	setIsKyb: () => {},
 })
 
 const CACHE_KEY = "profile_cache"
@@ -51,6 +56,7 @@ export const ProfileProvider = ({
 	const { status } = useSession()
 	const [user, setUser] = useState<AppuserProps | null>(() => getValidCache())
 	const [loading, setLoading] = useState<boolean>(() => getValidCache() === null)
+	const [isKyb, setIsKyb] = useState<boolean>(false)
 	const [error, setError] = useState<string | null>(null)
 
 	const fetchProfile = async () => {
@@ -126,7 +132,8 @@ export const ProfileProvider = ({
 	}
 
 	return (
-		<ProfileContext.Provider value={{ user, loading, error, retry, logout }}>
+		<ProfileContext.Provider
+			value={{ user, loading, error, retry, logout, isKyb, setIsKyb }}>
 			{children}
 		</ProfileContext.Provider>
 	)

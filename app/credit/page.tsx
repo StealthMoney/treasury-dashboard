@@ -260,7 +260,7 @@ export const collateralAssetsColumns = [
 ]
 
 export default function CreditsPage() {
-	const { user } = useProfile()
+	const { user, setIsKyb } = useProfile()
 
 	const [isBorrowOpen, setIsBorrowOpen] = useState(false)
 	const [borrowStep, setBorrowStep] = useState(0)
@@ -608,6 +608,10 @@ export default function CreditsPage() {
 			setRepayAmount(value)
 		}
 	}, [creditHistoryData])
+
+	useEffect(() => {
+		setIsKyb(showKybScreens)
+	}, [showKybScreens, setIsKyb])
 
 	const handleModalClose = () => {
 		setBorrowFundError(false)
