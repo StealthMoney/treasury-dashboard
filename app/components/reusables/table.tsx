@@ -20,13 +20,13 @@ export interface TableProps<T> {
 	columns: TableColumn<T>[]
 	extraHeader?: string | ReactNode
 	pagination?: TablePagination
-	kybStatus: "ACTIVE" | "PENDING_REVIEW" | "SUSPENDED" | null
+	kybStatus?: "ACTIVE" | "PENDING_REVIEW" | "SUSPENDED" | null
 	canPerformAction?: boolean
 	tableButtonClick?: () => void
 }
 
 export function Table<T extends { id: string | number }>({
-	data,
+	data = [],
 	columns,
 	extraHeader,
 	pagination,
@@ -61,7 +61,9 @@ export function Table<T extends { id: string | number }>({
 							? "You have no credit history yet!"
 							: pathname === "/credit"
 								? "Upload your invoices and bank statements to access a line of credit for your business."
-								: "You cannot generate report till you've secured a credit line"}
+								: pathname.includes("admin")
+									? "No Data Available"
+									: "You cannot generate report till you've secured a credit line"}
 					</p>
 					{kybStatus === "ACTIVE" && pathname === "/credit" && (
 						<button
@@ -114,15 +116,13 @@ export function Table<T extends { id: string | number }>({
 					{pagination && (
 						<div className="bg-background flex flex-col gap-4 border-t border-(--grey-1) px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
 							<p className="text-xs text-[#64748B] sm:text-sm">
-								Showing{" "}
 								<span className="text-foreground font-semibold">
-									{Math.min(pagination.itemsPerPage, data.length)}
+									Page {pagination.currentPage}
 								</span>{" "}
 								of{" "}
 								<span className="text-foreground font-semibold">
-									{pagination.totalItems}
-								</span>{" "}
-								items
+									{Math.ceil(pagination.totalItems / pagination.itemsPerPage)}
+								</span>
 							</p>
 							<div className="flex gap-2">
 								<button

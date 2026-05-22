@@ -129,8 +129,6 @@ export function ProfileTab({ onSave }: ProfileTabProps) {
 		)
 	}
 
-	console.log(data.businessEntity)
-
 	return (
 		<KYBStepWrapper title="Business Profile">
 			<div className="space-y-6">

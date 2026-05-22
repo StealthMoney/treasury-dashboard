@@ -1278,8 +1278,9 @@ export default function CreditsPage() {
 							canPerformAction={!canPerformActions}
 							pagination={{
 								currentPage: currentPage + 1,
-								totalItems: creditHistoryData?.totalElements ?? 0,
-								itemsPerPage: pageSize,
+								totalItems:
+									(creditHistoryData?.totalPages ?? 1) * (creditHistoryData?.size ?? 10),
+								itemsPerPage: creditHistoryData?.size ?? 10,
 								onPageChange: (page) => {
 									setCurrentPage(page - 1)
 								},

@@ -5,6 +5,7 @@ import { KYBStepWrapper } from "../reusables/kybstepwraper"
 import { SelectField, TextField } from "../reusables/general_inputs"
 import PageSkeleton from "../reusables/page_skeleton"
 import { useProfile } from "@/app/contexts/user_provider"
+import { usePathname } from "next/navigation"
 
 interface BankDetail {
 	bankName: string
@@ -76,6 +77,9 @@ export function BankAccountDetailTab() {
 		accountName: user?.bankDetails?.accountName || "",
 	})
 
+	const path = usePathname()
+	const disabled = !path.includes("admin")
+
 	const [errors] = useState<BankDetailErrors>({})
 
 	const handleChange = (field: keyof BankDetail, value: string) => {
@@ -113,6 +117,15 @@ export function BankAccountDetailTab() {
 						idPrefix="bank-"
 					/>
 				</div>
+				{!disabled && (
+					<div className="flex justify-center pt-4">
+						<button
+							// onClick={handleSave}
+							className="rounded-lg bg-black px-8 py-3 font-medium text-white transition-colors hover:bg-black/90">
+							Save Changes
+						</button>
+					</div>
+				)}
 			</div>
 		</KYBStepWrapper>
 	)
