@@ -7,4 +7,5 @@ extend-exclude = [
   "app/functions/helpers/formatted_date.ts",
   "app/functions/helpers/get_due_date.ts",
   "app/vault/page.tsx",                      # ignored temporarily
+  "public/**",
 ]

@@ -1,3 +1,4 @@
+import { ReactNode } from "react"
 export interface KYBFormData {
 	// Step 1
 	companyName: string
@@ -71,8 +72,8 @@ export type Result<T> =
 	| { success: false; error: string }
 
 export type NavLink = {
-	text: string
-	href: string
+	text: string | null
+	href: string | null
 	logo: React.ReactNode
 }
 
@@ -232,9 +233,193 @@ export interface InitiateLoanRepaymentDetails {
 	loanDueDate: string
 }
 
+export interface ModalConfig {
+	isOpen: boolean
+	title?: string
+	children: ReactNode
+	onClose?: () => void
+	showOverlay?: boolean
+	variant?: "center" | "slide"
+}
+
+export interface RejectionModalProps {
+	loading: boolean
+	isOpen: boolean
+	onClose: () => void
+	onConfirm: (reason: string) => void
+	subject?: string //
+}
+
+export interface DisplayBusiness {
+	id: string
+	name: string
+	rc: string
+	dateJoined: string
+	time: string
+	joinedVia: string
+	browser: string
+	kybStatus: "Completed" | "Pending" | "Rejected"
+	status: "Active" | "Inactive" | "Suspended"
+	industry: string
+	address: string
+	contactPerson: string
+	contactRole: string
+	email: string
+	phone: string
+	financialStats: any[]
+	documents: any[]
+}
+
 export interface RepaymentRecord {
 	amountPaid: number
 	repaymentReference: string
 	repaymentStatus: string
 	repaymentDate: string
+}
+
+export type DocumentType =
+	| "PASSPORT"
+	| "DRIVERS_LICENSE"
+	| "NATIONAL_ID"
+	| "CAC_CERTIFICATE"
+	| "UTILITY_BILL"
+	| "BANK_STATEMENT"
+
+export type ReviewStatus = "PENDING" | "VERIFIED" | "REJECTED"
+
+// Update DocumentStatus to reuse ReviewStatus
+export type DocumentStatus = ReviewStatus
+
+export interface BusinessDirector {
+	id: number
+	businessId: number
+	publicId: string
+	firstName: string
+	lastName: string
+	email: string
+	phoneNumber: string
+	dob: string
+	bvn: string
+	addressLine1: string
+	addressLine2: string
+	city: string
+	state: string
+	country: string
+	postalCode: string
+	createdById: number
+	lastModifiedById: number
+	createdAt: string
+	updatedAt: string
+	role: "DIRECTOR" | "SHAREHOLDER" | "BENEFICIAL_OWNER"
+	ownershipPercentage: number
+	status: ReviewStatus
+	isPep: boolean
+	rejectionReason: string | null
+}
+
+export interface BusinessDocument {
+	id: string // mapped from publicId for Table compatibility
+	publicId: string
+	ownerId: number
+	documentType: DocumentType
+	fileName: string
+	contentType: string
+	status: DocumentStatus
+	documentIdentificationNumber: string
+	otherDocumentDescription: string
+	rejectionReason: string | null
+	uploadedAt: string
+	verifiedAt: string | null
+	rejectedAt: string | null
+	createdAt: string
+	fileUrl: string
+}
+
+export interface BusinessDocumentPageResponse {
+	content: BusinessDocument[]
+	pageNo: number
+	pageSize: number
+	totalElements: number
+	totalPages: number
+	last: boolean
+}
+
+export type BusinessStatus = "ACTIVE" | "PENDING_REVIEW" | "REJECTED"
+
+export interface Business {
+	id: number
+	businessName: string
+	businessDescription: string
+	staffSize: string
+	industry: string
+	annualRevenue: number
+	annualRevenueCurrency: string
+	phoneNumber: string
+	website: string
+	linkedIn: string
+	twitter: string
+	instagram: string
+	email: string
+	disputeEmail: string
+	supportEmail: string
+	businessType: string
+	cacNumber: string
+	addressLine1: string
+	addressLine2: string
+	city: string
+	state: string
+	country: string
+	postalCode: string
+	status: BusinessStatus
+	createdById: number | null
+	lastModifiedById: number | null
+	createdAt: string
+	updatedAt: string
+}
+
+export interface BusinessResponse {
+	content: Business[]
+	pageable: Pageable
+	last: boolean
+	totalPages: number
+	totalElements: number
+	first: boolean
+	size: number
+	number: number
+	sort: Sort
+	numberOfElements: number
+	empty: boolean
+}
+
+// export interface BusinessDirector extends BusinessDocument {
+// 	role: "DIRECTOR"
+// }
+
+export interface PageableResponse<T> {
+	totalPages: number
+	totalElements: number
+	first: boolean
+	size: number
+	content: T[]
+	number: number
+	sort: {
+		empty: boolean
+		sorted: boolean
+		unsorted: boolean
+	}
+	numberOfElements: number
+	pageable: {
+		offset: number
+		sort: {
+			empty: boolean
+			sorted: boolean
+			unsorted: boolean
+		}
+		paged: boolean
+		pageNumber: number
+		pageSize: number
+		unpaged: boolean
+	}
+	last: boolean
+	empty: boolean
 }

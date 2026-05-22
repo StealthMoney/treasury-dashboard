@@ -31,6 +31,7 @@ const CACHE_KEY = "profile_cache"
 const CACHE_DURATION = 40 * 60 * 1000
 
 function getValidCache(): AppuserProps | null {
+	if (typeof window === "undefined") return null
 	try {
 		const cached = localStorage.getItem(CACHE_KEY)
 		if (!cached) return null
@@ -85,7 +86,10 @@ export const ProfileProvider = ({
 
 	useEffect(() => {
 		if (status !== "authenticated") {
-			if (status === "unauthenticated") setLoading(false)
+			if (status === "unauthenticated") {
+				setUser(null)
+				setLoading(false)
+			}
 			return
 		}
 
@@ -123,11 +127,13 @@ export const ProfileProvider = ({
 		return () => {
 			cancelled = true
 		}
-	}, [status, user])
+	}, [status])
 
 	const retry = () => fetchProfile()
 	const logout = async () => {
+		if (typeof window === "undefined") return null
 		localStorage.removeItem(CACHE_KEY)
+		setUser(null)
 		await signOut()
 	}
 

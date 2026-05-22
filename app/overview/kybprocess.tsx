@@ -23,6 +23,7 @@ import { OwnerInfo, KYBFormData, DocPayload } from "../types/general"
 import { useClientHeaders } from "../hooks/use_client_headers"
 import { useNetworkStatus } from "../hooks/network_detector"
 import { showToast } from "../functions/helpers/notify_user"
+import { KYBRequirementsChecklist } from "../components/reusables/kybrequirementchecklists"
 
 const initialFormData: KYBFormData = {
 	companyName: "",
@@ -1642,6 +1643,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 					</KYBStepWrapper>
 				)}
 			</div>
+			<KYBRequirementsChecklist />
 		</div>
 	)
 }

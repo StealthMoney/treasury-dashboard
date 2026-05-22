@@ -25,6 +25,19 @@ const endpoints = (params?: string | number, params2?: string | number) => {
 		"credit-type": `${envURL}/credit-line-types`,
 		"initiate-repay": `${envURL}/repayments/initiate`,
 		"finish-repay": `${envURL}/repayments/paid`,
+		"get-admin-credit": `${envURL}/credit-lines/admin?${params}`,
+		"update-credit-status": `${envURL}/credit-lines/${params}/status`,
+	}
+
+	const businesses = {
+		list: `${envURL}/businesses?${params}`,
+		"business-details": `${envURL}/businesses/${params}`,
+		"activate-business": `${envURL}/businesses/${params}/activate`,
+		"business-directors": `${envURL}/businesses/${params}/directors`,
+		"business-directors-details": `${envURL}/businesses/${params}/directors/${params2}`,
+		"update-business-directors": `${envURL}/businesses/${params}/directors/${params2}/status`,
+		"business-documents": `${envURL}/documents?${params}`,
+		"update-business-document": `${envURL}/documents/${params}/status`,
 	}
 
 	const banks = {
@@ -43,6 +56,7 @@ const endpoints = (params?: string | number, params2?: string | number) => {
 		account,
 		credit,
 		banks,
+		businesses,
 	}
 }
 
