@@ -648,7 +648,7 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 														href={`mailto:${business.supportEmail}`}
 														target="_blank"
 														className="font-medium text-(--green-1) hover:underline">
-														{business?.supprotEmail || "N/A"}
+														{business?.supportEmail || "N/A"}
 													</Link>
 												)}
 											</div>
