@@ -31,3 +31,21 @@ export const useCreditTypes = () => {
 		},
 	})
 }
+
+export const useCreditAdmin = (params?: Record<string, string>) => {
+	return useQuery({
+		queryKey: ["credit-history-admin", params],
+		queryFn: async () => {
+			const queryString = params
+				? `?${new URLSearchParams(params).toString()}`
+				: ""
+
+			const res = await fetch(`/api/admin/credit${queryString}`)
+			const data = await res.json()
+
+			if (!res.ok) throw new Error(data.error)
+
+			return data
+		},
+	})
+}
