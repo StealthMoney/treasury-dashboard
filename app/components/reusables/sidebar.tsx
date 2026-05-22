@@ -28,10 +28,31 @@ export default function Sidebar({
 	const pathname = usePathname()
 
 	const navLinks = [
-		{ logo: <PiHandCoins />, text: "Credit", href: "/credit" },
-		{ logo: <TbFileAnalytics />, text: "Report", href: "/report" },
-		{ logo: <RiUser3Line />, text: "Profile", href: "/profile" },
-		{ logo: <CiSettings />, text: "Settings", href: "/settings" },
+		{
+			logo: <PiHandCoins />,
+			text: user?.systemAdmin ? "Manage Credit" : "Credit",
+			href: user?.systemAdmin ? "/admin/manage-credit" : "/credit",
+		},
+		{
+			logo: <PiHandCoins />,
+			text: user?.systemAdmin ? "Manage Business" : null,
+			href: user?.systemAdmin ? "/admin/manage-business" : null,
+		},
+		{
+			logo: <TbFileAnalytics />,
+			text: user?.systemAdmin ? null : "Report",
+			href: user?.systemAdmin ? null : "/report",
+		},
+		{
+			logo: <RiUser3Line />,
+			text: "Profile",
+			href: user?.systemAdmin ? "/admin/manage-profile" : "/profile",
+		},
+		{
+			logo: <CiSettings />,
+			text: "Settings",
+			href: user?.systemAdmin ? "/admin/manage-settings" : "/settings",
+		},
 	]
 
 	const filteredLinks = filterLinks(user, navLinks)
@@ -78,12 +99,13 @@ export default function Sidebar({
 				className={`bg-background fixed top-20 left-0 z-50 flex h-[calc(100vh-80px)] w-[75%] flex-col justify-between px-5 transition-transform duration-300 md:w-[20%] md:border-r md:border-r-(--grey-1) ${open ? "translate-x-0" : "-translate-x-full md:translate-x-0"} `}>
 				<div className="mt-5 flex flex-col gap-2">
 					{filteredLinks.map((item) => {
-						const isActive = pathname === item.href
+						const isActive =
+							pathname === item.href || pathname.startsWith(item.href + "/")
 
 						return (
 							<Link
 								key={item.href}
-								href={item.href}
+								href={item.href || ""}
 								onClick={onClose}
 								className={`flex items-center gap-2 rounded-md px-2 py-2 transition-colors ${
 									isActive

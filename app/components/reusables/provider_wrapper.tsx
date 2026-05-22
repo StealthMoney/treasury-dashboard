@@ -12,9 +12,9 @@ export default function ProvideWrapper({
 }) {
 	return (
 		<SessionProvider>
-			<AuthGuard>
-				<ProfileProvider>{children}</ProfileProvider>
-			</AuthGuard>
+			<ProfileProvider>
+				<AuthGuard>{children}</AuthGuard>
+			</ProfileProvider>
 			<ToastContainer
 				position="top-right"
 				autoClose={3000}
