@@ -50,7 +50,7 @@ function resolveAuth(
 		return { type: "redirect", to: "/" }
 	}
 
-	if (isLoggedIn && !user) return { type: "loading" }
+	// if (isLoggedIn && !user) return { type: "loading" }
 
 	if (isLoggedIn && user) {
 		const matchedEntry = Object.entries(ROUTE_MAP).find(
