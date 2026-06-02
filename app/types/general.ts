@@ -105,6 +105,7 @@ export type LoanStatus =
 	| "OVERDUE"
 
 export interface LoanApplication {
+	loanId: number
 	loanTypeId: number
 	loanStatus: LoanStatus
 	durationInDays: number

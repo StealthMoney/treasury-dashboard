@@ -17,6 +17,8 @@ import {
 } from "@/app/types/general"
 import { updatecreditStatus } from "@/app/server/credits"
 import PageSkeleton from "@/app/components/reusables/page_skeleton"
+import { CSVLink } from "react-csv"
+import { useBusinessesDocuments } from "@/app/hooks/use_businesses"
 
 export default function ManageCreditPage() {
 	const [selectedRequest, setSelectedRequest] = useState<CreditRequest | null>(
@@ -45,6 +47,13 @@ export default function ManageCreditPage() {
 		...(searchTerm ? { "reference.contains": searchTerm } : {}),
 		...(statusFilter ? { "creditLineStatus.equals": statusFilter } : {}),
 	})
+
+	const { data: documents, refetch: documentRefetch } = useBusinessesDocuments(
+		selectedRequest?.loanId
+			? { "ownerId.equals": String(selectedRequest.loanId) }
+			: {},
+		!!selectedRequest?.loanId
+	)
 
 	const tableData =
 		creditHistoryData?.content.map((item, index) => ({
@@ -121,8 +130,8 @@ export default function ManageCreditPage() {
 		interest: Number(item.interest),
 		reference: item.reference,
 		loanTypeId: item.loanTypeId,
+		loanId: item.loanId,
 		durationInDays: item.durationInDays,
-		documents: [],
 	})
 
 	const handleRowClick = (item: LoanApplication) => {
@@ -230,34 +239,61 @@ export default function ManageCreditPage() {
 	return (
 		<div className="bg-background min-h-screen w-full px-6">
 			<div className="w-full overflow-x-auto md:max-w-[80%]">
-				<div className="mx-auto px-4 py-8 sm:px-6 lg:px-6">
-					{/* Header */}
-					<div className="mb-8">
-						<h1 className="text-foreground text-3xl font-bold">Manage Credits</h1>
-						<p className="text-text-1 mt-2">
-							Review and manage credit requests from businesses on the platform
-						</p>
-					</div>
+				<div className="mx-auto">
+					<div className="mb-8 flex items-center justify-between gap-4">
+						<div>
+							<h1 className="text-foreground text-xl font-bold">Credit Line</h1>
+						</div>
 
-					{/* <StatsSection stats={statsData} /> */}
-
-					{/* Filters */}
-					<div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-						<TextField
-							label="Search by Reference"
-							id="search"
-							placeholder="Enter reference ID"
-							value={searchTerm || ""}
-							onChange={setSearchTerm}
-						/>
-						<SelectField
-							label="Filter by Status"
-							id="status-filter"
-							value={statusFilter}
-							onChange={setStatusFilter}
-							placeholder="All Statuses"
-							options={statusOptions}
-						/>
+						<div className="flex items-center gap-2">
+							<TextField
+								label=""
+								id="search"
+								placeholder="Search by reference"
+								value={searchTerm || ""}
+								onChange={setSearchTerm}
+								compact
+								searchIcon
+							/>
+							<SelectField
+								label=""
+								id="status-filter"
+								value={statusFilter}
+								onChange={setStatusFilter}
+								placeholder="All Statuses"
+								options={statusOptions}
+								compact
+							/>
+							{tableData.length > 0 && (
+								<CSVLink
+									data={tableData.map((row) => ({
+										Reference: row.reference,
+										"Loan Amount": row.loanAmount,
+										Currency: row.currency,
+										Interest: row.interest,
+										"Duration (days)": row.durationInDays,
+										"Start Date": formatDate(row.loanStartDate),
+										"Due Date": formatDate(row.loanDueDate),
+										Status: row.loanStatus,
+									}))}
+									filename="credit-requests.csv"
+									className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-black px-3 py-1 text-xs font-semibold whitespace-nowrap text-white transition hover:bg-neutral-800">
+									<svg
+										className="h-3.5 w-3.5"
+										fill="none"
+										stroke="currentColor"
+										strokeWidth="2"
+										viewBox="0 0 24 24">
+										<path
+											strokeLinecap="round"
+											strokeLinejoin="round"
+											d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"
+										/>
+									</svg>
+									Export CSV
+								</CSVLink>
+							)}
+						</div>
 					</div>
 
 					{creditHistoryLoading ? (
@@ -361,9 +397,17 @@ export default function ManageCreditPage() {
 				<CreditRequestModal
 					isOpen={isModalOpen}
 					onClose={() => setIsModalOpen(false)}
-					data={selectedRequest}
+					data={
+						selectedRequest
+							? {
+									...selectedRequest,
+									documents: documents?.content ?? [],
+								}
+							: null
+					}
 					onApprove={handleApprove}
 					onReject={handleReject}
+					onRefetch={() => documentRefetch()}
 					isLoading={isLoading}
 				/>
 
