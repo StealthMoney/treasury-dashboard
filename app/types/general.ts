@@ -424,3 +424,13 @@ export interface PageableResponse<T> {
 	last: boolean
 	empty: boolean
 }
+
+export interface ActivityLog {
+	id: string
+	activityTitle: string
+	activitySubtitle: string
+	actionByRole: string
+	actionByEmail: string
+	date: string // ISO string
+	iconType: "approved" | "rejected" | "uploaded"
+}

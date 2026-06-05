@@ -2,12 +2,14 @@ interface KYBStepWrapperProps {
 	title: string | React.ReactNode
 	children: React.ReactNode
 	footer?: React.ReactNode
+	NoHorizontalPad?: boolean
 }
 
 export function KYBStepWrapper({
 	title,
 	children,
 	footer,
+	NoHorizontalPad,
 }: KYBStepWrapperProps) {
 	return (
 		<div className="space-y-6 rounded-lg border border-(--grey-1)">
@@ -17,7 +19,10 @@ export function KYBStepWrapper({
 			</div>
 
 			{/* Body */}
-			<div className="bg-background space-y-6 px-6 py-8">{children}</div>
+			<div
+				className={`bg-background space-y-6 ${!NoHorizontalPad ? "px-6" : ""} py-8`}>
+				{children}
+			</div>
 
 			{/* Footer */}
 			{footer && (

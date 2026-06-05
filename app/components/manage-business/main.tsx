@@ -10,8 +10,12 @@ import DocumentHistoryModal from "@/app/components/reusables/modals/history_moda
 import ApprovalModal from "@/app/components/reusables/modals/approval_modal"
 import RejectionModal from "@/app/components/reusables/modals/rejection_modal"
 import DirectorDetailModal from "@/app/components/reusables/modals/director_modal"
-import { getFileIconFromName } from "../reusables/file_icons"
-import { BusinessDocument, BusinessDirector } from "@/app/types/general"
+import { getFileBgClass, getFileIconFromName } from "../reusables/file_icons"
+import {
+	BusinessDocument,
+	BusinessDirector,
+	ActivityLog,
+} from "@/app/types/general"
 import {
 	useBusinessesDetails,
 	useBusinessesDirectors,
@@ -23,6 +27,9 @@ import {
 	updateBusinessDirectors,
 	updateBusinessDocuments,
 } from "@/app/server/business"
+import { IoMdCheckmarkCircle, IoMdCloseCircle } from "react-icons/io"
+import { ActivityIcon } from "../reusables/activity_icon"
+import { dummyActivities } from "@/app/utils/data/activityData"
 
 export default function BusinessDetailPage({ id }: { id: string }) {
 	const [loading, setLoading] = useState<boolean>(false)
@@ -31,6 +38,13 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 		title: string
 		message: string
 	} | null>(null)
+
+	const tabs = [
+		{ id: "overview", label: "Overview" },
+		{ id: "documents", label: "Documents" },
+		{ id: "directors", label: "Directors" },
+		{ id: "activities", label: "Activities" },
+	]
 
 	const { data: business, isLoading } = useBusinessesDetails(id)
 
@@ -290,9 +304,12 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 			header: "Documents",
 			accessor: (row) => (
 				<div className="flex items-center gap-3">
-					<span className="shrink-0">{getFileIconFromName(row.fileName, true)}</span>
+					<span
+						className={`shrink-0 rounded-lg px-2 py-2 ${getFileBgClass(row.fileName)}`}>
+						{getFileIconFromName(row.fileName, true)}
+					</span>
 					<div className="flex flex-col">
-						<p className="text-foreground max-w-50 truncate font-semibold">
+						<p className="text-foreground max-w-50 truncate text-[14px] font-semibold">
 							{row.fileName}
 						</p>
 						<p className="text-xs tracking-wide text-(--text-1) uppercase">
@@ -307,7 +324,7 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 			accessor: (row) => (
 				<div>
 					<p className="text-foreground">
-						{new Date(row.uploadedAt).toLocaleDateString("en-GB")}
+						{new Date(row.uploadedAt).toLocaleDateString("en-GB").replace(/\//g, "-")}
 					</p>
 					<p className="text-xs text-(--text-1)">
 						{new Date(row.uploadedAt).toLocaleTimeString("en-GB", {
@@ -324,22 +341,21 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 				<div
 					className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium ${
 						row.status === "VERIFIED"
-							? "bg-green-50 text-(--green-1)"
+							? "bg-(--grey-1) text-(--text-1)"
 							: row.status === "REJECTED"
 								? "bg-red-50 text-(--red-1)"
 								: "bg-orange-50 text-orange-600"
 					}`}>
-					<span
-						className={`h-2 w-2 rounded-full ${
-							row.status === "VERIFIED"
-								? "bg-(--green-1)"
-								: row.status === "REJECTED"
-									? "bg-(--red-1)"
-									: "bg-orange-500"
-						}`}
-					/>
+					{row.status === "VERIFIED" ? (
+						<IoMdCheckmarkCircle size={16} className="text-(--green-1)" />
+					) : row.status === "REJECTED" ? (
+						<IoMdCloseCircle size={16} className="text-(--red-1)" />
+					) : (
+						<span className="h-2 w-2 rounded-full bg-orange-500" />
+					)}
+
 					{row.status === "VERIFIED"
-						? "Verified"
+						? "Approved"
 						: row.status === "REJECTED"
 							? "Rejected"
 							: "Pending Review"}
@@ -352,7 +368,7 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 				<div className="flex items-center gap-4">
 					<button
 						onClick={() => handleReviewDocument(row)}
-						className="inline-flex items-center gap-2 text-sm font-medium text-(--green-1) transition">
+						className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-(--grey-1) px-2 py-2 text-sm text-[16px] font-medium text-(--text-1) transition">
 						<svg
 							className="h-4 w-4"
 							fill="none"
@@ -369,7 +385,7 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 					</button>
 					<button
 						onClick={() => handleViewHistory(row)}
-						className="inline-flex items-center gap-2 text-sm font-medium text-(--grey-3) transition hover:text-(--text-1)">
+						className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-(--grey-1) px-2 py-2 text-sm text-[16px] font-medium text-(--text-1) transition">
 						<svg
 							className="h-4 w-4"
 							fill="none"
@@ -434,22 +450,21 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 				<div
 					className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium ${
 						row.status === "VERIFIED"
-							? "bg-green-50 text-(--green-1)"
+							? "bg-(--grey-1) text-(--text-1)"
 							: row.status === "REJECTED"
 								? "bg-red-50 text-(--red-1)"
 								: "bg-orange-50 text-orange-600"
 					}`}>
-					<span
-						className={`h-2 w-2 rounded-full ${
-							row.status === "VERIFIED"
-								? "bg-(--green-1)"
-								: row.status === "REJECTED"
-									? "bg-(--red-1)"
-									: "bg-orange-500"
-						}`}
-					/>
+					{row.status === "VERIFIED" ? (
+						<IoMdCheckmarkCircle size={16} className="text-(--green-1)" />
+					) : row.status === "REJECTED" ? (
+						<IoMdCloseCircle size={16} className="text-(--red-1)" />
+					) : (
+						<span className="h-2 w-2 rounded-full bg-orange-500" />
+					)}
+
 					{row.status === "VERIFIED"
-						? "Verified"
+						? "Approved"
 						: row.status === "REJECTED"
 							? "Rejected"
 							: "Pending"}
@@ -486,6 +501,50 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 		},
 	]
 
+	const activityColumns: TableColumn<ActivityLog>[] = [
+		{
+			header: "Activity:",
+			accessor: (row) => (
+				<div className="flex items-center gap-3">
+					<ActivityIcon type={row.iconType} />
+					<div className="flex flex-col">
+						<p className="text-foreground text-[14px] font-semibold">
+							{row.activityTitle}
+						</p>
+						<p className="text-xs text-(--text-1)">{row.activitySubtitle}</p>
+					</div>
+				</div>
+			),
+		},
+		{
+			header: "Action By:",
+			accessor: (row) => (
+				<div className="flex flex-col">
+					<p className="text-foreground text-[14px]">
+						By: <span className="font-semibold">{row.actionByRole}</span>
+					</p>
+					<p className="text-xs text-(--text-1)">{row.actionByEmail}</p>
+				</div>
+			),
+		},
+		{
+			header: "Date:",
+			accessor: (row) => (
+				<div className="flex flex-col">
+					<p className="text-foreground text-[14px] font-medium">
+						{new Date(row.date).toLocaleDateString("en-GB").replace(/\//g, "-")}
+					</p>
+					<p className="text-xs text-(--text-1)">
+						{new Date(row.date).toLocaleTimeString("en-GB", {
+							hour: "2-digit",
+							minute: "2-digit",
+						})}
+					</p>
+				</div>
+			),
+		},
+	]
+
 	return (
 		<div className="bg-background min-h-screen w-full px-6">
 			<div className="w-full overflow-x-auto md:max-w-[80%]">
@@ -517,42 +576,43 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 					) : business ? (
 						<div className="mb-8 flex items-start justify-between">
 							<div>
-								<h1 className="text-foreground mb-2 text-2xl font-bold">
-									{business?.businessName}
-								</h1>
-								<p className="text-(--text-1)">
-									Business Reg No: {business?.cacNumber}
-								</p>
-								<div
-									className={`mt-2 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium ${
-										business?.status === "ACTIVE"
-											? "bg-green-50 text-(--green-1)"
-											: "bg-orange-50 text-orange-600"
-									}`}>
-									<span
-										className={`h-2 w-2 rounded-full ${
-											business?.status === "ACTIVE" ? "bg-(--green-1)" : "bg-orange-500"
-										}`}
-									/>
-									{business?.status}
+								<div className="flex flex-row items-start justify-start gap-x-2">
+									<h1 className="text-foreground mb-2 text-2xl font-bold">
+										{business?.businessName}
+									</h1>
+
+									<div
+										className={`inline-flex items-center justify-center gap-2 gap-x-1 rounded-full px-2 py-1.5 text-xs font-medium ${
+											business?.status === "ACTIVE"
+												? "bg-(--grey-1) text-(--text-1)"
+												: "bg-orange-50 text-orange-600"
+										}`}>
+										{business?.status === "ACTIVE" ? (
+											<IoMdCheckmarkCircle size={16} className="text-(--green-1)" />
+										) : (
+											<span
+												className={`h-2 w-2 rounded-full ${
+													business?.status === "ACTIVE" ? "bg-(--grey-1)" : "bg-orange-500"
+												}`}
+											/>
+										)}
+										{business?.status === "ACTIVE" ? "COMPLETED" : business?.status}
+									</div>
 								</div>
+								<p className="text-(--text-1)">{business?.cacNumber}</p>
 							</div>
 						</div>
 					) : null}
 
 					{/* Tabs */}
-					<div className="mb-8 flex gap-8 border-b border-(--grey-1)">
-						{[
-							{ id: "overview", label: "Overview" },
-							{ id: "documents", label: "Documents" },
-							{ id: "directors", label: "Directors" },
-						].map((tab) => (
+					<div className="mb-8 flex h-14 w-fit min-w-full gap-4 rounded-lg bg-[#F5F5F5] p-1 md:w-full">
+						{tabs.map((tab) => (
 							<button
 								key={tab.id}
 								onClick={() => setActiveTab(tab.id)}
-								className={`pb-4 font-medium transition ${
+								className={`cursor-pointer rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap transition-all md:min-w-[15%] ${
 									activeTab === tab.id
-										? "text-foreground border-b-2 border-(--green-1)"
+										? "bg-background text-foreground font-medium shadow-sm"
 										: "hover:text-foreground text-(--text-1)"
 								}`}>
 								{tab.label}
@@ -569,89 +629,87 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 						) : (
 							<div className="space-y-6">
 								{/* <StatsSection stats={business?.financialStats} /> add later */}
-								<KYBStepWrapper title="Business Information">
+								<KYBStepWrapper title="Business Information" NoHorizontalPad>
 									<div className="space-y-6">
-										<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-											<div>
-												<p className="mb-1 text-sm text-(--text-1)">Business ID:</p>
-												<p className="text-foreground font-medium">{business?.id}</p>
-											</div>
-											<div className="sm:text-right">
-												<p className="mb-1 text-sm text-(--text-1)">Industry:</p>
-												<p className="text-foreground font-medium">
-													{business?.industry || "N/A"}
-												</p>
-											</div>
+										<div className="flex flex-col gap-4 border-b border-(--grey-1) px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
+											<p className="mb-1 text-sm text-(--text-1)">Industry:</p>
+											<p className="text-foreground font-medium">
+												{business?.industry || "N/A"}
+											</p>
 										</div>
-										<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-											<div>
-												<p className="mb-1 text-sm text-(--text-1)">Address:</p>
-												<p className="text-foreground max-w-lg font-medium">
-													{business?.addressLine1 || "N/A"}
-												</p>
-											</div>
+
+										<div className="flex flex-col gap-4 border-b border-(--grey-1) px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
+											<p className="mb-1 text-sm text-(--text-1)">Business ID:</p>
+											<p className="text-foreground font-medium">{business?.id}</p>
 										</div>
-										<div className="flex flex-col gap-4 border-t border-(--grey-1) pt-6 sm:flex-row sm:items-center sm:justify-between">
-											<div>
-												<p className="mb-1 text-sm text-(--text-1)">Business Type:</p>
-												<p className="text-foreground font-medium">
-													{business?.businessType || "N/A"}
-												</p>
-											</div>
-											<div className="sm:text-right">
-												<p className="mb-1 text-sm text-(--text-1)">Website:</p>
-												{business?.website && business?.website !== "" && (
-													<Link
-														href={toAbsoluteUrl(business?.website || "")}
-														target="_blank"
-														className="font-medium text-(--green-1) hover:underline">
-														{business?.website || "N/A"}
-													</Link>
-												)}
-											</div>
+
+										<div className="flex flex-col gap-4 border-b border-(--grey-1) px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
+											<p className="mb-1 text-sm text-(--text-1)">Address:</p>
+											<p className="text-foreground max-w-lg font-medium">
+												{business?.addressLine1 || "N/A"}
+											</p>
 										</div>
-										<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-											<div>
-												<p className="mb-1 text-sm text-(--text-1)">Email Address:</p>
-												{business?.email && business?.email !== "" && (
-													<Link
-														href={`mailto:${business.email}`}
-														target="_blank"
-														className="font-medium text-(--green-1) hover:underline">
-														{business?.email || "N/A"}
-													</Link>
-												)}
-											</div>
-											<div className="sm:text-right">
-												<p className="mb-1 text-sm text-(--text-1)">Phone Number:</p>
-												<p className="text-foreground font-medium">
-													{business?.phoneNumber || "N/A"}
-												</p>
-											</div>
+
+										<div className="flex flex-col gap-4 border-b border-(--grey-1) px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
+											<p className="mb-1 text-sm text-(--text-1)">Business Type:</p>
+											<p className="text-foreground font-medium">
+												{business?.businessType || "N/A"}
+											</p>
 										</div>
-										<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-											<div>
-												<p className="mb-1 text-sm text-(--text-1)">Linkedin:</p>
-												{business?.linkedIn && business?.linkedIn !== "" && (
-													<Link
-														href={toAbsoluteUrl(business?.linkedIn || "")}
-														target="_blank"
-														className="font-medium text-(--green-1) hover:underline">
-														{business?.linkedIn || "N/A"}
-													</Link>
-												)}
-											</div>
-											<div className="sm:text-right">
-												<p className="mb-1 text-sm text-(--text-1)">Support Email:</p>
-												{business?.supportEmail && business?.supportEmail !== "" && (
-													<Link
-														href={`mailto:${business.supportEmail}`}
-														target="_blank"
-														className="font-medium text-(--green-1) hover:underline">
-														{business?.supportEmail || "N/A"}
-													</Link>
-												)}
-											</div>
+
+										<div className="flex flex-col gap-4 border-b border-(--grey-1) px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
+											<p className="mb-1 text-sm text-(--text-1)">Website:</p>
+											{business?.website && business?.website !== "" && (
+												<Link
+													href={toAbsoluteUrl(business?.website || "")}
+													target="_blank"
+													className="font-medium text-(--green-1) hover:underline">
+													{business?.website || "N/A"}
+												</Link>
+											)}
+										</div>
+
+										<div className="flex flex-col gap-4 border-b border-(--grey-1) px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
+											<p className="mb-1 text-sm text-(--text-1)">Email Address:</p>
+											{business?.email && business?.email !== "" && (
+												<Link
+													href={`mailto:${business.email}`}
+													target="_blank"
+													className="font-medium text-(--green-1) hover:underline">
+													{business?.email || "N/A"}
+												</Link>
+											)}
+										</div>
+
+										<div className="flex flex-col gap-4 border-b border-(--grey-1) px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
+											<p className="mb-1 text-sm text-(--text-1)">Phone Number:</p>
+											<p className="text-foreground font-medium">
+												{business?.phoneNumber || "N/A"}
+											</p>
+										</div>
+
+										<div className="flex flex-col gap-4 border-b border-(--grey-1) px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
+											<p className="mb-1 text-sm text-(--text-1)">Linkedin:</p>
+											{business?.linkedIn && business?.linkedIn !== "" && (
+												<Link
+													href={toAbsoluteUrl(business?.linkedIn || "")}
+													target="_blank"
+													className="font-medium text-(--green-1) hover:underline">
+													{business?.linkedIn || "N/A"}
+												</Link>
+											)}
+										</div>
+
+										<div className="flex flex-col gap-4 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
+											<p className="mb-1 text-sm text-(--text-1)">Support Email:</p>
+											{business?.supportEmail && business?.supportEmail !== "" && (
+												<Link
+													href={`mailto:${business.supportEmail}`}
+													target="_blank"
+													className="font-medium text-(--green-1) hover:underline">
+													{business?.supportEmail || "N/A"}
+												</Link>
+											)}
 										</div>
 									</div>
 								</KYBStepWrapper>
@@ -669,7 +727,11 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 						) : (
 							<div className="space-y-6">
 								<h2 className="text-foreground text-lg font-semibold">Documents</h2>
-								<Table data={documents?.content || []} columns={documentColumns} />
+								<Table
+									extraHeader="Documents"
+									data={documents?.content || []}
+									columns={documentColumns}
+								/>
 							</div>
 						))}
 
@@ -684,10 +746,41 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 						) : (
 							<div className="space-y-6">
 								<h2 className="text-foreground text-lg font-semibold">Directors</h2>
-								<Table data={directors ?? []} columns={directorColumns} />
+								<Table
+									extraHeader="Directors"
+									data={directors ?? []}
+									columns={directorColumns}
+									// extraHeaderActions={
+									// 	<select
+									// 		className="rounded-md border border-(--grey-1) bg-white px-3 py-2 text-sm"
+									// 		onChange={(e) => console.log(e.target.value)}>
+									// 		<option value="all">All</option>
+									// 		<option value="active">Active</option>
+									// 		<option value="inactive">Inactive</option>
+									// 	</select>
+									// }
+								/>
 							</div>
 						))}
 				</div>
+
+				{/* Activities */}
+				{activeTab === "activities" && (
+					<div className="space-y-6">
+						<h2 className="text-foreground text-lg font-semibold">Activities</h2>
+						<Table
+							extraHeader="Activities"
+							data={dummyActivities}
+							columns={activityColumns}
+							pagination={{
+								currentPage: 1,
+								totalItems: dummyActivities.length,
+								itemsPerPage: 15,
+								onPageChange: () => {},
+							}}
+						/>
+					</div>
+				)}
 
 				{/* ── Document modals ── */}
 				<DocumentReviewModal

@@ -31,6 +31,7 @@ export interface TableProps<T> {
 	tabs?: TableTab[]
 	activeTab?: string
 	onTabChange?: (key: string) => void
+	extraHeaderActions?: ReactNode
 }
 
 export function Table<T extends { id: string | number }>({
@@ -44,6 +45,7 @@ export function Table<T extends { id: string | number }>({
 	tabs,
 	activeTab,
 	onTabChange,
+	extraHeaderActions,
 }: TableProps<T>) {
 	const isEmpty = data.length === 0
 	const pathname = usePathname()
@@ -52,10 +54,14 @@ export function Table<T extends { id: string | number }>({
 		<div className="bg-background mb-8 overflow-hidden rounded-lg border border-(--grey-1)">
 			{/* Optional extra header */}
 			{extraHeader && (
-				<div className="border-b border-(--grey-1) bg-(--grey-4) px-4 py-4 sm:px-6">
+				<div className="flex justify-between border-b border-(--grey-1) bg-(--grey-4) px-4 py-4 sm:px-6">
 					<h3 className="text-foreground text-[14px] font-semibold sm:text-[16px]">
 						{extraHeader}
 					</h3>
+
+					{extraHeaderActions && (
+						<div className="flex items-center gap-2">{extraHeaderActions}</div>
+					)}
 				</div>
 			)}
 
@@ -68,14 +74,12 @@ export function Table<T extends { id: string | number }>({
 							<button
 								key={tab.key}
 								onClick={() => onTabChange?.(tab.key)}
-								className={`relative pb-3 pt-4 text-sm font-medium transition-colors ${
-									isActive
-										? "text-foreground"
-										: "text-(--text-1) hover:text-foreground"
+								className={`relative pt-4 pb-3 text-sm font-medium transition-colors ${
+									isActive ? "text-foreground" : "hover:text-foreground text-(--text-1)"
 								}`}>
 								{tab.label}
 								{isActive && (
-									<span className="absolute bottom-0 left-0 h-[2px] w-full rounded-t-full bg-foreground border-(--foreground)" />
+									<span className="bg-foreground absolute bottom-0 left-0 h-[2px] w-full rounded-t-full border-(--foreground)" />
 								)}
 							</button>
 						)

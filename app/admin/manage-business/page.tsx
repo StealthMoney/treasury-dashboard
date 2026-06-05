@@ -21,6 +21,7 @@ import PageSkeleton from "@/app/components/reusables/page_skeleton"
 import ApprovalModal from "@/app/components/reusables/modals/approval_modal"
 import { activateBusiness } from "@/app/server/business"
 import { formatDateWithSuffix } from "@/app/functions/helpers/formatted_date"
+import { StatsSection } from "@/app/components/reusables/stats_section"
 
 const transformBusinessForDisplay = (business: Business): DisplayBusiness => ({
 	id: business.id.toString(),
@@ -268,22 +269,37 @@ export default function BusinessListPage() {
 		},
 	]
 
+	const businessStats = [
+		{
+			label: "Total Businesses",
+			value: 1280,
+			// footer: "All registered businesses",
+		},
+		{
+			label: "Active Businesses",
+			value: 945,
+			// footer: "Currently active on platform",
+		},
+		{
+			label: "Inactive Businesses",
+			value: 335,
+			// footer: "Dormant or suspended accounts",
+		},
+	]
+
 	return (
 		<div className="bg-background min-h-screen w-full px-6">
 			<div className="w-full overflow-x-auto md:max-w-[80%]">
 				<div className="mx-auto px-4 py-8 sm:px-6 lg:px-6">
-					<div className="mb-8">
-						<h1 className="text-foreground mb-2 text-2xl font-bold sm:text-3xl">
-							Business List
-						</h1>
+					<div className="mb-8 flex items-center justify-between gap-4">
+						<div className="max-w-100">
+							<h1 className="text-foreground text-xl font-bold">Business List</h1>
+							<small className="text-[16px] text-(--text-1)">
+								Manage and review all businesses and keep track of their activities here
+							</small>
+						</div>
 
-						<p className="text-(--text-1)">
-							Manage and review all businesses and keep track of their activities here
-						</p>
-					</div>
-
-					<div className="mb-8 flex w-full flex-col items-stretch gap-4 md:flex-row md:items-end">
-						<div className="w-full md:flex-1">
+						<div className="flex items-center gap-2">
 							<TextField
 								id="business-search"
 								label="Search"
@@ -293,10 +309,10 @@ export default function BusinessListPage() {
 									setCurrentPage(1)
 									setSearchValue(value)
 								}}
+								compact
+								searchIcon
 							/>
-						</div>
 
-						<div className="w-full md:w-60">
 							<SelectField
 								id="business-status"
 								label="Status"
@@ -307,9 +323,12 @@ export default function BusinessListPage() {
 								}}
 								options={statusOptions}
 								placeholder="All Status"
+								compact
 							/>
 						</div>
 					</div>
+
+					<StatsSection stats={businessStats} />
 
 					{isLoading ? (
 						<div className="bg-background min-h-screen w-full">
