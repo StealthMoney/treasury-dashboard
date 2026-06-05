@@ -20,6 +20,11 @@ import PageSkeleton from "@/app/components/reusables/page_skeleton"
 import { CSVLink } from "react-csv"
 import { useBusinessesDocuments } from "@/app/hooks/use_businesses"
 
+const CREDIT_TABS = [
+	{ label: "Credit loan request", key: "request" },
+	{ label: "Credit loan history", key: "history" },
+]
+
 export default function ManageCreditPage() {
 	const [selectedRequest, setSelectedRequest] = useState<CreditRequest | null>(
 		null
@@ -35,8 +40,17 @@ export default function ManageCreditPage() {
 	const [currentPage, setCurrentPage] = useState(0)
 	const [searchTerm, setSearchTerm] = useState<string | null>(null)
 	const [statusFilter, setStatusFilter] = useState("")
+	const [activeTab, setActiveTab] = useState("request")
 	const [creditHistoryData, setCreditHistoryData] =
 		useState<PaginatedLoanApplicationResponse | null>(null)
+
+	const tabFilter =
+		activeTab === "request"
+			? { "creditLineStatus.equals": "REVIEW" }
+			: {
+					"creditLineStatus.notEquals": "REVIEW",
+					...(statusFilter ? { "creditLineStatus.equals": statusFilter } : {}),
+				}
 
 	const {
 		data,
@@ -45,7 +59,7 @@ export default function ManageCreditPage() {
 	} = useCreditAdmin({
 		page: String(currentPage),
 		...(searchTerm ? { "reference.contains": searchTerm } : {}),
-		...(statusFilter ? { "creditLineStatus.equals": statusFilter } : {}),
+		...tabFilter,
 	})
 
 	const { data: documents, refetch: documentRefetch } = useBusinessesDocuments(
@@ -55,20 +69,27 @@ export default function ManageCreditPage() {
 		!!selectedRequest?.loanId
 	)
 
-	const tableData =
-		creditHistoryData?.content.map((item, index) => ({
+	const tableData: (LoanApplication & { id: number })[] =
+		data?.content.map((item: LoanApplication, index: number) => ({
 			id: index + 1,
 			...item,
-		})) || []
+		})) ?? []
 
 	useEffect(() => {
 		setCreditHistoryData(data)
 	}, [data])
 
-	const items: LoanApplication[] = creditHistoryData?.content ?? []
+	// Reset page and status filter when switching tabs
+	const handleTabChange = (key: string) => {
+		setActiveTab(key)
+		setCurrentPage(0)
+		setStatusFilter("")
+	}
+
+	const items: LoanApplication[] = data?.content ?? []
 
 	// Stats derived from the current page
-	const totalRequests = creditHistoryData?.totalElements ?? items.length
+	const totalRequests = data?.totalElements ?? items.length
 	const pendingRequests = items.filter((r) => r.loanStatus === "REVIEW").length
 	const disbursedRequests = items.filter(
 		(r) => r.loanStatus === "DISBURSED"
@@ -85,9 +106,9 @@ export default function ManageCreditPage() {
 		},
 	]
 
+	// Status filter options — only relevant for the history tab
 	const statusOptions = [
 		{ label: "All", value: "" },
-		{ label: "Review", value: "REVIEW" },
 		{ label: "Approved", value: "APPROVED" },
 		{ label: "Disbursed", value: "DISBURSED" },
 		{ label: "Rejected", value: "REJECTED" },
@@ -185,7 +206,7 @@ export default function ManageCreditPage() {
 		} finally {
 			setIsLoading(false)
 			setIsApprovalModalOpen(true)
-			refetch()
+			await refetch()
 		}
 	}
 
@@ -226,7 +247,7 @@ export default function ManageCreditPage() {
 			})
 		} finally {
 			setIsApprovalModalOpen(true)
-			refetch()
+			await refetch()
 		}
 	}
 
@@ -255,15 +276,21 @@ export default function ManageCreditPage() {
 								compact
 								searchIcon
 							/>
-							<SelectField
-								label=""
-								id="status-filter"
-								value={statusFilter}
-								onChange={setStatusFilter}
-								placeholder="All Statuses"
-								options={statusOptions}
-								compact
-							/>
+							{/* Status filter only shown on history tab */}
+							{activeTab === "history" && (
+								<SelectField
+									label=""
+									id="status-filter"
+									value={statusFilter}
+									onChange={(val) => {
+										setStatusFilter(val)
+										setCurrentPage(0)
+									}}
+									placeholder="All Statuses"
+									options={statusOptions}
+									compact
+								/>
+							)}
 							{tableData.length > 0 && (
 								<CSVLink
 									data={tableData.map((row) => ({
@@ -304,7 +331,11 @@ export default function ManageCreditPage() {
 						</div>
 					) : (
 						<Table
+							extraHeader="Recent activities"
 							data={tableData || []}
+							tabs={CREDIT_TABS}
+							activeTab={activeTab}
+							onTabChange={handleTabChange}
 							columns={[
 								{
 									header: "Reference",
@@ -383,12 +414,9 @@ export default function ManageCreditPage() {
 							]}
 							pagination={{
 								currentPage: currentPage + 1,
-								totalItems:
-									(creditHistoryData?.totalPages ?? 1) * (creditHistoryData?.size ?? 10),
-								itemsPerPage: creditHistoryData?.size ?? 10,
-								onPageChange: (page) => {
-									setCurrentPage(page - 1)
-								},
+								totalItems: (data?.totalPages ?? 1) * (data?.size ?? 10),
+								itemsPerPage: data?.size ?? 10,
+								onPageChange: (page) => setCurrentPage(page - 1),
 							}}
 						/>
 					)}

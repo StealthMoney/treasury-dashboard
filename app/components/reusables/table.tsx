@@ -2,6 +2,11 @@ import { ReactNode } from "react"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 
+export interface TableTab {
+	label: string
+	key: string
+}
+
 export interface TableColumn<T> {
 	header: string | ReactNode
 	accessor: keyof T | ((row: T) => ReactNode)
@@ -23,6 +28,9 @@ export interface TableProps<T> {
 	kybStatus?: "ACTIVE" | "PENDING_REVIEW" | "SUSPENDED" | null
 	canPerformAction?: boolean
 	tableButtonClick?: () => void
+	tabs?: TableTab[]
+	activeTab?: string
+	onTabChange?: (key: string) => void
 }
 
 export function Table<T extends { id: string | number }>({
@@ -33,6 +41,9 @@ export function Table<T extends { id: string | number }>({
 	kybStatus,
 	canPerformAction,
 	tableButtonClick,
+	tabs,
+	activeTab,
+	onTabChange,
 }: TableProps<T>) {
 	const isEmpty = data.length === 0
 	const pathname = usePathname()
@@ -45,6 +56,30 @@ export function Table<T extends { id: string | number }>({
 					<h3 className="text-foreground text-[14px] font-semibold sm:text-[16px]">
 						{extraHeader}
 					</h3>
+				</div>
+			)}
+
+			{/* Optional tabs */}
+			{tabs && tabs.length > 0 && (
+				<div className="flex gap-6 border-b border-(--grey-1) px-4 sm:px-6">
+					{tabs.map((tab) => {
+						const isActive = activeTab === tab.key
+						return (
+							<button
+								key={tab.key}
+								onClick={() => onTabChange?.(tab.key)}
+								className={`relative pb-3 pt-4 text-sm font-medium transition-colors ${
+									isActive
+										? "text-foreground"
+										: "text-(--text-1) hover:text-foreground"
+								}`}>
+								{tab.label}
+								{isActive && (
+									<span className="absolute bottom-0 left-0 h-[2px] w-full rounded-t-full bg-foreground border-(--foreground)" />
+								)}
+							</button>
+						)
+					})}
 				</div>
 			)}
 

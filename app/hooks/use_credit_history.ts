@@ -47,5 +47,9 @@ export const useCreditAdmin = (params?: Record<string, string>) => {
 
 			return data
 		},
+		staleTime: 0,
+		gcTime: 0,
+		refetchOnMount: true,
+		refetchOnWindowFocus: true,
 	})
 }
