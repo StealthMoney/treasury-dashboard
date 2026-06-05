@@ -15,6 +15,7 @@ import {
 	BusinessDocument,
 	BusinessDirector,
 	ActivityLog,
+	Transaction,
 } from "@/app/types/general"
 import {
 	useBusinessesDetails,
@@ -30,6 +31,9 @@ import {
 import { IoMdCheckmarkCircle, IoMdCloseCircle } from "react-icons/io"
 import { ActivityIcon } from "../reusables/activity_icon"
 import { dummyActivities } from "@/app/utils/data/activityData"
+import { dummyTransactions } from "@/app/utils/data/transactionsData"
+import { FilterDropdown } from "../reusables/filterdropdown"
+import { businessFinancialStats } from "@/app/utils/data/financialData"
 
 export default function BusinessDetailPage({ id }: { id: string }) {
 	const [loading, setLoading] = useState<boolean>(false)
@@ -39,11 +43,15 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 		message: string
 	} | null>(null)
 
+	const [transactionFilter, setTransactionFilter] = useState("all")
+	const [activityFilter, setActivityFilter] = useState("all")
+
 	const tabs = [
 		{ id: "overview", label: "Overview" },
 		{ id: "documents", label: "Documents" },
 		{ id: "directors", label: "Directors" },
 		{ id: "activities", label: "Activities" },
+		{ id: "transactions", label: "Transactions" },
 	]
 
 	const { data: business, isLoading } = useBusinessesDetails(id)
@@ -63,6 +71,15 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 	// const business = businesses.find((item) => item.id === id)
 
 	const [activeTab, setActiveTab] = useState("overview")
+
+	const actionFilterOptions = [
+		{
+			label: activeTab === "activities" ? "All Activities" : "All Transactions",
+			value: "all",
+		},
+		{ label: "Most Recent", value: "recent" },
+		{ label: "Today", value: "today" },
+	]
 
 	// Document modal state
 	const [reviewModalOpen, setReviewModalOpen] = useState(false)
@@ -545,6 +562,79 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 		},
 	]
 
+	function formatNaira(value: number): string {
+		return "₦" + value.toLocaleString("en-NG", { minimumFractionDigits: 2 })
+	}
+
+	const transactionColumns: TableColumn<Transaction>[] = [
+		{
+			header: "Date",
+			accessor: (row) => (
+				<div className="flex flex-col">
+					<p className="text-foreground text-[14px] font-medium">
+						{new Date(row.date).toLocaleDateString("en-GB").replace(/\//g, "-")}
+					</p>
+					<p className="text-xs text-(--text-1)">
+						{new Date(row.date).toLocaleTimeString("en-GB", {
+							hour: "2-digit",
+							minute: "2-digit",
+						})}
+					</p>
+				</div>
+			),
+		},
+		{
+			header: "Amount",
+			accessor: (row) => (
+				<div className="flex flex-col">
+					<p className="text-foreground text-[14px] font-semibold">
+						{formatNaira(row.amount)}
+					</p>
+					<p className="text-xs text-(--text-1)">
+						{formatNaira(row.runningBalance)}
+					</p>
+				</div>
+			),
+		},
+		{
+			header: "Transaction Type",
+			accessor: (row) => (
+				<div className="flex flex-col">
+					<p className="text-foreground text-[14px] font-semibold">
+						{row.transactionTitle}
+					</p>
+					<p className="text-xs text-(--text-1)">{row.transactionType}</p>
+				</div>
+			),
+		},
+		{
+			header: "Status",
+			accessor: (row) => (
+				<div
+					className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium ${
+						row.status === "SUCCESSFUL"
+							? "bg-(--grey-1) text-(--text-1)"
+							: row.status === "FAILED"
+								? "bg-red-50 text-(--red-1)"
+								: "bg-orange-50 text-orange-600"
+					}`}>
+					{row.status === "SUCCESSFUL" ? (
+						<IoMdCheckmarkCircle size={16} className="text-(--green-1)" />
+					) : row.status === "FAILED" ? (
+						<IoMdCloseCircle size={16} className="text-(--red-1)" />
+					) : (
+						<span className="h-2 w-2 rounded-full bg-orange-500" />
+					)}
+					{row.status === "SUCCESSFUL"
+						? "Successful"
+						: row.status === "FAILED"
+							? "Failed"
+							: "Pending"}
+				</div>
+			),
+		},
+	]
+
 	return (
 		<div className="bg-background min-h-screen w-full px-6">
 			<div className="w-full overflow-x-auto md:max-w-[80%]">
@@ -605,14 +695,14 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 					) : null}
 
 					{/* Tabs */}
-					<div className="mb-8 flex h-14 w-fit min-w-full gap-4 rounded-lg bg-[#F5F5F5] p-1 md:w-full">
+					<div className="mb-8 flex h-14 w-full items-center gap-2 overflow-x-auto rounded-lg bg-[#F5F5F5] p-1">
 						{tabs.map((tab) => (
 							<button
 								key={tab.id}
 								onClick={() => setActiveTab(tab.id)}
-								className={`cursor-pointer rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap transition-all md:min-w-[15%] ${
+								className={`flex-shrink-0 cursor-pointer rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap transition-all ${
 									activeTab === tab.id
-										? "bg-background text-foreground font-medium shadow-sm"
+										? "bg-background text-foreground shadow-sm"
 										: "hover:text-foreground text-(--text-1)"
 								}`}>
 								{tab.label}
@@ -628,7 +718,33 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 							</div>
 						) : (
 							<div className="space-y-6">
-								{/* <StatsSection stats={business?.financialStats} /> add later */}
+								<KYBStepWrapper title="Financial Summary">
+									<div className="grid grid-cols-1 gap-4 gap-y-0 rounded-lg px-4 sm:grid-cols-2 lg:flex lg:flex-nowrap lg:gap-x-6 lg:overflow-x-auto">
+										{businessFinancialStats.map((stat, index) => (
+											<div key={index} className="flex px-4 py-2 lg:items-start">
+												<div className="flex-1">
+													<div className="bg-background rounded-lg">
+														<p className="mb-2 text-[16px] text-(--text-1)">{stat.label}</p>
+
+														<div className="text-foreground mb-2 flex items-baseline gap-2">
+															{stat.valueRow?.suffix && (
+																<span className="text-[24px] font-medium">
+																	{stat.valueRow.suffix}
+																</span>
+															)}
+															<h2 className="text-[24px] font-bold">
+																{typeof stat.valueRow?.main === "number"
+																	? stat.valueRow.main.toLocaleString()
+																	: stat.valueRow?.main}
+															</h2>
+														</div>
+													</div>
+												</div>
+											</div>
+										))}
+									</div>
+								</KYBStepWrapper>
+
 								<KYBStepWrapper title="Business Information" NoHorizontalPad>
 									<div className="space-y-6">
 										<div className="flex flex-col gap-4 border-b border-(--grey-1) px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -726,7 +842,6 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 							</div>
 						) : (
 							<div className="space-y-6">
-								<h2 className="text-foreground text-lg font-semibold">Documents</h2>
 								<Table
 									extraHeader="Documents"
 									data={documents?.content || []}
@@ -745,20 +860,10 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 							</div>
 						) : (
 							<div className="space-y-6">
-								<h2 className="text-foreground text-lg font-semibold">Directors</h2>
 								<Table
 									extraHeader="Directors"
 									data={directors ?? []}
 									columns={directorColumns}
-									// extraHeaderActions={
-									// 	<select
-									// 		className="rounded-md border border-(--grey-1) bg-white px-3 py-2 text-sm"
-									// 		onChange={(e) => console.log(e.target.value)}>
-									// 		<option value="all">All</option>
-									// 		<option value="active">Active</option>
-									// 		<option value="inactive">Inactive</option>
-									// 	</select>
-									// }
 								/>
 							</div>
 						))}
@@ -767,7 +872,6 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 				{/* Activities */}
 				{activeTab === "activities" && (
 					<div className="space-y-6">
-						<h2 className="text-foreground text-lg font-semibold">Activities</h2>
 						<Table
 							extraHeader="Activities"
 							data={dummyActivities}
@@ -775,6 +879,43 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 							pagination={{
 								currentPage: 1,
 								totalItems: dummyActivities.length,
+								itemsPerPage: 15,
+								onPageChange: () => {},
+							}}
+							extraHeaderActions={
+								<FilterDropdown
+									options={actionFilterOptions}
+									selected={transactionFilter}
+									onChange={(val) => {
+										setActivityFilter(val)
+										console.log("Transaction filter:", val)
+									}}
+								/>
+							}
+						/>
+					</div>
+				)}
+
+				{/* Transactions */}
+				{activeTab === "transactions" && (
+					<div className="space-y-6">
+						<Table
+							extraHeader="Transactions"
+							data={dummyTransactions}
+							columns={transactionColumns}
+							extraHeaderActions={
+								<FilterDropdown
+									options={actionFilterOptions}
+									selected={transactionFilter}
+									onChange={(val) => {
+										setTransactionFilter(val)
+										console.log("Transaction filter:", val)
+									}}
+								/>
+							}
+							pagination={{
+								currentPage: 1,
+								totalItems: dummyTransactions.length,
 								itemsPerPage: 15,
 								onPageChange: () => {},
 							}}

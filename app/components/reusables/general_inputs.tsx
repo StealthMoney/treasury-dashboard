@@ -46,7 +46,7 @@ export function SelectField({
 					onChange={(e) => onChange(e.target.value)}
 					disabled={disabled}
 					className={`w-full cursor-pointer appearance-none bg-transparent text-sm text-(--text-1) outline-none ${
-						compact ? "px-3 py-1.5 pr-7 text-xs" : "px-3 py-2.5"
+						compact ? "px-3 py-2 pr-7 text-xs" : "px-3 py-2.5"
 					}`}>
 					<option value="" disabled>
 						{placeholder}
@@ -183,7 +183,7 @@ export function TextField({
 					onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
 					disabled={disabled}
 					className={`text-foreground flex-1 bg-transparent text-[14px] placeholder-(--text-1) outline-none ${
-						compact ? "px-2 py-1 text-xs" : "px-3 py-2.5"
+						compact ? "px-2 py-2 text-xs" : "px-3 py-2.5"
 					}`}
 				/>
 			</div>

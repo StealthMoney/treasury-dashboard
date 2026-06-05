@@ -22,6 +22,7 @@ import ApprovalModal from "@/app/components/reusables/modals/approval_modal"
 import { activateBusiness } from "@/app/server/business"
 import { formatDateWithSuffix } from "@/app/functions/helpers/formatted_date"
 import { StatsSection } from "@/app/components/reusables/stats_section"
+import { IoMdCheckmarkCircle, IoMdCloseCircle } from "react-icons/io"
 
 const transformBusinessForDisplay = (business: Business): DisplayBusiness => ({
 	id: business.id.toString(),
@@ -168,8 +169,8 @@ export default function BusinessListPage() {
 
 		if (status === "Completed") {
 			return (
-				<div className={`${baseClass} bg-green-50 text-(--green-1)`}>
-					<span className="h-2 w-2 rounded-full bg-(--green-1)" />
+				<div className={`${baseClass} bg-(--grey-1) text-(--text-1)`}>
+					<IoMdCheckmarkCircle size={16} className="text-(--green-1)" />
 					{status}
 				</div>
 			)
@@ -187,7 +188,7 @@ export default function BusinessListPage() {
 		if (status === "Rejected") {
 			return (
 				<div className={`${baseClass} bg-red-50 text-(--red-1)`}>
-					<span className="h-2 w-2 rounded-full bg-(--red-1)" />
+					<IoMdCloseCircle size={16} className="text-(--red-1)" />
 					{status}
 				</div>
 			)
@@ -303,7 +304,7 @@ export default function BusinessListPage() {
 							<TextField
 								id="business-search"
 								label="Search"
-								placeholder="Search by business name, website or email..."
+								placeholder="Search by business name"
 								value={searchValue}
 								onChange={(value) => {
 									setCurrentPage(1)

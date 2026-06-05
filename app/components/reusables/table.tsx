@@ -54,13 +54,15 @@ export function Table<T extends { id: string | number }>({
 		<div className="bg-background mb-8 overflow-hidden rounded-lg border border-(--grey-1)">
 			{/* Optional extra header */}
 			{extraHeader && (
-				<div className="flex justify-between border-b border-(--grey-1) bg-(--grey-4) px-4 py-4 sm:px-6">
+				<div className="flex flex-col gap-3 border-b border-(--grey-1) bg-(--grey-4) px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
 					<h3 className="text-foreground text-[14px] font-semibold sm:text-[16px]">
 						{extraHeader}
 					</h3>
 
 					{extraHeaderActions && (
-						<div className="flex items-center gap-2">{extraHeaderActions}</div>
+						<div className="flex flex-wrap justify-end gap-2 sm:justify-end">
+							{extraHeaderActions}
+						</div>
 					)}
 				</div>
 			)}

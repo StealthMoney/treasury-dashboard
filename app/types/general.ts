@@ -434,3 +434,13 @@ export interface ActivityLog {
 	date: string // ISO string
 	iconType: "approved" | "rejected" | "uploaded"
 }
+
+export interface Transaction {
+	id: string
+	date: string // ISO string
+	amount: number
+	runningBalance: number
+	transactionTitle: string
+	transactionType: string
+	status: "SUCCESSFUL" | "FAILED" | "PENDING"
+}
