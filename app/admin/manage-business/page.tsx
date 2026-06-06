@@ -23,6 +23,7 @@ import { activateBusiness } from "@/app/server/business"
 import { formatDateWithSuffix } from "@/app/functions/helpers/formatted_date"
 import { StatsSection } from "@/app/components/reusables/stats_section"
 import { IoMdCheckmarkCircle, IoMdCloseCircle } from "react-icons/io"
+import { FaRegClock } from "react-icons/fa6"
 
 const transformBusinessForDisplay = (business: Business): DisplayBusiness => ({
 	id: business.id.toString(),
@@ -178,8 +179,8 @@ export default function BusinessListPage() {
 
 		if (status === "Pending") {
 			return (
-				<div className={`${baseClass} bg-orange-50 text-orange-600`}>
-					<span className="h-2 w-2 rounded-full bg-orange-500" />
+				<div className={`${baseClass} bg-(--grey-1) text-(--text-1)`}>
+					<FaRegClock size={14} className="text-orange-500" />
 					{status}
 				</div>
 			)
@@ -187,7 +188,7 @@ export default function BusinessListPage() {
 
 		if (status === "Rejected") {
 			return (
-				<div className={`${baseClass} bg-red-50 text-(--red-1)`}>
+				<div className={`${baseClass} bg-(--grey-1) text-(--text-1)`}>
 					<IoMdCloseCircle size={16} className="text-(--red-1)" />
 					{status}
 				</div>

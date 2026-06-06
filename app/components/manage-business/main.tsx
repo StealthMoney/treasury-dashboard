@@ -34,6 +34,7 @@ import { dummyActivities } from "@/app/utils/data/activityData"
 import { dummyTransactions } from "@/app/utils/data/transactionsData"
 import { FilterDropdown } from "../reusables/filterdropdown"
 import { businessFinancialStats } from "@/app/utils/data/financialData"
+import { FaRegClock } from "react-icons/fa6"
 
 export default function BusinessDetailPage({ id }: { id: string }) {
 	const [loading, setLoading] = useState<boolean>(false)
@@ -268,9 +269,14 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 				})
 			} finally {
 				setLoading(false)
-				setRejectionModalOpen(false)
+				if (rejectionSubject === "director") {
+					setRejectionModalOpen(false)
+					await refetchDirectors()
+				} else {
+					setReviewModalOpen(false)
+					await refetchDocuments()
+				}
 				setApprovalModalOpen(true)
-				await refetchDirectors()
 			}
 		} else if (rejectionSubject === "document") {
 			if (!id || !setSelectedDocument) return
@@ -283,6 +289,7 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 				)
 
 				if (req.success) {
+					setReviewModalOpen(false)
 					setSelectedDocument((prev) =>
 						prev ? { ...prev, status: "REJECTED", rejectionReason: reason } : prev
 					)
@@ -292,6 +299,7 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 						message: "The document status has been updated to rejected.",
 					})
 				} else {
+					setReviewModalOpen(false)
 					setApprovalMessage({
 						type: "failed",
 						title: "Failed to reject document",
@@ -299,6 +307,7 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 					})
 				}
 			} catch (err) {
+				setReviewModalOpen(false)
 				setApprovalMessage({
 					type: "failed",
 					title: "Failed to reject document",
@@ -356,19 +365,13 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 			header: "Status",
 			accessor: (row) => (
 				<div
-					className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium ${
-						row.status === "VERIFIED"
-							? "bg-(--grey-1) text-(--text-1)"
-							: row.status === "REJECTED"
-								? "bg-red-50 text-(--red-1)"
-								: "bg-orange-50 text-orange-600"
-					}`}>
+					className={`inline-flex items-center gap-2 rounded-full bg-(--grey-1) px-3 py-1.5 text-xs font-medium text-(--text-1)`}>
 					{row.status === "VERIFIED" ? (
 						<IoMdCheckmarkCircle size={16} className="text-(--green-1)" />
 					) : row.status === "REJECTED" ? (
 						<IoMdCloseCircle size={16} className="text-(--red-1)" />
 					) : (
-						<span className="h-2 w-2 rounded-full bg-orange-500" />
+						<FaRegClock size={14} className="text-orange-500" />
 					)}
 
 					{row.status === "VERIFIED"
@@ -465,19 +468,13 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 			header: "Status",
 			accessor: (row) => (
 				<div
-					className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium ${
-						row.status === "VERIFIED"
-							? "bg-(--grey-1) text-(--text-1)"
-							: row.status === "REJECTED"
-								? "bg-red-50 text-(--red-1)"
-								: "bg-orange-50 text-orange-600"
-					}`}>
+					className={`inline-flex items-center gap-2 rounded-full bg-(--grey-1) px-3 py-1.5 text-xs font-medium text-(--text-1)`}>
 					{row.status === "VERIFIED" ? (
 						<IoMdCheckmarkCircle size={16} className="text-(--green-1)" />
 					) : row.status === "REJECTED" ? (
 						<IoMdCloseCircle size={16} className="text-(--red-1)" />
 					) : (
-						<span className="h-2 w-2 rounded-full bg-orange-500" />
+						<FaRegClock size={14} className="text-orange-500" />
 					)}
 
 					{row.status === "VERIFIED"
@@ -930,7 +927,7 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 					document={selectedDocument}
 					onClose={() => setReviewModalOpen(false)}
 					onApprove={handleApproveDocument}
-					onReject={handleRejectDocument}
+					onReject={(reason) => handleRejectionConfirm(reason)}
 				/>
 				<DocumentHistoryModal
 					isOpen={historyModalOpen}
