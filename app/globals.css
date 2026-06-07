@@ -32,6 +32,15 @@ body {
 	font-family: Arial, Helvetica, sans-serif;
 }
 
+#app-root {
+	transition: filter 0.3s ease;
+}
+
+body.modal-open #app-root {
+	filter: blur(6px);
+	pointer-events: none;
+}
+
 .prompt-image {
 	background: url("/images/prompt.svg");
 	background-size: contain;

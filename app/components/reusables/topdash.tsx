@@ -7,11 +7,38 @@ import { useProfile } from "@/app/contexts/user_provider"
 import { returnUserInitials } from "@/app/functions/helpers/initials"
 import { AppuserProps } from "@/app/types/app_user"
 
+const TITLE_MAP: Record<string, string> = {
+	"manage-business": "Manage Business",
+	"manage-credit": "Manage Credit",
+	"manage-report": "Manage Report",
+	"manage-waitlist": "Manage Waitlist",
+	"manage-document": "Manage Document",
+	"manage-profile": "Manage Profile",
+	"manage-settings": "Manage Settings",
+	credit: "Credit",
+	report: "Report",
+	profile: "Profile",
+	settings: "Settings",
+	admin: "Admin",
+}
+
 export default function Topdash({ onMenuClick }: { onMenuClick: () => void }) {
 	const pathname = usePathname()
-	const title = pathname.replace(/\//g, "")
-	const formattedTitle = title.charAt(0).toUpperCase() + title.slice(1)
-	const { user } = useProfile()
+	const { user, isKyb } = useProfile()
+
+	const segments = pathname.split("/").filter(Boolean)
+	const lastSegment = segments[segments.length - 1] ?? ""
+
+	const formattedTitle =
+		segments
+			.slice()
+			.reverse()
+			.map((s) => TITLE_MAP[s])
+			.find(Boolean) ??
+		lastSegment
+			.split("-")
+			.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+			.join(" ")
 
 	return (
 		<header className="bg-background fixed top-0 left-0 z-50 flex h-20 w-full border-b border-(--grey-1)">
@@ -30,7 +57,7 @@ export default function Topdash({ onMenuClick }: { onMenuClick: () => void }) {
 			</div>
 
 			<div className="flex flex-1 items-center justify-between px-6">
-				<h1>{formattedTitle}</h1>
+				<h1>{!isKyb ? formattedTitle : ""}</h1>
 
 				<div className="flex items-center gap-3">
 					<button

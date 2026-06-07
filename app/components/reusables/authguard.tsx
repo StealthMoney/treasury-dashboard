@@ -6,14 +6,6 @@ import { useRouter, usePathname } from "next/navigation"
 import { useProfile } from "@/app/contexts/user_provider"
 import { LineLoader } from "./line_loader"
 
-const PUBLIC_ROUTES = ["/", "/account/activate", "/reset-password"]
-const ROUTE_MAP: Record<string, string> = {
-	"/credit": "Credit",
-	"/report": "Report",
-	"/profile": "Profile",
-	"/settings": "Settings",
-}
-
 type AuthDecision =
 	| { type: "loading" }
 	| { type: "redirect"; to: string }
@@ -27,8 +19,29 @@ function resolveAuth(
 ): AuthDecision {
 	if (status === "loading") return { type: "loading" }
 
+	const PUBLIC_ROUTES = ["/", "/account/activate", "/reset-password"]
+
+	const USER_ROUTES: Record<string, string> = {
+		"/credit": "Credit",
+		"/report": "Report",
+		"/profile": "Profile",
+		"/settings": "Settings",
+	}
+
+	const ADMIN_ROUTES: Record<string, string> = {
+		"/admin/manage-credit": "Manage Credit",
+		"/admin/manage-report": "Manage Report",
+		"/admin/manage-profile": "Profile",
+		"/admin/settings": "Settings",
+		"/admin/manage-waitlist": "Manage Waitlist",
+		"/admin/manage-business": "Manage Business",
+		"/admin/manage-document": "Manage Document",
+	}
+	const ROUTE_MAP = { ...USER_ROUTES, ...ADMIN_ROUTES }
+
 	const isPublic = PUBLIC_ROUTES.includes(pathname)
 	const isLoggedIn = Boolean(session?.accessToken)
+
 	const isTokenExpired = session?.expires
 		? new Date(session.expires).getTime() < Date.now()
 		: true
@@ -37,11 +50,14 @@ function resolveAuth(
 		return { type: "redirect", to: "/" }
 	}
 
+	// if (isLoggedIn && !user) return { type: "loading" }
+
 	if (isLoggedIn && user) {
 		const matchedEntry = Object.entries(ROUTE_MAP).find(
 			([route]) => pathname === route || pathname.startsWith(route + "/")
 		)
-		const requiredMenu = matchedEntry?.[1]
+
+		const requiredMenu = matchedEntry?.[1] ?? null
 
 		const hasAccess = requiredMenu
 			? user.profileMenu.includes(requiredMenu)
@@ -51,14 +67,20 @@ function resolveAuth(
 			const firstRoute = Object.entries(ROUTE_MAP).find(([, menu]) =>
 				user.profileMenu.includes(menu)
 			)?.[0]
-			if (firstRoute) return { type: "redirect", to: firstRoute }
+
+			if (firstRoute) {
+				return { type: "redirect", to: firstRoute }
+			}
 		}
 
 		if (pathname === "/") {
+			const relevantRoutes = user.systemAdmin ? ADMIN_ROUTES : USER_ROUTES
+
 			const defaultRoute =
-				Object.entries(ROUTE_MAP).find(([, menu]) =>
+				Object.entries(relevantRoutes).find(([, menu]) =>
 					user.profileMenu.includes(menu)
 				)?.[0] ?? "/"
+
 			return { type: "redirect", to: defaultRoute }
 		}
 	}
@@ -68,14 +90,17 @@ function resolveAuth(
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
 	const { data: session, status } = useSession()
-	const { user } = useProfile()
+	const { user, loading: profileLoading } = useProfile()
 	const router = useRouter()
 	const pathname = usePathname()
 
-	const decision = useMemo(
-		() => resolveAuth(status, session, user, pathname),
-		[status, session, user, pathname]
-	)
+	const decision = useMemo(() => {
+		if (status === "loading") {
+			return { type: "loading", to: "/" }
+		}
+
+		return resolveAuth(status, session, user, pathname)
+	}, [status, session, user, pathname])
 
 	useEffect(() => {
 		if (decision.type === "redirect") {

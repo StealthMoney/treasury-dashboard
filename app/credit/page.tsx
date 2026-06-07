@@ -260,7 +260,7 @@ export const collateralAssetsColumns = [
 ]
 
 export default function CreditsPage() {
-	const { user } = useProfile()
+	const { user, setIsKyb } = useProfile()
 
 	const [isBorrowOpen, setIsBorrowOpen] = useState(false)
 	const [borrowStep, setBorrowStep] = useState(0)
@@ -630,6 +630,10 @@ export default function CreditsPage() {
 			setRepayAmount(value)
 		}
 	}, [creditHistoryData])
+
+	useEffect(() => {
+		setIsKyb(showKybScreens)
+	}, [showKybScreens, setIsKyb])
 
 	const handleModalClose = () => {
 		setBorrowFundError(false)
@@ -1274,8 +1278,9 @@ export default function CreditsPage() {
 							canPerformAction={!canPerformActions}
 							pagination={{
 								currentPage: currentPage + 1,
-								totalItems: creditHistoryData?.totalElements ?? 0,
-								itemsPerPage: pageSize,
+								totalItems:
+									(creditHistoryData?.totalPages ?? 1) * (creditHistoryData?.size ?? 10),
+								itemsPerPage: creditHistoryData?.size ?? 10,
 								onPageChange: (page) => {
 									setCurrentPage(page - 1)
 								},

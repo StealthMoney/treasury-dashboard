@@ -5,27 +5,33 @@ import { useSession } from "next-auth/react"
 import { getProfile } from "../server/get_profile"
 import { AppuserProps } from "../types/app_user"
 import { signOut } from "next-auth/react"
+import { Dispatch, SetStateAction } from "react"
 
 type ProfileContextType = {
 	user: AppuserProps | null
 	loading: boolean
 	error: string | null
+	isKyb: boolean
 	retry: () => void
 	logout: () => void
+	setIsKyb: Dispatch<SetStateAction<boolean>>
 }
 
 const ProfileContext = createContext<ProfileContextType>({
 	user: null,
 	loading: true,
 	error: null,
+	isKyb: false,
 	retry: () => {},
 	logout: () => {},
+	setIsKyb: () => {},
 })
 
 const CACHE_KEY = "profile_cache"
 const CACHE_DURATION = 40 * 60 * 1000
 
 function getValidCache(): AppuserProps | null {
+	if (typeof window === "undefined") return null
 	try {
 		const cached = localStorage.getItem(CACHE_KEY)
 		if (!cached) return null
@@ -51,6 +57,7 @@ export const ProfileProvider = ({
 	const { status } = useSession()
 	const [user, setUser] = useState<AppuserProps | null>(() => getValidCache())
 	const [loading, setLoading] = useState<boolean>(() => getValidCache() === null)
+	const [isKyb, setIsKyb] = useState<boolean>(false)
 	const [error, setError] = useState<string | null>(null)
 
 	const fetchProfile = async () => {
@@ -79,7 +86,10 @@ export const ProfileProvider = ({
 
 	useEffect(() => {
 		if (status !== "authenticated") {
-			if (status === "unauthenticated") setLoading(false)
+			if (status === "unauthenticated") {
+				setUser(null)
+				setLoading(false)
+			}
 			return
 		}
 
@@ -117,16 +127,19 @@ export const ProfileProvider = ({
 		return () => {
 			cancelled = true
 		}
-	}, [status, user])
+	}, [status])
 
 	const retry = () => fetchProfile()
 	const logout = async () => {
+		if (typeof window === "undefined") return null
 		localStorage.removeItem(CACHE_KEY)
+		setUser(null)
 		await signOut()
 	}
 
 	return (
-		<ProfileContext.Provider value={{ user, loading, error, retry, logout }}>
+		<ProfileContext.Provider
+			value={{ user, loading, error, retry, logout, isKyb, setIsKyb }}>
 			{children}
 		</ProfileContext.Provider>
 	)

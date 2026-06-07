@@ -124,7 +124,9 @@ export function TeamTab() {
 										</span>
 									</td>
 									<td className="px-4 py-4">
-										<button className="hover:bg-muted rounded-lg p-2 transition-colors">
+										<button
+											title="more"
+											className="hover:bg-muted rounded-lg p-2 transition-colors">
 											<AiOutlineMore size={18} className="text-foreground" />
 										</button>
 									</td>
@@ -145,7 +147,9 @@ export function TeamTab() {
 									<p className="text-foreground font-medium">{member.name}</p>
 									<p className="text-muted-foreground text-sm">{member.email}</p>
 								</div>
-								<button className="hover:bg-muted rounded-lg p-2 transition-colors">
+								<button
+									title="more"
+									className="hover:bg-muted rounded-lg p-2 transition-colors">
 									<AiOutlineMore size={18} className="text-muted-foreground" />
 								</button>
 							</div>

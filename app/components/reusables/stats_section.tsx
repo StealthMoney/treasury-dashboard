@@ -4,7 +4,7 @@ import { HiPlus } from "react-icons/hi"
 // ---- API / endpoint shape ----
 export interface StatValueRow {
 	main: string | number
-	suffix?: "USDC" | "USDT"
+	suffix?: "USDC" | "USDT" | "NGN" | "USD"
 }
 
 export interface StatData {
@@ -22,7 +22,7 @@ export interface StatUIConfig {
 }
 
 export interface StatsSectionProps {
-	actionDisabled: boolean
+	actionDisabled?: boolean
 	stats: StatData[]
 	uiConfig?: StatUIConfig[]
 	buttonLabel?: string
