@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Modal } from "./modal"
 import { BusinessDirector } from "@/app/types/general"
 import { IoMdCheckmarkCircle, IoMdCloseCircle } from "react-icons/io"
@@ -12,12 +12,16 @@ interface DirectorDetailModalProps {
 	director: BusinessDirector | null
 	onClose: () => void
 	onApprove: () => void
-	onReject: () => void
+	onRejectInitiate: () => void
+	onReject: (reason: string) => void
 }
+
+type Step = "review" | "reject"
 
 function StatusBadge({ status }: { status: BusinessDirector["status"] }) {
 	const base =
 		"inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium"
+
 	if (status === "VERIFIED")
 		return (
 			<div className={`${base} bg-(--grey-1) text-(--text-1)`}>
@@ -25,6 +29,7 @@ function StatusBadge({ status }: { status: BusinessDirector["status"] }) {
 				Approved
 			</div>
 		)
+
 	if (status === "REJECTED")
 		return (
 			<div className={`${base} bg-red-50 text-(--red-1)`}>
@@ -32,6 +37,7 @@ function StatusBadge({ status }: { status: BusinessDirector["status"] }) {
 				Rejected
 			</div>
 		)
+
 	return (
 		<div className={`${base} bg-orange-50 text-orange-600`}>
 			<FaRegClock size={14} className="text-orange-500" />
@@ -50,40 +56,8 @@ function MaskedBvn({ bvn }: { bvn: string }) {
 			</span>
 			<button
 				onClick={() => setVisible((v) => !v)}
-				className="hover:text-foreground cursor-pointer text-(--text-1) transition">
-				{visible ? (
-					<svg
-						className="h-3.5 w-3.5"
-						fill="none"
-						stroke="currentColor"
-						viewBox="0 0 24 24">
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							strokeWidth={2}
-							d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
-						/>
-					</svg>
-				) : (
-					<svg
-						className="h-3.5 w-3.5"
-						fill="none"
-						stroke="currentColor"
-						viewBox="0 0 24 24">
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							strokeWidth={2}
-							d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-						/>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							strokeWidth={2}
-							d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-						/>
-					</svg>
-				)}
+				className="hover:text-foreground cursor-pointer text-(--text-1)">
+				{visible ? "Hide" : "Show"}
 			</button>
 		</span>
 	)
@@ -92,10 +66,8 @@ function MaskedBvn({ bvn }: { bvn: string }) {
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
 	return (
 		<div className="flex items-center justify-between border-b border-(--grey-1) py-3">
-			<p className="shrink-0 text-sm text-(--text-1)">{label}</p>
-			<p className="text-foreground ml-4 text-right text-sm font-medium">
-				{value}
-			</p>
+			<p className="text-sm text-(--text-1)">{label}</p>
+			<p className="text-foreground text-right text-sm font-medium">{value}</p>
 		</div>
 	)
 }
@@ -106,57 +78,83 @@ export default function DirectorDetailModal({
 	director,
 	onClose,
 	onApprove,
+	onRejectInitiate,
 	onReject,
 }: DirectorDetailModalProps) {
+	const [step, setStep] = useState<Step>("review")
+	const [rejectionReason, setRejectionReason] = useState("")
+	const [touched, setTouched] = useState(false)
+
+	// reset when modal closes
+	const resetModalState = () => {
+		setStep("review")
+		setRejectionReason("")
+		setTouched(false)
+	}
+
+	if (!director) return null
+
+	const handleConfirmReject = () => {
+		setTouched(true)
+		if (!rejectionReason.trim()) return
+
+		onReject(rejectionReason)
+	}
+
+	const handleClose = () => {
+		resetModalState()
+		setTimeout(() => {
+			onClose()
+		}, 1000)
+	}
+
+	const handleRejection = () => {
+		onRejectInitiate()
+		setStep("reject")
+	}
+
+	const handleGoBack = () => {
+		setStep("review")
+		setRejectionReason("")
+	}
+
+	const hasError = touched && !rejectionReason.trim()
+	const isSettled =
+		director.status === "VERIFIED" || director.status === "REJECTED"
+
 	return (
 		<Modal
 			isOpen={isOpen && !!director}
-			onClose={onClose}
-			title="Director Details"
-			showOverlay={true}
+			onClose={handleClose}
+			title={step === "review" ? "Director Details" : "Reject Director"}
+			showOverlay
 			variant="slide">
-			{director && (
+			{step === "review" && (
 				<div className="flex h-full flex-col">
 					<div className="flex-1">
 						{/* Header */}
-						<div className="mb-1 flex items-start justify-between border-b border-(--grey-1) pb-5">
+						<div className="mb-4 flex items-start justify-between border-b border-(--grey-1) pb-4">
 							<div>
 								<p className="text-foreground text-base font-bold">
 									{director.firstName} {director.lastName}
 								</p>
-								<p className="mt-0.5 text-xs tracking-wide text-(--text-1) uppercase">
+								<p className="text-xs tracking-wide text-(--text-1) uppercase">
 									{director.role.replace(/_/g, " ")}
 								</p>
 							</div>
-							<div className="ml-4 flex flex-col items-end gap-2">
-								<StatusBadge status={director.status} />
-								{director.isPep && (
-									<div className="inline-flex items-center gap-1.5 rounded-full border border-yellow-200 bg-yellow-50 px-2.5 py-1 text-xs font-semibold text-yellow-700">
-										<svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-											<path
-												fillRule="evenodd"
-												d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-												clipRule="evenodd"
-											/>
-										</svg>
-										PEP
-									</div>
-								)}
-							</div>
+
+							<StatusBadge status={director.status} />
 						</div>
 
 						{/* Details */}
 						<Row
 							label="Date of Birth"
-							value={new Date(director.dob).toLocaleDateString("en-GB", {
-								day: "numeric",
-								month: "long",
-								year: "numeric",
-							})}
+							value={new Date(director.dob).toLocaleDateString("en-GB")}
 						/>
 						<Row label="BVN" value={<MaskedBvn bvn={director.bvn} />} />
 						<Row label="Email" value={director.email} />
 						<Row label="Phone" value={director.phoneNumber} />
+
 						<Row
 							label="Address"
 							value={[
@@ -169,20 +167,17 @@ export default function DirectorDetailModal({
 								.filter(Boolean)
 								.join(", ")}
 						/>
+
 						<Row
 							label="Added"
-							value={new Date(director.createdAt).toLocaleDateString("en-GB", {
-								day: "numeric",
-								month: "long",
-								year: "numeric",
-							})}
+							value={new Date(director.createdAt).toLocaleDateString("en-GB")}
 						/>
+
 						<Row label="Public ID" value={director.publicId} />
 
-						{/* Rejection reason */}
 						{director.status === "REJECTED" && director.rejectionReason && (
-							<div className="mt-5 rounded-lg border border-red-100 bg-red-50 p-4">
-								<p className="mb-1 text-xs font-semibold tracking-wide text-(--red-1) uppercase">
+							<div className="mt-4 rounded-lg border border-red-100 bg-red-50 p-4">
+								<p className="text-xs font-semibold text-(--red-1) uppercase">
 									Rejection Reason
 								</p>
 								<p className="text-sm text-(--red-1)">{director.rejectionReason}</p>
@@ -190,21 +185,63 @@ export default function DirectorDetailModal({
 						)}
 					</div>
 
-					{/* Actions — only shown for pending directors */}
 					{director.status === "PENDING" && (
-						<div className="-mx-6 mt-6 flex gap-3 border-t border-(--grey-1) px-6 pt-6 pb-0">
+						<div className="mt-6 flex gap-3 border-t border-(--grey-1) pt-4">
 							<button
-								onClick={onReject}
-								className="flex-1 cursor-pointer rounded-lg border border-(--grey-1) px-4 py-3 font-medium text-(--red-1) transition hover:bg-red-50">
+								onClick={handleRejection}
+								disabled={loading}
+								className="flex-1 cursor-pointer rounded-lg border border-(--grey-1) px-4 py-3 text-sm font-medium text-(--red-1)">
 								Reject
 							</button>
+
 							<button
 								onClick={onApprove}
-								className="flex-1 cursor-pointer rounded-lg bg-(--green-1) px-4 py-3 font-medium text-white transition hover:opacity-90 active:scale-[0.99]">
+								disabled={loading}
+								className="flex-1 cursor-pointer rounded-lg bg-(--green-1) px-4 py-3 text-sm font-medium text-white">
 								{loading ? "Approving..." : "Approve"}
 							</button>
 						</div>
 					)}
+				</div>
+			)}
+
+			{step === "reject" && (
+				<div className="flex flex-col gap-4">
+					<div className="border-b border-(--grey-1) pb-4">
+						<p className="text-foreground text-base font-bold">Reject Director</p>
+						<p className="text-xs text-(--text-1)">Provide reason for rejection</p>
+					</div>
+
+					<textarea
+						value={rejectionReason}
+						onChange={(e) => {
+							setRejectionReason(e.target.value)
+							if (touched) setTouched(false)
+						}}
+						placeholder="Reason for rejection..."
+						rows={5}
+						className="w-full resize-none rounded-xl border border-(--grey-1) bg-(--grey-4) px-4 py-3 text-sm focus:outline-none"
+					/>
+
+					{hasError && (
+						<p className="text-xs text-(--red-1)">Rejection reason is required</p>
+					)}
+
+					<div className="flex gap-3 pt-2">
+						<button
+							onClick={handleGoBack}
+							disabled={loading}
+							className="flex-1 cursor-pointer rounded-lg border border-(--grey-1) px-4 py-3 text-sm font-medium">
+							Go Back
+						</button>
+
+						<button
+							onClick={handleConfirmReject}
+							disabled={loading}
+							className="flex-1 cursor-pointer rounded-lg bg-(--red-1) px-4 py-3 text-sm font-medium text-white">
+							{loading ? "Processing..." : "Confirm Rejection"}
+						</button>
+					</div>
 				</div>
 			)}
 		</Modal>

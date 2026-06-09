@@ -28,7 +28,7 @@ const DocumentHeader = ({ document }: { document: BusinessDocument }) => (
 				{getFileIconFromName(document.fileName, true)}
 			</span>
 			<div>
-				<p className="text-foreground max-w-[140px] truncate text-sm font-semibold lg:max-w-[200px]">
+				<p className="text-foreground max-w-35 truncate text-sm font-semibold lg:max-w-50">
 					{document.fileName}
 				</p>
 				<p className="text-xs font-medium text-(--text-1)">
@@ -204,7 +204,7 @@ export default function DocumentReviewModal({
 									</div>
 
 									{/* Preview */}
-									<div className="flex min-h-[380px] items-center justify-center p-4">
+									<div className="flex min-h-95 items-center justify-center p-4">
 										{document.contentType?.startsWith("image/") ? (
 											<img
 												src={document.fileUrl}
@@ -274,7 +274,7 @@ export default function DocumentReviewModal({
 						<div className="flex flex-col gap-4">
 							<DocumentHeader document={document} />
 
-							<div className="min-h-[200px] space-y-3">
+							<div className="min-h-50 space-y-3">
 								<TextField
 									label="Reason for Rejection"
 									id="rejectionReason"

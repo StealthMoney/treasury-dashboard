@@ -2,16 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import {
-	AiOutlineCheck,
-	AiOutlineEye,
-	AiOutlineEyeInvisible,
-} from "react-icons/ai"
+import { AiOutlineCheck } from "react-icons/ai"
 import Image from "next/image"
-import { Spinner } from "../components/reusables/spinner"
-import { FeedbackModal } from "../components/reusables/feedback_modal"
-import LeftPanel from "../components/reusables/left_panel"
-import { InputField } from "../components/reusables/general_inputs"
+import { Spinner } from "@/app/components/reusables/spinner"
+import { FeedbackModal } from "@/app/components/reusables/feedback_modal"
+import LeftPanel from "@/app/components/reusables/left_panel"
+import { InputField } from "@/app/components/reusables/general_inputs"
 
 const PASSWORD_CRITERIA = [
 	{
@@ -235,20 +231,20 @@ export default function Page() {
 	return (
 		<>
 			<style>{`
-				@keyframes fadeInUp {
-					from {
-						opacity: 0;
-						transform: translateY(16px);
-					}
-					to {
-						opacity: 1;
-						transform: translateY(0);
-					}
-				}
-				.animate-fade-in-up {
-					animation: fadeInUp 0.35s ease forwards;
-				}
-			`}</style>
+                @keyframes fadeInUp {
+                    from {
+                        opacity: 0;
+                        transform: translateY(16px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+                .animate-fade-in-up {
+                    animation: fadeInUp 0.35s ease forwards;
+                }
+            `}</style>
 
 			<div className="flex min-h-screen flex-col bg-[#FBFBFB]">
 				<FeedbackModal

@@ -12,10 +12,10 @@ import {
 } from "react-icons/fa6"
 import { BusinessDocument } from "@/app/types/general"
 import { updateBusinessDocuments } from "@/app/server/business"
+import { ISODateString } from "next-auth"
 
 export interface CreditRequest {
 	id: string | number
-	organizationName: string
 	amount: number
 	loanStatus:
 		| "pending"
@@ -40,6 +40,8 @@ export interface CreditRequest {
 	loanDueDate: string
 	reference: string
 	interest: number
+	createdAt: ISODateString
+	businessName: string
 	documents?: BusinessDocument[]
 }
 
@@ -401,7 +403,7 @@ export default function CreditRequestModal({
 					<div className="rounded-xl border border-(--grey-1) bg-(--grey-4) p-4">
 						<p className="mb-1 text-xs text-(--text-1)">Rejecting loan for</p>
 						<p className="text-foreground text-sm font-semibold">
-							{data.organizationName}
+							{data.businessName}
 						</p>
 						<p className="mt-0.5 font-mono text-xs text-(--text-1)">
 							{data.reference}
@@ -480,6 +482,10 @@ export default function CreditRequestModal({
 					<div className="overflow-hidden rounded-xl">
 						<div className="divide-y divide-(--grey-1) px-4">
 							<DetailRow
+								label="Business"
+								value={<span className="font-mono text-xs">{data.businessName}</span>}
+							/>
+							<DetailRow
 								label="Reference"
 								value={<span className="font-mono text-xs">{data.reference}</span>}
 							/>
@@ -543,13 +549,17 @@ export default function CreditRequestModal({
 		<Modal
 			isOpen={isOpen}
 			onClose={handleClose}
-			title={data.organizationName}
+			title={data.businessName}
 			showOverlay={true}
 			variant="slide">
 			<div className="flex flex-col gap-5">
 				{/* Loan Details */}
 				<div className="overflow-hidden rounded-xl">
 					<div className="divide-y divide-(--grey-1) px-4">
+						<DetailRow
+							label="Business"
+							value={<span className="font-mono text-xs">{data.businessName}</span>}
+						/>
 						<DetailRow
 							label="Reference"
 							value={<span className="font-mono text-xs">{data.reference}</span>}

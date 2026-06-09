@@ -368,16 +368,16 @@ export default function BusinessListPage() {
 				{selectedBusiness && (
 					<div className="flex h-full flex-col">
 						<div className="flex flex-1 flex-col gap-5">
-							<div className="flex flex-col gap-1 border-b border-(--grey-1) pb-5">
-								<p className="text-xs font-medium tracking-wide text-(--text-1) uppercase">
+							<div className="flex justify-between gap-1 border-b border-(--grey-1) pb-5">
+								<p className="text-xs font-medium tracking-wide text-(--text-1)">
 									Business
 								</p>
 
-								<p className="text-foreground text-base font-semibold">
-									{selectedBusiness.name}
-								</p>
-
-								<p className="text-xs text-(--text-1)">{selectedBusiness.rc}</p>
+								<div className="flex flex-col">
+									<p className="text-foreground text-base font-semibold">
+										{selectedBusiness.name}
+									</p>
+								</div>
 							</div>
 
 							<div className="flex items-center justify-between border-b border-(--grey-1) py-3">

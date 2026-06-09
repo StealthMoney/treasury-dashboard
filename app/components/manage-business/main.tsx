@@ -95,7 +95,6 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 
 	// Shared approval / rejection modal state
 	const [approvalModalOpen, setApprovalModalOpen] = useState(false)
-	const [rejectionModalOpen, setRejectionModalOpen] = useState(false)
 	const [rejectionSubject, setRejectionSubject] = useState<
 		"document" | "director"
 	>("document")
@@ -161,12 +160,6 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 		}
 	}
 
-	const handleRejectDocument = () => {
-		setReviewModalOpen(false)
-		setRejectionSubject("document")
-		setRejectionModalOpen(true)
-	}
-
 	// const handleRejectDocument = async (reason: string) => {
 
 	// }
@@ -228,9 +221,8 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 	}
 
 	const handleRejectDirector = () => {
-		setDirectorModalOpen(false)
+		setDirectorModalOpen(true)
 		setRejectionSubject("director")
-		setRejectionModalOpen(true)
 	}
 
 	const handleRejectionConfirm = async (reason: string) => {
@@ -246,6 +238,7 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 				)
 
 				if (req.success) {
+					setDirectorModalOpen(false)
 					setSelectedDirector((prev) =>
 						prev ? { ...prev, status: "REJECTED", rejectionReason: reason } : prev
 					)
@@ -255,6 +248,7 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 						message: "The director's status has been updated to rejected.",
 					})
 				} else {
+					setDirectorModalOpen(false)
 					setApprovalMessage({
 						type: "failed",
 						title: "Failed to reject director",
@@ -262,6 +256,7 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 					})
 				}
 			} catch (err) {
+				setDirectorModalOpen(false)
 				setApprovalMessage({
 					type: "failed",
 					title: "Failed to reject director",
@@ -270,7 +265,7 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 			} finally {
 				setLoading(false)
 				if (rejectionSubject === "director") {
-					setRejectionModalOpen(false)
+					setDirectorModalOpen(false)
 					await refetchDirectors()
 				} else {
 					setReviewModalOpen(false)
@@ -315,13 +310,10 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 				})
 			} finally {
 				setLoading(false)
-				setRejectionModalOpen(false)
 				setApprovalModalOpen(true)
 				await refetchDocuments()
 			}
 		}
-
-		setRejectionModalOpen(false)
 	}
 
 	// ── Document columns ───────────────────────────────────────────────────────
@@ -942,7 +934,8 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 					director={selectedDirector}
 					onClose={() => setDirectorModalOpen(false)}
 					onApprove={handleApproveDirector}
-					onReject={handleRejectDirector}
+					onReject={(reason) => handleRejectionConfirm(reason)}
+					onRejectInitiate={handleRejectDirector}
 				/>
 
 				{/* ── Shared approval / rejection modals ── */}
@@ -950,13 +943,6 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 					approvalMessage={approvalMessage}
 					isOpen={approvalModalOpen}
 					onClose={() => setApprovalModalOpen(false)}
-				/>
-				<RejectionModal
-					loading={loading}
-					isOpen={rejectionModalOpen}
-					subject={rejectionSubject}
-					onClose={() => setRejectionModalOpen(false)}
-					onConfirm={handleRejectionConfirm}
 				/>
 			</div>
 		</div>

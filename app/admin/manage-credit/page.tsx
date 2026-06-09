@@ -135,7 +135,6 @@ export default function ManageCreditPage() {
 
 	const toModalRequest = (item: LoanApplication): CreditRequest => ({
 		id: item.reference,
-		organizationName: item.reference,
 		amount: item.loanAmount,
 		loanAmount: item.loanAmount,
 		loanStatus: item.loanStatus.toLowerCase() as CreditRequest["loanStatus"],
@@ -153,6 +152,8 @@ export default function ManageCreditPage() {
 		reference: item.reference,
 		loanTypeId: item.loanTypeId,
 		loanId: item.loanId,
+		businessName: item.businessName,
+		createdAt: item.createdAt,
 		durationInDays: item.durationInDays,
 	})
 
@@ -160,6 +161,9 @@ export default function ManageCreditPage() {
 		setSelectedRequest(toModalRequest(item))
 		setIsModalOpen(true)
 	}
+
+	console.log(selectedRequest, "is seleted");
+	
 
 	// Status progression map for approve
 	const nextApproveStatus: Record<string, string> = {
@@ -326,82 +330,145 @@ export default function ManageCreditPage() {
 							tabs={CREDIT_TABS}
 							activeTab={activeTab}
 							onTabChange={handleTabChange}
-							columns={[
-								{
-									header: "Reference",
-									accessor: (row) => (
-										<span className="text-foreground font-mono text-xs font-semibold">
-											{row.reference.split("-")[0]}…
-										</span>
-									),
-								},
-								{
-									header: "Loan Amount",
-									accessor: (row) => (
-										<span className="text-foreground font-medium">
-											{row.currency} {row.loanAmount.toLocaleString()}
-										</span>
-									),
-								},
-								{
-									header: "Interest",
-									accessor: (row) => (
-										<span className="text-foreground text-sm">
-											{row.currency} {row.interest.toLocaleString()}
-										</span>
-									),
-								},
-								{
-									header: "Duration",
-									accessor: (row) => (
-										<span className="text-foreground text-sm">
-											{row.durationInDays} days
-										</span>
-									),
-								},
-								{
-									header: "Start Date",
-									accessor: (row) => (
-										<span className="text-foreground text-sm">
-											{formatDate(row.loanStartDate)}
-										</span>
-									),
-								},
-								{
-									header: "Due Date",
-									accessor: (row) => (
-										<span className="text-foreground text-sm">
-											{formatDate(row.loanDueDate)}
-										</span>
-									),
-								},
-								{
-									header: "Status",
-									accessor: (row) => (
-										<span
-											className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
-												statusStyle[row.loanStatus] ?? "bg-gray-100 text-gray-700"
-											}`}>
-											{row.loanStatus.charAt(0) + row.loanStatus.slice(1).toLowerCase()}
-										</span>
-									),
-								},
-								{
-									header: "Action",
-									accessor: (row) => (
-										<button
-											onClick={() => handleRowClick(row)}
-											className="rounded-lg p-2 text-(--text-1) transition hover:bg-(--grey-4)"
-											title="View details">
-											<svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-												<circle cx="12" cy="5" r="2" />
-												<circle cx="12" cy="12" r="2" />
-												<circle cx="12" cy="19" r="2" />
-											</svg>
-										</button>
-									),
-								},
-							]}
+							columns={
+								activeTab === "request"
+									? [
+											{
+												header: "Date",
+												accessor: (row) => (
+													<span className="text-foreground text-sm">
+														{formatDate(row.createdAt)}
+													</span>
+												),
+											},
+											{
+												header: "Business",
+												accessor: (row) => (
+													<span className="text-foreground font-medium">
+														{row.businessName}
+													</span>
+												),
+											},
+											{
+												header: "Loan Amount",
+												accessor: (row) => (
+													<span className="text-foreground font-medium">
+														{row.currency} {row.loanAmount.toLocaleString()}
+													</span>
+												),
+											},
+											{
+												header: "Duration",
+												accessor: (row) => (
+													<span className="text-foreground text-sm">
+														{row.durationInDays} days
+													</span>
+												),
+											},
+											{
+												header: "Status",
+												accessor: (row) => (
+													<span
+														className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
+															statusStyle[row.loanStatus] ?? "bg-gray-100 text-gray-700"
+														}`}>
+														{row.loanStatus.charAt(0) + row.loanStatus.slice(1).toLowerCase()}
+													</span>
+												),
+											},
+											{
+												header: "Action",
+												accessor: (row) => (
+													<button
+														onClick={() => handleRowClick(row)}
+														className="rounded-lg p-2 text-(--text-1) transition hover:bg-(--grey-4)"
+														title="View details">
+														<svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+															<circle cx="12" cy="5" r="2" />
+															<circle cx="12" cy="12" r="2" />
+															<circle cx="12" cy="19" r="2" />
+														</svg>
+													</button>
+												),
+											},
+										]
+									: [
+											{
+												header: "Business Name",
+												accessor: (row) => (
+													<span className="text-foreground font-medium">
+														{row.businessName}
+													</span>
+												),
+											},
+											{
+												header: "Loan Amount",
+												accessor: (row) => (
+													<span className="text-foreground font-medium">
+														{row.currency} {row.loanAmount.toLocaleString()}
+													</span>
+												),
+											},
+											{
+												header: "Interest",
+												accessor: (row) => (
+													<span className="text-foreground text-sm">
+														{row.currency} {row.interest.toLocaleString()}
+													</span>
+												),
+											},
+											{
+												header: "Duration",
+												accessor: (row) => (
+													<span className="text-foreground text-sm">
+														{row.durationInDays} days
+													</span>
+												),
+											},
+											{
+												header: "Start Date",
+												accessor: (row) => (
+													<span className="text-foreground text-sm">
+														{formatDate(row.loanStartDate)}
+													</span>
+												),
+											},
+											{
+												header: "Due Date",
+												accessor: (row) => (
+													<span className="text-foreground text-sm">
+														{formatDate(row.loanDueDate)}
+													</span>
+												),
+											},
+											{
+												header: "Status",
+												accessor: (row) => (
+													<span
+														className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
+															statusStyle[row.loanStatus] ?? "bg-gray-100 text-gray-700"
+														}`}>
+														{row.loanStatus.charAt(0) + row.loanStatus.slice(1).toLowerCase()}
+													</span>
+												),
+											},
+											{
+												header: "Action",
+												accessor: (row) => (
+													<button
+														onClick={() => handleRowClick(row)}
+														className="rounded-lg p-2 text-(--text-1) transition hover:bg-(--grey-4)"
+														title="View details">
+														<svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+															<circle cx="12" cy="5" r="2" />
+															<circle cx="12" cy="12" r="2" />
+															<circle cx="12" cy="19" r="2" />
+														</svg>
+													</button>
+												),
+											},
+										]
+							}
 							pagination={{
 								currentPage: currentPage + 1,
 								totalItems: (data?.totalPages ?? 1) * (data?.size ?? 10),

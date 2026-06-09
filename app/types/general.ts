@@ -1,3 +1,4 @@
+import { ISODateString } from "next-auth"
 import { ReactNode } from "react"
 export interface KYBFormData {
 	// Step 1
@@ -115,6 +116,8 @@ export interface LoanApplication {
 	loanDueDate: string
 	reference: string
 	interest: number
+	createdAt: ISODateString
+	businessName: string
 }
 
 export interface Pageable {
