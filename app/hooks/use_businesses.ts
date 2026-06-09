@@ -66,3 +66,17 @@ export const useBusinessesDocuments = (
 		},
 	})
 }
+
+export const useBusinessesStats = (params: string) => {
+	return useQuery({
+		queryKey: [`${params}_stats`, params],
+		queryFn: async () => {
+			const res = await fetch(`/api/admin/business/stats/${params}`)
+			const data = await res.json()
+
+			if (!res.ok) throw new Error(data.error)
+
+			return data
+		},
+	})
+}

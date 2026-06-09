@@ -38,6 +38,7 @@ const endpoints = (params?: string | number, params2?: string | number) => {
 		"update-business-directors": `${envURL}/businesses/${params}/directors/${params2}/status`,
 		"business-documents": `${envURL}/documents?${params}`,
 		"update-business-document": `${envURL}/documents/${params}/status`,
+		"business-overview": `${envURL}/admin/businesses/${params}/overview`,
 	}
 
 	const banks = {

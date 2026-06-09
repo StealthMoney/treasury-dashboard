@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { StatsSection } from "../reusables/stats_section"
 import { KYBStepWrapper } from "../reusables/kybstepwraper"
@@ -21,6 +21,7 @@ import {
 	useBusinessesDetails,
 	useBusinessesDirectors,
 	useBusinessesDocuments,
+	useBusinessesStats,
 } from "@/app/hooks/use_businesses"
 import PageSkeleton from "../reusables/page_skeleton"
 import SectionSkeleton from "../reusables/sectionSkeleton"
@@ -30,11 +31,10 @@ import {
 } from "@/app/server/business"
 import { IoMdCheckmarkCircle, IoMdCloseCircle } from "react-icons/io"
 import { ActivityIcon } from "../reusables/activity_icon"
-import { dummyActivities } from "@/app/utils/data/activityData"
-import { dummyTransactions } from "@/app/utils/data/transactionsData"
 import { FilterDropdown } from "../reusables/filterdropdown"
-import { businessFinancialStats } from "@/app/utils/data/financialData"
 import { FaRegClock } from "react-icons/fa6"
+import { resolveActivityIconType } from "@/app/functions/helpers/activity_icon_resolver"
+import { AiOutlineDeliveredProcedure } from "react-icons/ai"
 
 export default function BusinessDetailPage({ id }: { id: string }) {
 	const [loading, setLoading] = useState<boolean>(false)
@@ -46,6 +46,10 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 
 	const [transactionFilter, setTransactionFilter] = useState("all")
 	const [activityFilter, setActivityFilter] = useState("all")
+	const [activityPage, setActivityPage] = useState(1)
+	const itemsPerPage = 10
+
+	const [transactionPage, setTransactionPage] = useState(1)
 
 	const tabs = [
 		{ id: "overview", label: "Overview" },
@@ -56,6 +60,45 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 	]
 
 	const { data: business, isLoading } = useBusinessesDetails(id)
+	const { data: businessStatsData, isLoading: businessStatsLoading } =
+		useBusinessesStats(id)
+
+	const activities = businessStatsData?.recentActivities
+
+	const transactions = businessStatsData?.transactions
+
+	const businessFinancialStats = businessStatsData?.stats
+		? [
+				{
+					label: "Annual Revenue",
+					valueRow: {
+						main: businessStatsData.stats.annualRevenue,
+						suffix: "₦",
+					},
+				},
+				{
+					label: "Active Loans",
+					valueRow: {
+						main: businessStatsData.stats.activeLoan,
+						suffix: "",
+					},
+				},
+				{
+					label: "Cash Flow",
+					valueRow: {
+						main: businessStatsData.stats.cashFlow,
+						suffix: "₦",
+					},
+				},
+				{
+					label: "Existing Liabilities",
+					valueRow: {
+						main: businessStatsData.stats.existingLiabilities,
+						suffix: "₦",
+					},
+				},
+			]
+		: []
 
 	const {
 		data: directors,
@@ -69,8 +112,6 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 		refetch: refetchDocuments,
 	} = useBusinessesDocuments({ "ownerId.equals": id }, !!id)
 
-	// const business = businesses.find((item) => item.id === id)
-
 	const [activeTab, setActiveTab] = useState("overview")
 
 	const actionFilterOptions = [
@@ -79,7 +120,7 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 			value: "all",
 		},
 		{ label: "Most Recent", value: "recent" },
-		{ label: "Today", value: "today" },
+		{ label: "Oldest", value: "oldest" },
 	]
 
 	// Document modal state
@@ -159,10 +200,6 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 			await refetchDocuments()
 		}
 	}
-
-	// const handleRejectDocument = async (reason: string) => {
-
-	// }
 
 	const handleViewDirector = (director: BusinessDirector) => {
 		setSelectedDirector(director)
@@ -314,6 +351,90 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 				await refetchDocuments()
 			}
 		}
+	}
+
+	const processedActivities = useMemo(() => {
+		const data = activities ? [...activities] : []
+
+		switch (activityFilter) {
+			case "recent":
+				return data.sort(
+					(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+				)
+
+			case "oldest":
+				return data.sort(
+					(a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+				)
+
+			case "all":
+			default:
+				return data
+		}
+	}, [activities, activityFilter])
+
+	const processedTransactions = useMemo(() => {
+		const data = transactions ? [...transactions] : []
+
+		switch (transactionFilter) {
+			case "recent":
+				return data.sort(
+					(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+				)
+
+			case "oldest":
+				return data.sort(
+					(a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+				)
+
+			case "all":
+			default:
+				return data
+		}
+	}, [transactions, transactionFilter])
+
+	const resetPage = () => {
+		setActivityPage(1)
+	}
+
+	const resetTransactionPage = () => {
+		setTransactionPage(1)
+	}
+
+	useEffect(() => {
+		resetTransactionPage()
+	}, [transactionFilter])
+
+	useEffect(() => {
+		resetPage()
+	}, [activityFilter])
+
+	// frontend pagination for activities
+	const paginatedActivities = useMemo(() => {
+		const start = (activityPage - 1) * itemsPerPage
+		const end = start + itemsPerPage
+
+		return processedActivities.slice(start, end)
+	}, [processedActivities, activityPage])
+
+	const totalActivityItems = processedActivities.length
+
+	// frontend pagination for transactions
+	const paginatedTransactions = useMemo(() => {
+		const start = (transactionPage - 1) * itemsPerPage
+		const end = start + itemsPerPage
+
+		return processedTransactions.slice(start, end)
+	}, [processedTransactions, transactionPage])
+
+	const totalTransactionItems = processedTransactions.length
+
+	const statusStyle: Record<string, string> = {
+		REVIEW: "text-yellow-700",
+		APPROVED: "text-green-700",
+		DISBURSED: "text-blue-700",
+		REPAID: "text-purple-700",
+		REJECTED: "text-red-700",
 	}
 
 	// ── Document columns ───────────────────────────────────────────────────────
@@ -512,12 +633,12 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 			header: "Activity:",
 			accessor: (row) => (
 				<div className="flex items-center gap-3">
-					<ActivityIcon type={row.iconType} />
+					<ActivityIcon type={resolveActivityIconType(row.title)} />
 					<div className="flex flex-col">
-						<p className="text-foreground text-[14px] font-semibold">
-							{row.activityTitle}
+						<p className="text-foreground text-[14px] font-semibold">{row.title}</p>
+						<p className="max-w-90 truncate text-xs text-(--text-1)">
+							{row.description}
 						</p>
-						<p className="text-xs text-(--text-1)">{row.activitySubtitle}</p>
 					</div>
 				</div>
 			),
@@ -527,9 +648,9 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 			accessor: (row) => (
 				<div className="flex flex-col">
 					<p className="text-foreground text-[14px]">
-						By: <span className="font-semibold">{row.actionByRole}</span>
+						By: <span className="font-semibold">{row.performedBy}</span>
 					</p>
-					<p className="text-xs text-(--text-1)">{row.actionByEmail}</p>
+					<p className="text-xs text-(--text-1)">{row.email}</p>
 				</div>
 			),
 		},
@@ -537,7 +658,7 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 			header: "Date:",
 			accessor: (row) => (
 				<div className="flex flex-col">
-					<p className="text-foreground text-[14px] font-medium">
+					<p className="text-foreground min-w-20 text-[14px] font-medium">
 						{new Date(row.date).toLocaleDateString("en-GB").replace(/\//g, "-")}
 					</p>
 					<p className="text-xs text-(--text-1)">
@@ -579,9 +700,6 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 					<p className="text-foreground text-[14px] font-semibold">
 						{formatNaira(row.amount)}
 					</p>
-					<p className="text-xs text-(--text-1)">
-						{formatNaira(row.runningBalance)}
-					</p>
 				</div>
 			),
 		},
@@ -590,35 +708,36 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 			accessor: (row) => (
 				<div className="flex flex-col">
 					<p className="text-foreground text-[14px] font-semibold">
-						{row.transactionTitle}
+						{row.transactionType?.split("_")?.join(" ")}
 					</p>
-					<p className="text-xs text-(--text-1)">{row.transactionType}</p>
 				</div>
 			),
 		},
 		{
 			header: "Status",
 			accessor: (row) => (
-				<div
-					className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium ${
-						row.status === "SUCCESSFUL"
-							? "bg-(--grey-1) text-(--text-1)"
-							: row.status === "FAILED"
-								? "bg-red-50 text-(--red-1)"
-								: "bg-orange-50 text-orange-600"
-					}`}>
-					{row.status === "SUCCESSFUL" ? (
+				<div className="inline-flex items-center gap-2 rounded-full bg-(--grey-1) px-3 py-1.5 text-xs font-medium text-(--text-1)">
+					{row.status === "APPROVED" || row.status === "REPAID" ? (
 						<IoMdCheckmarkCircle size={16} className="text-(--green-1)" />
-					) : row.status === "FAILED" ? (
+					) : row.status === "REJECTED" ? (
 						<IoMdCloseCircle size={16} className="text-(--red-1)" />
+					) : row.status === "REVIEW" ? (
+						<FaRegClock size={14} className="text-orange-500" />
+					) : row.status === "DISBURSED" ? (
+						<AiOutlineDeliveredProcedure size={14} className="text-blue-700" />
 					) : (
 						<span className="h-2 w-2 rounded-full bg-orange-500" />
 					)}
-					{row.status === "SUCCESSFUL"
-						? "Successful"
-						: row.status === "FAILED"
-							? "Failed"
-							: "Pending"}
+
+					{row.status === "APPROVED"
+						? "Approved"
+						: row.status === "REJECTED"
+							? "Rejected"
+							: row.status === "DISBURSED"
+								? "Disbursed"
+								: row.status === "REPAID"
+									? "Repaid"
+									: "Review"}
 				</div>
 			),
 		},
@@ -689,7 +808,7 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 							<button
 								key={tab.id}
 								onClick={() => setActiveTab(tab.id)}
-								className={`flex-shrink-0 cursor-pointer rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap transition-all ${
+								className={`shrink-0 cursor-pointer rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap transition-all ${
 									activeTab === tab.id
 										? "bg-background text-foreground shadow-sm"
 										: "hover:text-foreground text-(--text-1)"
@@ -707,32 +826,34 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 							</div>
 						) : (
 							<div className="space-y-6">
-								<KYBStepWrapper title="Financial Summary">
-									<div className="grid grid-cols-1 gap-4 gap-y-0 rounded-lg px-4 sm:grid-cols-2 lg:flex lg:flex-nowrap lg:gap-x-6 lg:overflow-x-auto">
-										{businessFinancialStats.map((stat, index) => (
-											<div key={index} className="flex px-4 py-2 lg:items-start">
-												<div className="flex-1">
-													<div className="bg-background rounded-lg">
-														<p className="mb-2 text-[16px] text-(--text-1)">{stat.label}</p>
+								{businessStatsData?.stats && (
+									<KYBStepWrapper title="Financial Summary">
+										<div className="grid grid-cols-1 gap-4 gap-y-0 rounded-lg px-4 sm:grid-cols-2 lg:flex lg:flex-nowrap lg:gap-x-6 lg:overflow-x-auto">
+											{businessFinancialStats.map((stat, index) => (
+												<div key={index} className="flex px-4 py-2 lg:items-start">
+													<div className="flex-1">
+														<div className="bg-background rounded-lg">
+															<p className="mb-2 text-[16px] text-(--text-1)">{stat.label}</p>
 
-														<div className="text-foreground mb-2 flex items-baseline gap-2">
-															{stat.valueRow?.suffix && (
-																<span className="text-[24px] font-medium">
-																	{stat.valueRow.suffix}
-																</span>
-															)}
-															<h2 className="text-[24px] font-bold">
-																{typeof stat.valueRow?.main === "number"
-																	? stat.valueRow.main.toLocaleString()
-																	: stat.valueRow?.main}
-															</h2>
+															<div className="text-foreground mb-2 flex items-baseline gap-2">
+																{stat.valueRow?.suffix && (
+																	<span className="text-[24px] font-medium">
+																		{stat.valueRow.suffix}
+																	</span>
+																)}
+																<h2 className="text-[24px] font-bold">
+																	{typeof stat.valueRow?.main === "number"
+																		? stat.valueRow.main.toLocaleString()
+																		: stat.valueRow?.main}
+																</h2>
+															</div>
 														</div>
 													</div>
 												</div>
-											</div>
-										))}
-									</div>
-								</KYBStepWrapper>
+											))}
+										</div>
+									</KYBStepWrapper>
+								)}
 
 								<KYBStepWrapper title="Business Information" NoHorizontalPad>
 									<div className="space-y-6">
@@ -863,21 +984,20 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 					<div className="space-y-6">
 						<Table
 							extraHeader="Activities"
-							data={dummyActivities}
+							data={paginatedActivities || []}
 							columns={activityColumns}
 							pagination={{
-								currentPage: 1,
-								totalItems: dummyActivities.length,
-								itemsPerPage: 15,
+								currentPage: activityPage,
+								totalItems: totalActivityItems,
+								itemsPerPage: itemsPerPage,
 								onPageChange: () => {},
 							}}
 							extraHeaderActions={
 								<FilterDropdown
 									options={actionFilterOptions}
-									selected={transactionFilter}
+									selected={activityFilter}
 									onChange={(val) => {
 										setActivityFilter(val)
-										console.log("Transaction filter:", val)
 									}}
 								/>
 							}
@@ -890,7 +1010,7 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 					<div className="space-y-6">
 						<Table
 							extraHeader="Transactions"
-							data={dummyTransactions}
+							data={paginatedTransactions || []}
 							columns={transactionColumns}
 							extraHeaderActions={
 								<FilterDropdown
@@ -898,14 +1018,13 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 									selected={transactionFilter}
 									onChange={(val) => {
 										setTransactionFilter(val)
-										console.log("Transaction filter:", val)
 									}}
 								/>
 							}
 							pagination={{
-								currentPage: 1,
-								totalItems: dummyTransactions.length,
-								itemsPerPage: 15,
+								currentPage: transactionPage,
+								totalItems: totalTransactionItems,
+								itemsPerPage: itemsPerPage,
 								onPageChange: () => {},
 							}}
 						/>

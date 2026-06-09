@@ -4,7 +4,6 @@ export async function GET(req: Request) {
 	const { searchParams } = new URL(req.url)
 
 	const query = searchParams.toString()
-	console.log(query, "llapi")
 
 	const res = await getBusinessesDocuments(query)
 	if (!res.success) {

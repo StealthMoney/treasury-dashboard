@@ -428,22 +428,54 @@ export interface PageableResponse<T> {
 	empty: boolean
 }
 
-export interface ActivityLog {
-	id: string
-	activityTitle: string
-	activitySubtitle: string
-	actionByRole: string
-	actionByEmail: string
-	date: string // ISO string
-	iconType: "approved" | "rejected" | "uploaded"
+export type TransactionType = "CREDIT_LINE" | "REPAYMENT"
+
+// export interface Transaction {
+// 	id: string
+// 	date: string // ISO string
+// 	amount: number
+// 	runningBalance: number
+// 	transactionTitle: string
+// 	transactionType: TransactionType
+// 	status: "SUCCESSFUL" | "FAILED" | "PENDING"
+// }
+
+export interface BusinessOverviewStats {
+	annualRevenue: number
+	activeLoan: number
+	cashFlow: number
+	existingLiabilities: number
 }
 
+export interface RecentActivity {
+	title: string
+	description: string
+	performedBy: string
+	email: string | null
+	date: string
+}
+
+export interface ActivityLog extends RecentActivity {
+	id: number
+	iconType: "approved" | "rejected" | "uploaded" | "repaid"
+}
+
+export type TransactionStatus =
+	| "REJECTED"
+	| "REPAID"
+	| "APPROVED"
+	| "DISBURSED"
+	| "REVIEW"
+
 export interface Transaction {
-	id: string
-	date: string // ISO string
+	date: string
 	amount: number
-	runningBalance: number
-	transactionTitle: string
-	transactionType: string
-	status: "SUCCESSFUL" | "FAILED" | "PENDING"
+	transactionType: TransactionType
+	status: TransactionStatus
+}
+
+export interface BusinessOverviewResponse {
+	stats: BusinessOverviewStats
+	recentActivities: RecentActivity[]
+	transactions: Transaction[]
 }

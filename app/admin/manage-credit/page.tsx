@@ -162,8 +162,7 @@ export default function ManageCreditPage() {
 		setIsModalOpen(true)
 	}
 
-	console.log(selectedRequest, "is seleted");
-	
+	console.log(selectedRequest, "is seleted")
 
 	// Status progression map for approve
 	const nextApproveStatus: Record<string, string> = {

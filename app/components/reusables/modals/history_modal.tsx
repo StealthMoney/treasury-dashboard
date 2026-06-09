@@ -248,7 +248,7 @@ export default function DocumentHistoryModal({
 											<div
 												className="flex w-[25px] items-center justify-center bg-[#F7F8F9]"
 												style={{ minHeight: "48px" }}>
-												<div className="w-px border-2 border-(--grey-1) h-full" />
+												<div className="h-full w-px border-2 border-(--grey-1)" />
 											</div>
 										)}
 									</div>
