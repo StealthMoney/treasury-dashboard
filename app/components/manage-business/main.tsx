@@ -429,14 +429,6 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 
 	const totalTransactionItems = processedTransactions.length
 
-	const statusStyle: Record<string, string> = {
-		REVIEW: "text-yellow-700",
-		APPROVED: "text-green-700",
-		DISBURSED: "text-blue-700",
-		REPAID: "text-purple-700",
-		REJECTED: "text-red-700",
-	}
-
 	// ── Document columns ───────────────────────────────────────────────────────
 	const documentColumns: TableColumn<BusinessDocument>[] = [
 		{
@@ -774,25 +766,19 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 					) : business ? (
 						<div className="mb-8 flex items-start justify-between">
 							<div>
-								<div className="flex flex-row items-start justify-start gap-x-2">
+								<div className="flex flex-row items-center justify-start gap-x-2">
 									<h1 className="text-foreground mb-2 text-2xl font-bold">
 										{business?.businessName}
 									</h1>
 
 									<div
-										className={`inline-flex items-center justify-center gap-2 gap-x-1 rounded-full px-2 py-1.5 text-xs font-medium ${
-											business?.status === "ACTIVE"
-												? "bg-(--grey-1) text-(--text-1)"
-												: "bg-orange-50 text-orange-600"
-										}`}>
+										className={`inline-flex items-center justify-center gap-2 gap-x-1 rounded-full bg-(--grey-1) px-2 py-1.5 text-xs font-medium text-(--text-1)`}>
 										{business?.status === "ACTIVE" ? (
 											<IoMdCheckmarkCircle size={16} className="text-(--green-1)" />
+										) : business?.status === "PENDING_REVIEW" ? (
+											<FaRegClock size={14} className="text-orange-500" />
 										) : (
-											<span
-												className={`h-2 w-2 rounded-full ${
-													business?.status === "ACTIVE" ? "bg-(--grey-1)" : "bg-orange-500"
-												}`}
-											/>
+											<IoMdCloseCircle size={16} className="text-(--red-1)" />
 										)}
 										{business?.status === "ACTIVE" ? "COMPLETED" : business?.status}
 									</div>

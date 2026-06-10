@@ -1,4 +1,6 @@
 import type { NextConfig } from "next"
+const envURL =
+	process.env.STEALTH_ENDPOINT || process.env.NEXT_PUBLIC_STEALTH_ENDPOINT
 
 const nextConfig: NextConfig = {
 	/* config options here */
@@ -11,7 +13,7 @@ const nextConfig: NextConfig = {
 		remotePatterns: [
 			{
 				protocol: "https",
-				hostname: "res.cloudinary.com",
+				hostname: envURL || "https://api.staging.stealthtreasury.com/v1/api",
 				pathname: "/**",
 			},
 		],

@@ -336,7 +336,6 @@ export interface BusinessDocument {
 	verifiedAt: string | null
 	rejectedAt: string | null
 	createdAt: string
-	fileUrl: string
 }
 
 export interface BusinessDocumentPageResponse {

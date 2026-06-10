@@ -7,7 +7,6 @@ import { ChangeEvent, useEffect, useRef, useState, useCallback } from "react"
 import PdfPreview from "../pdfViewer"
 import { IoMdCheckmarkCircle, IoMdCloseCircle } from "react-icons/io"
 import { TextField } from "../general_inputs"
-import { CiClock2 } from "react-icons/ci"
 import { FaRegClock } from "react-icons/fa6"
 
 interface DocumentReviewModalProps {
@@ -153,8 +152,9 @@ export default function DocumentReviewModal({
 										<button
 											onClick={async () => {
 												if (!document) return
+												const fileUrl = `https://api.staging.stealthtreasury.com/v1/api/documents/${document.publicId}`
 												try {
-													const res = await fetch(document.fileUrl)
+													const res = await fetch(fileUrl)
 													const blob = await res.blob()
 													const blobUrl = URL.createObjectURL(blob)
 													const a = window.document.createElement("a")
@@ -183,7 +183,7 @@ export default function DocumentReviewModal({
 										</button>
 
 										<a
-											href={document.fileUrl}
+											href={`https://api.staging.stealthtreasury.com/v1/api/documents/${document.fileName}`}
 											target="_blank"
 											rel="noopener noreferrer"
 											title="Open in new tab"
@@ -207,13 +207,15 @@ export default function DocumentReviewModal({
 									<div className="flex min-h-95 items-center justify-center p-4">
 										{document.contentType?.startsWith("image/") ? (
 											<img
-												src={document.fileUrl}
+												src={`https://api.staging.stealthtreasury.com/v1/api/documents/${document.publicId}`}
 												alt={document.fileName}
 												className="max-h-[380px] w-full object-contain"
 											/>
 										) : document.contentType === "application/pdf" ? (
 											<div className="h-3/4 w-full">
-												<PdfPreview fileUrl={document.fileUrl} />
+												<PdfPreview
+													fileUrl={`https://api.staging.stealthtreasury.com/v1/api/documents/${document.publicId}`}
+												/>
 											</div>
 										) : (
 											<div className="px-6 text-center">

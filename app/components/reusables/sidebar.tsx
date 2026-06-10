@@ -12,6 +12,8 @@ import { Spinner } from "./spinner"
 import { FeedbackModal } from "./feedback_modal"
 import { filterLinks } from "@/app/functions/helpers/available_links"
 import { useProfile } from "@/app/contexts/user_provider"
+import { IoDocumentLockOutline } from "react-icons/io5"
+import { LiaBusinessTimeSolid } from "react-icons/lia"
 
 export default function Sidebar({
 	open,
@@ -34,9 +36,14 @@ export default function Sidebar({
 			href: user?.systemAdmin ? "/admin/manage-credit" : "/credit",
 		},
 		{
-			logo: <PiHandCoins />,
+			logo: <LiaBusinessTimeSolid />,
 			text: user?.systemAdmin ? "Manage Business" : null,
 			href: user?.systemAdmin ? "/admin/manage-business" : null,
+		},
+		{
+			logo: <IoDocumentLockOutline />,
+			text: user?.systemAdmin ? "Manage Document" : null,
+			href: user?.systemAdmin ? "/admin/manage-document" : null,
 		},
 		{
 			logo: <TbFileAnalytics />,

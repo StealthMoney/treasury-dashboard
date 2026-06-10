@@ -207,11 +207,11 @@ export default function CreditRequestModal({
 		const isPdf = doc.fileName.toLowerCase().endsWith(".pdf")
 		if (isPdf) {
 			window.open(
-				`https://docs.google.com/viewer?url=${encodeURIComponent(doc.fileUrl)}&embedded=false`,
+				`https://docs.google.com/viewer?url=${encodeURIComponent(`https://api.staging.stealthtreasury.com/v1/api/documents/${doc.publicId}`)}&embedded=false`,
 				"_blank"
 			)
 		} else {
-			window.open(doc.fileUrl, "_blank")
+			window.open(`https://api.staging.stealthtreasury.com/v1/api/documents/${doc.publicId}`, "_blank")
 		}
 	}
 
