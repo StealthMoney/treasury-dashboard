@@ -152,7 +152,7 @@ export default function DocumentReviewModal({
 										<button
 											onClick={async () => {
 												if (!document) return
-												const fileUrl = `https://api.staging.stealthtreasury.com/v1/api/documents/${document.publicId}`
+												const fileUrl = `/api/admin/business/documents/${document.publicId}`
 												try {
 													const res = await fetch(fileUrl)
 													const blob = await res.blob()
@@ -183,7 +183,7 @@ export default function DocumentReviewModal({
 										</button>
 
 										<a
-											href={`https://api.staging.stealthtreasury.com/v1/api/documents/${document.fileName}`}
+											href={`/api/admin/business/documents/${document.publicId}`} // might be filename
 											target="_blank"
 											rel="noopener noreferrer"
 											title="Open in new tab"
@@ -207,14 +207,14 @@ export default function DocumentReviewModal({
 									<div className="flex min-h-95 items-center justify-center p-4">
 										{document.contentType?.startsWith("image/") ? (
 											<img
-												src={`https://api.staging.stealthtreasury.com/v1/api/documents/${document.publicId}`}
+												src={`/api/admin/business/documents/${document.publicId}`}
 												alt={document.fileName}
 												className="max-h-[380px] w-full object-contain"
 											/>
 										) : document.contentType === "application/pdf" ? (
 											<div className="h-3/4 w-full">
 												<PdfPreview
-													fileUrl={`https://api.staging.stealthtreasury.com/v1/api/documents/${document.publicId}`}
+													fileUrl={`/api/admin/business/documents/${document.publicId}`}
 												/>
 											</div>
 										) : (

@@ -13,6 +13,7 @@ import {
 import { BusinessDocument } from "@/app/types/general"
 import { updateBusinessDocuments } from "@/app/server/business"
 import { ISODateString } from "next-auth"
+import { getBaseUrl } from "@/app/functions/helpers/get_base_url"
 
 export interface CreditRequest {
 	id: string | number
@@ -204,15 +205,10 @@ export default function CreditRequestModal({
 	}
 
 	const handleViewDocument = (doc: BusinessDocument) => {
-		const isPdf = doc.fileName.toLowerCase().endsWith(".pdf")
-		if (isPdf) {
-			window.open(
-				`https://docs.google.com/viewer?url=${encodeURIComponent(`https://api.staging.stealthtreasury.com/v1/api/documents/${doc.publicId}`)}&embedded=false`,
-				"_blank"
-			)
-		} else {
-			window.open(`https://api.staging.stealthtreasury.com/v1/api/documents/${doc.publicId}`, "_blank")
-		}
+		window.open(
+			`${getBaseUrl()}/api/admin/business/documents/${doc.publicId}`,
+			"_blank"
+		)
 	}
 
 	const handleConfirmReject = async () => {

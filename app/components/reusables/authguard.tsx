@@ -19,7 +19,7 @@ function resolveAuth(
 ): AuthDecision {
 	if (status === "loading") return { type: "loading" }
 
-	const PUBLIC_ROUTES = ["/", "/account/activate", "/account/reset/finish"]
+	const PUBLIC_ROUTES = ["/", "/account/activate", "/account/reset/finish", "/api/*"]
 
 	const USER_ROUTES: Record<string, string> = {
 		"/credit": "Credit",

@@ -35,6 +35,7 @@ import { FilterDropdown } from "../reusables/filterdropdown"
 import { FaRegClock } from "react-icons/fa6"
 import { resolveActivityIconType } from "@/app/functions/helpers/activity_icon_resolver"
 import { AiOutlineDeliveredProcedure } from "react-icons/ai"
+import { formatNaira } from "@/app/functions/helpers/formatNaira"
 
 export default function BusinessDetailPage({ id }: { id: string }) {
 	const [loading, setLoading] = useState<boolean>(false)
@@ -663,10 +664,6 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 			),
 		},
 	]
-
-	function formatNaira(value: number): string {
-		return "₦" + value.toLocaleString("en-NG", { minimumFractionDigits: 2 })
-	}
 
 	const transactionColumns: TableColumn<Transaction>[] = [
 		{

@@ -27,6 +27,7 @@ const endpoints = (params?: string | number, params2?: string | number) => {
 		"finish-repay": `${envURL}/repayments/paid`,
 		"get-admin-credit": `${envURL}/credit-lines/admin?${params}`,
 		"update-credit-status": `${envURL}/credit-lines/${params}/status`,
+		"credit-overview": `${envURL}/admin/credit-lines/stats`,
 	}
 
 	const businesses = {
@@ -39,6 +40,7 @@ const endpoints = (params?: string | number, params2?: string | number) => {
 		"business-documents": `${envURL}/documents?${params}`,
 		"update-business-document": `${envURL}/documents/${params}/status`,
 		"business-overview": `${envURL}/admin/businesses/${params}/overview`,
+		"view-document": `${envURL}/documents/${params}`,
 	}
 
 	const banks = {

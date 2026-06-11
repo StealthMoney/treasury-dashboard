@@ -394,10 +394,6 @@ export interface BusinessResponse {
 	empty: boolean
 }
 
-// export interface BusinessDirector extends BusinessDocument {
-// 	role: "DIRECTOR"
-// }
-
 export interface PageableResponse<T> {
 	totalPages: number
 	totalElements: number
@@ -428,16 +424,6 @@ export interface PageableResponse<T> {
 }
 
 export type TransactionType = "CREDIT_LINE" | "REPAYMENT"
-
-// export interface Transaction {
-// 	id: string
-// 	date: string // ISO string
-// 	amount: number
-// 	runningBalance: number
-// 	transactionTitle: string
-// 	transactionType: TransactionType
-// 	status: "SUCCESSFUL" | "FAILED" | "PENDING"
-// }
 
 export interface BusinessOverviewStats {
 	annualRevenue: number
@@ -477,4 +463,11 @@ export interface BusinessOverviewResponse {
 	stats: BusinessOverviewStats
 	recentActivities: RecentActivity[]
 	transactions: Transaction[]
+}
+
+export interface LoanStats {
+	totalDisbursed: number
+	totalRepaid: number
+	outstandingBalance: number
+	overdueLoans: number
 }

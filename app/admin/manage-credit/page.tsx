@@ -10,7 +10,10 @@ import {
 	SelectField,
 	TextField,
 } from "@/app/components/reusables/general_inputs"
-import { useCreditAdmin } from "@/app/hooks/use_credit_history"
+import {
+	useCreditAdmin,
+	useCreditAdminStats,
+} from "@/app/hooks/use_credit_history"
 import {
 	PaginatedLoanApplicationResponse,
 	LoanApplication,
@@ -20,6 +23,7 @@ import PageSkeleton from "@/app/components/reusables/page_skeleton"
 import { CSVLink } from "react-csv"
 import { useBusinessesDocuments } from "@/app/hooks/use_businesses"
 import { RiArrowDropDownLine } from "react-icons/ri"
+import { formatNaira } from "@/app/functions/helpers/formatNaira"
 
 const CREDIT_TABS = [
 	{ label: "Credit loan request", key: "request" },
@@ -70,6 +74,29 @@ export default function ManageCreditPage() {
 		!!selectedRequest?.loanId
 	)
 
+	const { data: stats, isLoading: statsLoading } = useCreditAdminStats()
+
+	const statsData = [
+		{
+			label: "Total Disbursed",
+			value: formatNaira(stats?.totalDisbursed),
+		},
+		{
+			label: "Total Repaid",
+			value: formatNaira(stats?.totalRepaid),
+		},
+		{
+			label: "Outstanding Balance",
+			value: formatNaira(stats?.outstandingBalance),
+		},
+		{
+			label: "Overdue Loans",
+			valueRow: {
+				main: formatNaira(stats?.overdueLoans),
+			},
+		},
+	]
+
 	const tableData: (LoanApplication & { id: number })[] =
 		data?.content.map((item: LoanApplication, index: number) => ({
 			id: index + 1,
@@ -96,16 +123,6 @@ export default function ManageCreditPage() {
 		(r) => r.loanStatus === "DISBURSED"
 	).length
 	const totalCreditAmount = items.reduce((sum, r) => sum + r.loanAmount, 0)
-
-	const statsData = [
-		{ label: "Total Credit Requests", value: totalRequests },
-		{ label: "Under Review", value: pendingRequests },
-		{ label: "Disbursed Credits", value: disbursedRequests },
-		{
-			label: "Total Credit Amount",
-			valueRow: { main: `${(totalCreditAmount / 1_000_000).toFixed(1)}M` },
-		},
-	]
 
 	// Status filter options — only relevant for the history tab
 	const statusOptions = [
@@ -314,7 +331,9 @@ export default function ManageCreditPage() {
 						</div>
 					</div>
 
-					{creditHistoryLoading ? (
+					{statsLoading ? null : <StatsSection stats={statsData} />}
+
+					{creditHistoryLoading || statsLoading ? (
 						<div className="bg-background min-h-screen w-full px-6">
 							<div className="w-full overflow-x-auto">
 								<PageSkeleton />
