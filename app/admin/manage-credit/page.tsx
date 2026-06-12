@@ -24,6 +24,7 @@ import { CSVLink } from "react-csv"
 import { useBusinessesDocuments } from "@/app/hooks/use_businesses"
 import { RiArrowDropDownLine } from "react-icons/ri"
 import { formatNaira } from "@/app/functions/helpers/formatNaira"
+import { StatusBadge } from "@/app/components/reusables/status_badge"
 
 const CREDIT_TABS = [
 	{ label: "Credit loan request", key: "request" },
@@ -113,16 +114,6 @@ export default function ManageCreditPage() {
 		setCurrentPage(0)
 		setStatusFilter("")
 	}
-
-	const items: LoanApplication[] = data?.content ?? []
-
-	// Stats derived from the current page
-	const totalRequests = data?.totalElements ?? items.length
-	const pendingRequests = items.filter((r) => r.loanStatus === "REVIEW").length
-	const disbursedRequests = items.filter(
-		(r) => r.loanStatus === "DISBURSED"
-	).length
-	const totalCreditAmount = items.reduce((sum, r) => sum + r.loanAmount, 0)
 
 	// Status filter options — only relevant for the history tab
 	const statusOptions = [
@@ -383,14 +374,7 @@ export default function ManageCreditPage() {
 											},
 											{
 												header: "Status",
-												accessor: (row) => (
-													<span
-														className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
-															statusStyle[row.loanStatus] ?? "bg-gray-100 text-gray-700"
-														}`}>
-														{row.loanStatus.charAt(0) + row.loanStatus.slice(1).toLowerCase()}
-													</span>
-												),
+												accessor: (row) => <StatusBadge status={row.loanStatus} />,
 											},
 											{
 												header: "Action",
@@ -459,14 +443,7 @@ export default function ManageCreditPage() {
 											},
 											{
 												header: "Status",
-												accessor: (row) => (
-													<span
-														className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
-															statusStyle[row.loanStatus] ?? "bg-gray-100 text-gray-700"
-														}`}>
-														{row.loanStatus.charAt(0) + row.loanStatus.slice(1).toLowerCase()}
-													</span>
-												),
+												accessor: (row) => <StatusBadge status={row.loanStatus} />,
 											},
 											{
 												header: "Action",

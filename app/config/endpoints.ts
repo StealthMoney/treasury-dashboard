@@ -43,6 +43,10 @@ const endpoints = (params?: string | number, params2?: string | number) => {
 		"view-document": `${envURL}/documents/${params}`,
 	}
 
+	const transactions = {
+		"view-transactions": `${envURL}/admin/transactions?${params}&sort=date,desc`,
+	}
+
 	const banks = {
 		list: `${envURL}/payments/get-banks`,
 		verify: `${envURL}/payments/name-inquiry?accountNumber=${params}&bankCode=${params2}`,
@@ -60,6 +64,7 @@ const endpoints = (params?: string | number, params2?: string | number) => {
 		credit,
 		banks,
 		businesses,
+		transactions,
 	}
 }
 

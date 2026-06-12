@@ -36,6 +36,7 @@ import { FaRegClock } from "react-icons/fa6"
 import { resolveActivityIconType } from "@/app/functions/helpers/activity_icon_resolver"
 import { AiOutlineDeliveredProcedure } from "react-icons/ai"
 import { formatNaira } from "@/app/functions/helpers/formatNaira"
+import { StatusBadge } from "../reusables/status_badge"
 
 export default function BusinessDetailPage({ id }: { id: string }) {
 	const [loading, setLoading] = useState<boolean>(false)
@@ -704,31 +705,7 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 		},
 		{
 			header: "Status",
-			accessor: (row) => (
-				<div className="inline-flex items-center gap-2 rounded-full bg-(--grey-1) px-3 py-1.5 text-xs font-medium text-(--text-1)">
-					{row.status === "APPROVED" || row.status === "REPAID" ? (
-						<IoMdCheckmarkCircle size={16} className="text-(--green-1)" />
-					) : row.status === "REJECTED" ? (
-						<IoMdCloseCircle size={16} className="text-(--red-1)" />
-					) : row.status === "REVIEW" ? (
-						<FaRegClock size={14} className="text-orange-500" />
-					) : row.status === "DISBURSED" ? (
-						<AiOutlineDeliveredProcedure size={14} className="text-blue-700" />
-					) : (
-						<span className="h-2 w-2 rounded-full bg-orange-500" />
-					)}
-
-					{row.status === "APPROVED"
-						? "Approved"
-						: row.status === "REJECTED"
-							? "Rejected"
-							: row.status === "DISBURSED"
-								? "Disbursed"
-								: row.status === "REPAID"
-									? "Repaid"
-									: "Review"}
-				</div>
-			),
+			accessor: (row) => <StatusBadge status={row.status} />,
 		},
 	]
 

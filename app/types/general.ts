@@ -471,3 +471,45 @@ export interface LoanStats {
 	outstandingBalance: number
 	overdueLoans: number
 }
+
+export interface TransactionBusiness {
+	name: string
+	rcNumber: string
+}
+
+export interface TransactionBankAccount {
+	bankName: string
+	accountName: string
+	accountNumber: string
+}
+
+export interface Transaction2 {
+	transactionId: string
+	date: string
+	business: TransactionBusiness
+	amount: number
+	initiatedBy: string
+	status: TransactionStatus
+	notes: string
+	bankAccount: TransactionBankAccount
+	transactionType: string
+}
+
+export interface TransactionStats {
+	totalVolumeNgn: number
+	outstandingBalance: number
+	repayments: number
+	overdueAmount: number
+}
+
+export interface TransactionPageData {
+	stats: TransactionStats
+	transactions: {
+		content: Transaction2[]
+		pageNo: number
+		pageSize: number
+		totalElements: number
+		totalPages: number
+		last: boolean
+	}
+}
