@@ -191,26 +191,24 @@ export default function ManageTransactionsPage() {
 
 	const typeOptions = [
 		{ label: "All Types", value: "" },
-		{ label: "Disbursed", value: "DISBURSED" },
+		{ label: "Disbursement", value: "DISBURSEMENT" },
 		{ label: "Repayment", value: "REPAYMENT" },
 	]
 
 	const statusOptions = [
 		{ label: "All Statuses", value: "" },
-		{ label: "Review", value: "REVIEW" },
-		{ label: "Approved", value: "APPROVED" },
-		{ label: "Disbursed", value: "DISBURSED" },
-		{ label: "Repaid", value: "REPAID" },
-		{ label: "Rejected", value: "REJECTED" },
+		{ label: "Posted", value: "POSTED" },
+		{ label: "Reversed", value: "REVERSED" },
 	]
 
 	const columns = [
 		{
 			header: "Transaction ID",
 			accessor: (row: Transaction2 & { id: number }) => (
-				<span className="text-foreground max-w-32.5 truncate font-mono text-sm">
-					{row.transactionId.split("-")[0]}…
-				</span>
+				<div className="text-foreground flex max-w-32.5 flex-col truncate font-mono text-sm">
+					<span>{row.transactionId.split("-")[0]}…</span>
+					<small className="text-xs text-(--text-1)">{row.transactionType}</small>
+				</div>
 			),
 		},
 		{
@@ -226,7 +224,7 @@ export default function ManageTransactionsPage() {
 			accessor: (row: Transaction2 & { id: number }) => (
 				<div>
 					<p className="text-foreground text-sm font-medium">{row.business.name}</p>
-					<p className="text-xs text-(--text-1)">{row.business.rcNumber}</p>
+					<small className="text-xs text-(--text-1)">{row.business.rcNumber}</small>
 				</div>
 			),
 		},

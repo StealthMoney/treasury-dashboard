@@ -15,6 +15,7 @@ const TITLE_MAP: Record<string, string> = {
 	"manage-document": "Manage Document",
 	"manage-profile": "Manage Profile",
 	"manage-settings": "Manage Settings",
+	"manage-transactions": "Manage Transactions",
 	credit: "Credit",
 	report: "Report",
 	profile: "Profile",

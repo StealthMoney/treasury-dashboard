@@ -572,6 +572,7 @@ export default function CreditsPage() {
 		setIsKybVerified(user?.kybStatus === "ACTIVE" || false)
 		setShowKybScreens(false)
 		setKybStatus("PENDING_REVIEW")
+		window.location.reload()
 	}
 
 	useEffect(() => {

@@ -41,6 +41,7 @@ function resolveAuth(
 		"/admin/manage-waitlist": "Manage Waitlist",
 		"/admin/manage-business": "Manage Business",
 		"/admin/manage-document": "Manage Document",
+		// "/admin/manage-transactions": "Manage Transactions"
 	}
 	const ROUTE_MAP = { ...USER_ROUTES, ...ADMIN_ROUTES }
 

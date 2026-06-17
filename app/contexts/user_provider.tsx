@@ -1,12 +1,10 @@
 "use client"
-
 import { createContext, useContext, useEffect, useState } from "react"
 import { useSession } from "next-auth/react"
 import { getProfile } from "../server/get_profile"
 import { AppuserProps } from "../types/app_user"
 import { signOut } from "next-auth/react"
 import { Dispatch, SetStateAction } from "react"
-
 type ProfileContextType = {
 	user: AppuserProps | null
 	loading: boolean
@@ -16,7 +14,6 @@ type ProfileContextType = {
 	logout: () => void
 	setIsKyb: Dispatch<SetStateAction<boolean>>
 }
-
 const ProfileContext = createContext<ProfileContextType>({
 	user: null,
 	loading: true,
@@ -26,53 +23,23 @@ const ProfileContext = createContext<ProfileContextType>({
 	logout: () => {},
 	setIsKyb: () => {},
 })
-
-const CACHE_KEY = "profile_cache"
-const CACHE_DURATION = 40 * 60 * 1000
-
-function getValidCache(): AppuserProps | null {
-	if (typeof window === "undefined") return null
-	try {
-		const cached = localStorage.getItem(CACHE_KEY)
-		if (!cached) return null
-
-		const parsed = JSON.parse(cached)
-		if (Date.now() - parsed.timestamp > CACHE_DURATION) {
-			localStorage.removeItem(CACHE_KEY)
-			return null
-		}
-
-		return parsed.data
-	} catch {
-		localStorage.removeItem(CACHE_KEY)
-		return null
-	}
-}
-
 export const ProfileProvider = ({
 	children,
 }: {
 	children: React.ReactNode
 }) => {
 	const { status } = useSession()
-	const [user, setUser] = useState<AppuserProps | null>(() => getValidCache())
-	const [loading, setLoading] = useState<boolean>(() => getValidCache() === null)
+	const [user, setUser] = useState<AppuserProps | null>(null)
+	const [loading, setLoading] = useState<boolean>(true)
 	const [isKyb, setIsKyb] = useState<boolean>(false)
 	const [error, setError] = useState<string | null>(null)
-
 	const fetchProfile = async () => {
-		setLoading(true)
+		if (!user) setLoading(true)
 		setError(null)
-
 		try {
 			const res = await getProfile()
-
 			if (res.success) {
 				setUser(res.data)
-				localStorage.setItem(
-					CACHE_KEY,
-					JSON.stringify({ data: res.data, timestamp: Date.now() })
-				)
 			} else {
 				setError(res.error || "Couldn't get your data")
 			}
@@ -83,7 +50,6 @@ export const ProfileProvider = ({
 			setLoading(false)
 		}
 	}
-
 	useEffect(() => {
 		if (status !== "authenticated") {
 			if (status === "unauthenticated") {
@@ -92,25 +58,14 @@ export const ProfileProvider = ({
 			}
 			return
 		}
-
-		if (user) {
-			setLoading(false)
-			return
-		}
-
 		let cancelled = false
-
 		;(async () => {
+			if (!user) setLoading(true)
 			try {
 				const res = await getProfile()
 				if (cancelled) return
-
 				if (res.success) {
 					setUser(res.data)
-					localStorage.setItem(
-						CACHE_KEY,
-						JSON.stringify({ data: res.data, timestamp: Date.now() })
-					)
 				} else {
 					setError(res.error || "Couldn't get your data")
 				}
@@ -123,20 +78,17 @@ export const ProfileProvider = ({
 				if (!cancelled) setLoading(false)
 			}
 		})()
-
 		return () => {
 			cancelled = true
 		}
 	}, [status])
-
 	const retry = () => fetchProfile()
 	const logout = async () => {
-		if (typeof window === "undefined") return null
-		localStorage.removeItem(CACHE_KEY)
 		setUser(null)
 		await signOut()
 	}
-
+	console.log(user);
+	
 	return (
 		<ProfileContext.Provider
 			value={{ user, loading, error, retry, logout, isKyb, setIsKyb }}>
@@ -144,5 +96,4 @@ export const ProfileProvider = ({
 		</ProfileContext.Provider>
 	)
 }
-
 export const useProfile = () => useContext(ProfileContext)

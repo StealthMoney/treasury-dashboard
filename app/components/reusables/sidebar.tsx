@@ -14,6 +14,7 @@ import { filterLinks } from "@/app/functions/helpers/available_links"
 import { useProfile } from "@/app/contexts/user_provider"
 import { IoDocumentLockOutline } from "react-icons/io5"
 import { LiaBusinessTimeSolid } from "react-icons/lia"
+import { MdFormatListBulleted } from "react-icons/md"
 
 export default function Sidebar({
 	open,
@@ -44,6 +45,11 @@ export default function Sidebar({
 			logo: <IoDocumentLockOutline />,
 			text: user?.systemAdmin ? "Manage Document" : null,
 			href: user?.systemAdmin ? "/admin/manage-document" : null,
+		},
+		{
+			logo: <MdFormatListBulleted />,
+			text: user?.systemAdmin ? "Manage Transactions" : null,
+			href: user?.systemAdmin ? "/admin/manage-transactions" : null,
 		},
 		{
 			logo: <TbFileAnalytics />,

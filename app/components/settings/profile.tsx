@@ -1,6 +1,7 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client"
 
-import { useState, useRef, ChangeEvent } from "react"
+import { useState, useRef, ChangeEvent, useEffect } from "react"
 import { TextField, SelectField } from "../reusables/general_inputs"
 import { AiOutlineCloudUpload } from "react-icons/ai"
 import { KYBStepWrapper } from "../reusables/kybstepwraper"
@@ -45,6 +46,16 @@ export function ProfileTab({ onSave }: ProfileTabProps) {
 		businessWebsite: user?.businessInfo?.website || "",
 		businessEntity: mapBusinessType(user?.businessInfo?.businessType) || "",
 	})
+
+	useEffect(() => {
+		setData((prev) => ({
+			...prev,
+			businessName: user?.businessInfo?.businessName || "",
+			businessEmail: user?.businessInfo?.email || "",
+			businessWebsite: user?.businessInfo?.website || "",
+			businessEntity: mapBusinessType(user?.businessInfo?.businessType) || "",
+		}))
+	}, [user])
 
 	const [logoPreview, setLogoPreview] = useState<string | null>(null)
 
