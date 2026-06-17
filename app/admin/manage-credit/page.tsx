@@ -175,7 +175,8 @@ export default function ManageCreditPage() {
 		pending: "REVIEW",
 		review: "APPROVED",
 		approved: "DISBURSED",
-		disbursed: "REPAID",
+		disbursed: "REVIEWING_REPAYMENT",
+		reviewing_repayment: "REPAID",
 	}
 
 	const handleApprove = async () => {
@@ -443,7 +444,11 @@ export default function ManageCreditPage() {
 											},
 											{
 												header: "Status",
-												accessor: (row) => <StatusBadge status={row.loanStatus} />,
+												accessor: (row) => (
+													<div className="min-w-40">
+														<StatusBadge status={row.loanStatus} />
+													</div>
+												),
 											},
 											{
 												header: "Action",

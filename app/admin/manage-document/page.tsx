@@ -14,7 +14,10 @@ import {
 	getFileIconFromName,
 } from "@/app/components/reusables/file_icons"
 import { BusinessDocument } from "@/app/types/general"
-import { useBusinessesDocuments } from "@/app/hooks/use_businesses"
+import {
+	useBusinessesDocuments,
+	useBusinessesDocumentStats,
+} from "@/app/hooks/use_businesses"
 import PageSkeleton from "@/app/components/reusables/page_skeleton"
 import { updateBusinessDocuments } from "@/app/server/business"
 import { IoMdCheckmarkCircle, IoMdCloseCircle } from "react-icons/io"
@@ -62,24 +65,17 @@ export default function ManageDocumentPage() {
 		refetch: refetchDocuments,
 	} = useBusinessesDocuments(params, true)
 
-	// ── Derived stats ────────────────────────────────────────────────────────
-	const allDocuments: BusinessDocument[] = documents?.content ?? []
+	const { data: documentStatsRaw, isLoading: documentStatLoading } =
+		useBusinessesDocumentStats()
 
 	const documentStats = useMemo(() => {
-		const total = documents?.totalElements ?? 0
-		const approved = allDocuments.filter((d) => d.status === "VERIFIED").length
-		const pending = allDocuments.filter(
-			(d) => d.status !== "VERIFIED" && d.status !== "REJECTED"
-		).length
-		const rejected = allDocuments.filter((d) => d.status === "REJECTED").length
-
 		return [
-			{ label: "Total Documents", value: total },
-			{ label: "Total Approved", value: approved },
-			{ label: "Total Pending", value: pending },
-			{ label: "Total Rejected", value: rejected },
+			{ label: "Total Documents", value: documentStatsRaw?.totalDocuments ?? 0 },
+			{ label: "Total Approved", value: documentStatsRaw?.totalApproved ?? 0 },
+			{ label: "Total Pending", value: documentStatsRaw?.totalPending ?? 0 },
+			{ label: "Total Rejected", value: documentStatsRaw?.totalRejected ?? 0 },
 		]
-	}, [documents, allDocuments])
+	}, [documentStatsRaw])
 
 	// ── Status filter options ────────────────────────────────────────────────
 	const statusOptions = [
@@ -327,7 +323,9 @@ export default function ManageDocumentPage() {
 						</div>
 					</div>
 
-					<StatsSection stats={documentStats} />
+					{!documentStatLoading && documentStatsRaw && (
+						<StatsSection stats={documentStats} />
+					)}
 
 					{isLoading ? (
 						<div className="bg-background min-h-screen w-full">

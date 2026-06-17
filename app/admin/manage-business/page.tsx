@@ -16,10 +16,11 @@ import {
 import {
 	useBusinesses,
 	useBusinessesDocuments,
+	useBusinessesStatsMain,
 } from "@/app/hooks/use_businesses"
 import PageSkeleton from "@/app/components/reusables/page_skeleton"
 import ApprovalModal from "@/app/components/reusables/modals/approval_modal"
-import { activateBusiness } from "@/app/server/business"
+import { updateBusinessStatus } from "@/app/server/business"
 import { formatDateWithSuffix } from "@/app/functions/helpers/formatted_date"
 import { StatsSection } from "@/app/components/reusables/stats_section"
 import { IoMdCheckmarkCircle, IoMdCloseCircle } from "react-icons/io"
@@ -107,6 +108,9 @@ export default function BusinessListPage() {
 		refetch: refetchBusiness,
 	} = useBusinesses(params)
 
+	const { data: businessStatsRaw, isLoading: isLoadingBusinessStats } =
+		useBusinessesStatsMain()
+
 	useEffect(() => {
 		const data = rawBusinesses?.content?.map(transformBusinessForDisplay) || []
 
@@ -133,9 +137,16 @@ export default function BusinessListPage() {
 	const handleApproveBusiness = async () => {
 		if (!selectedBusiness) return
 
+		const payload = {
+			status: "ACTIVE",
+		}
+
 		setLoading(true)
 		try {
-			const res = await activateBusiness(selectedBusiness.id)
+			const res = await updateBusinessStatus(
+				selectedBusiness.id,
+				JSON.stringify(payload)
+			)
 			if (res.success) {
 				setApprovalMessage({
 					type: "success",
@@ -274,17 +285,17 @@ export default function BusinessListPage() {
 	const businessStats = [
 		{
 			label: "Total Businesses",
-			value: 1280,
+			value: businessStatsRaw?.totalBusinesses ?? 0,
 			// footer: "All registered businesses",
 		},
 		{
 			label: "Active Businesses",
-			value: 945,
+			value: businessStatsRaw?.activeBusinesses ?? 0,
 			// footer: "Currently active on platform",
 		},
 		{
 			label: "Inactive Businesses",
-			value: 335,
+			value: businessStatsRaw?.inactiveBusinesses ?? 0,
 			// footer: "Dormant or suspended accounts",
 		},
 	]
@@ -330,7 +341,9 @@ export default function BusinessListPage() {
 						</div>
 					</div>
 
-					<StatsSection stats={businessStats} />
+					{!isLoadingBusinessStats && businessStatsRaw && (
+						<StatsSection stats={businessStats} />
+					)}
 
 					{isLoading ? (
 						<div className="bg-background min-h-screen w-full">
@@ -369,7 +382,7 @@ export default function BusinessListPage() {
 					<div className="flex h-full flex-col">
 						<div className="flex flex-1 flex-col gap-5">
 							<div className="flex justify-between gap-1 border-b border-(--grey-1) pb-5">
-								<p className="text-xs font-medium tracking-wide text-(--text-1)">
+								<p className="text-sm font-medium tracking-wide text-(--text-1)">
 									Business
 								</p>
 

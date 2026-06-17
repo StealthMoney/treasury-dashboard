@@ -25,6 +25,7 @@ export interface CreditRequest {
 		| "disbursed"
 		| "rejected"
 		| "repaid"
+		| "reviewing_repayment"
 	requestDate: string
 	startDate: string
 	endDate: string
@@ -313,7 +314,7 @@ export default function CreditRequestModal({
 							type="button"
 							onClick={handleDocumentReject}
 							disabled={isDocLoading || docRejectionReason.trim().length === 0}
-							className="flex-1 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:brightness-90 disabled:cursor-not-allowed disabled:opacity-50">
+							className="flex-1 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:cursor-pointer hover:brightness-90 disabled:cursor-not-allowed disabled:opacity-50">
 							{isDocLoading ? "Processing…" : "Confirm Rejection"}
 						</button>
 					</div>
@@ -377,7 +378,7 @@ export default function CreditRequestModal({
 						<button
 							onClick={handleDocumentApprove}
 							disabled={isDocLoading}
-							className="flex-1 rounded-xl bg-(--green-1) px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:brightness-90 disabled:cursor-not-allowed disabled:opacity-50">
+							className="flex-1 rounded-xl bg-(--green-1) px-4 py-3 text-sm hover:cursor-pointer font-semibold text-white shadow-sm transition-all hover:brightness-90 disabled:cursor-not-allowed disabled:opacity-50">
 							{isDocLoading ? "Processing…" : "Yes, Verify"}
 						</button>
 					</div>
@@ -431,14 +432,14 @@ export default function CreditRequestModal({
 								setRejectionReason("")
 							}}
 							disabled={isLoadingState}
-							className="text-foreground flex-1 rounded-xl border border-(--grey-1) px-4 py-3 text-sm font-semibold transition-all hover:bg-(--grey-4) disabled:cursor-not-allowed disabled:opacity-50">
+							className="text-foreground flex-1 rounded-xl hover:cursor-pointer border border-(--grey-1) px-4 py-3 text-sm font-semibold transition-all hover:bg-(--grey-4) disabled:cursor-not-allowed disabled:opacity-50">
 							Back
 						</button>
 						<button
 							type="button"
 							onClick={handleConfirmReject}
 							disabled={isLoadingState || rejectionReason.trim().length === 0}
-							className="flex-1 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:brightness-90 disabled:cursor-not-allowed disabled:opacity-50">
+							className="flex-1 rounded-xl bg-red-600 px-4 py-3 text-sm hover:cursor-pointer font-semibold text-white shadow-sm transition-all hover:brightness-90 disabled:cursor-not-allowed disabled:opacity-50">
 							{isLoadingState ? "Processing…" : "Confirm Rejection"}
 						</button>
 					</div>
@@ -531,7 +532,7 @@ export default function CreditRequestModal({
 								else setIsRejecting(true)
 							}}
 							disabled={isLoadingState}
-							className="flex-1 rounded-xl bg-(--green-1) px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:brightness-90 disabled:cursor-not-allowed disabled:opacity-50">
+							className="flex-1 rounded-xl bg-(--green-1) hover:cursor-pointer px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:brightness-90 disabled:cursor-not-allowed disabled:opacity-50">
 							{isLoadingState ? "Processing…" : "Yes, Approve"}
 						</button>
 					</div>
@@ -717,7 +718,7 @@ export default function CreditRequestModal({
 								setIsConfirming(true)
 							}}
 							disabled={isLoadingState}
-							className="flex-1 rounded-xl border border-(--grey-1) px-4 py-3 text-sm font-semibold text-(--red-1) transition-all hover:border-red-200 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50">
+							className="flex-1 rounded-xl hover:cursor-pointer border border-(--grey-1) px-4 py-3 text-sm font-semibold text-(--red-1) transition-all hover:border-red-200 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50">
 							Reject
 						</button>
 						<button
@@ -726,7 +727,7 @@ export default function CreditRequestModal({
 								setIsConfirming(true)
 							}}
 							disabled={isLoadingState}
-							className="flex-1 rounded-xl bg-(--green-1) px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:brightness-90 disabled:cursor-not-allowed disabled:opacity-50">
+							className="flex-1 rounded-xl bg-(--green-1) hover:cursor-pointer px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:brightness-90 disabled:cursor-not-allowed disabled:opacity-50">
 							Approve
 						</button>
 					</div>
@@ -737,7 +738,7 @@ export default function CreditRequestModal({
 						<button
 							onClick={onApprove}
 							disabled={isLoadingState}
-							className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:brightness-90 disabled:cursor-not-allowed disabled:opacity-50">
+							className="w-full rounded-xl hover:cursor-pointer bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:brightness-90 disabled:cursor-not-allowed disabled:opacity-50">
 							{isLoadingState ? "Processing…" : "Mark as Disbursed"}
 						</button>
 					</div>
@@ -748,7 +749,18 @@ export default function CreditRequestModal({
 						<button
 							onClick={onApprove}
 							disabled={isLoadingState}
-							className="w-full rounded-xl bg-purple-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:brightness-90 disabled:cursor-not-allowed disabled:opacity-50">
+							className="w-full rounded-xl hover:cursor-pointer bg-purple-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:brightness-90 disabled:cursor-not-allowed disabled:opacity-50">
+							{isLoadingState ? "Processing…" : "Mark as Pending Repayment"}
+						</button>
+					</div>
+				)}
+
+				{data.loanStatus === "reviewing_repayment" && (
+					<div className="pt-1">
+						<button
+							onClick={onApprove}
+							disabled={isLoadingState}
+							className="w-full rounded-xl hover:cursor-pointer bg-green-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:brightness-90 disabled:cursor-not-allowed disabled:opacity-50">
 							{isLoadingState ? "Processing…" : "Mark as Repaid"}
 						</button>
 					</div>

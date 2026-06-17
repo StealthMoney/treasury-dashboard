@@ -104,6 +104,7 @@ export type LoanStatus =
 	| "DISBURSED"
 	| "REPAID"
 	| "OVERDUE"
+	| "REVIEWING_REPAYMENT"
 
 export interface LoanApplication {
 	loanId: number
@@ -178,6 +179,7 @@ export type LoanStatusUI =
 	| "REJECTED"
 	| "DISBURSED"
 	| "REPAID"
+	| "REVIEWING_REPAYMENT"
 export interface LoanApplicationUI {
 	loanTypeId: number
 	loanStatus: LoanStatusUI
@@ -321,6 +323,19 @@ export interface BusinessDirector {
 	rejectionReason: string | null
 }
 
+export interface DocumentStats {
+	totalDocuments: number
+	totalApproved: number
+	totalPending: number
+	totalRejected: number
+}
+
+export interface BusinessStats {
+	totalBusinesses: number
+	activeBusinesses: number
+	inactiveBusinesses: number
+}
+
 export interface BusinessDocument {
 	id: string // mapped from publicId for Table compatibility
 	publicId: string
@@ -451,6 +466,7 @@ export type TransactionStatus =
 	| "APPROVED"
 	| "DISBURSED"
 	| "REVIEW"
+	| "REVIEWING_REPAYMENT"
 
 export interface Transaction {
 	date: string

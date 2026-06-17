@@ -67,6 +67,18 @@ export default function ManageTransactionsPage() {
 
 	const params = {
 		page: String(currentPage),
+		...(typeFilter && {
+			transactionType: typeFilter,
+		}),
+		...(searchTerm.trim() && {
+			businessName: searchTerm.trim(),
+		}),
+		...(dateFilter && {
+			dateFrom: `${dateFilter}T00:00:00Z`,
+		}),
+		...(statusFilter && {
+			status: statusFilter,
+		}),
 	}
 
 	const {
@@ -179,8 +191,7 @@ export default function ManageTransactionsPage() {
 
 	const typeOptions = [
 		{ label: "All Types", value: "" },
-		{ label: "Credit Line", value: "CREDIT_LINE" },
-		{ label: "Loan", value: "LOAN" },
+		{ label: "Disbursed", value: "DISBURSED" },
 		{ label: "Repayment", value: "REPAYMENT" },
 	]
 
