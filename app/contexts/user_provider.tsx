@@ -87,8 +87,8 @@ export const ProfileProvider = ({
 		setUser(null)
 		await signOut()
 	}
-	console.log(user);
-	
+	console.log(user)
+
 	return (
 		<ProfileContext.Provider
 			value={{ user, loading, error, retry, logout, isKyb, setIsKyb }}>
