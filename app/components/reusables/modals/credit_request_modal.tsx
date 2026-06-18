@@ -14,6 +14,7 @@ import { BusinessDocument } from "@/app/types/general"
 import { updateBusinessDocuments } from "@/app/server/business"
 import { ISODateString } from "next-auth"
 import { getBaseUrl } from "@/app/functions/helpers/get_base_url"
+import { StatusBadge } from "../status_badge"
 
 export interface CreditRequest {
 	id: string | number
@@ -619,20 +620,6 @@ export default function CreditRequestModal({
 								const isRejected = doc.status === "REJECTED"
 								const isActioned = isVerified || isRejected
 
-								const docStatusStyle: Record<string, string> = {
-									VERIFIED: "bg-emerald-50 text-emerald-600 border border-emerald-200",
-									REJECTED: "bg-red-50 text-(--red-1) border border-red-200",
-									PENDING: "bg-amber-50 text-amber-600 border border-amber-200",
-									SUBMITTED: "bg-blue-50 text-blue-600 border border-blue-200",
-								}
-
-								const docStatusDot: Record<string, string> = {
-									VERIFIED: "bg-emerald-400",
-									REJECTED: "bg-red-400",
-									PENDING: "bg-amber-400",
-									SUBMITTED: "bg-blue-400",
-								}
-
 								const docStatusLabel: Record<string, string> = {
 									VERIFIED: "Verified",
 									REJECTED: "Rejected",
@@ -656,13 +643,8 @@ export default function CreditRequestModal({
 												{doc.otherDocumentDescription ||
 													doc.documentType.replace(/_/g, " ").toLowerCase()}
 											</p>
-											<span
-												className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${docStatusStyle[statusKey] ?? "border border-gray-200 bg-gray-50 text-gray-600"}`}>
-												<span
-													className={`h-1.5 w-1.5 rounded-full ${docStatusDot[statusKey] ?? "bg-gray-400"}`}
-												/>
-												{docStatusLabel[statusKey] ?? statusKey}
-											</span>
+
+											<StatusBadge status={docStatusLabel[statusKey]} />
 										</div>
 
 										{/* Bottom row: action buttons */}

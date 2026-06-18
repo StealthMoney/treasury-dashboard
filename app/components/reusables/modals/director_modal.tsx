@@ -1,10 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Modal } from "./modal"
 import { BusinessDirector } from "@/app/types/general"
-import { IoMdCheckmarkCircle, IoMdCloseCircle } from "react-icons/io"
-import { FaRegClock } from "react-icons/fa6"
+import { StatusBadge } from "../status_badge"
 
 interface DirectorDetailModalProps {
 	loading: boolean
@@ -17,34 +16,6 @@ interface DirectorDetailModalProps {
 }
 
 type Step = "review" | "reject"
-
-function StatusBadge({ status }: { status: BusinessDirector["status"] }) {
-	const base =
-		"inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium"
-
-	if (status === "VERIFIED")
-		return (
-			<div className={`${base} bg-(--grey-1) text-(--text-1)`}>
-				<IoMdCheckmarkCircle size={14} className="text-(--green-1)" />
-				Approved
-			</div>
-		)
-
-	if (status === "REJECTED")
-		return (
-			<div className={`${base} bg-red-50 text-(--red-1)`}>
-				<IoMdCloseCircle size={14} className="text-(--red-1)" />
-				Rejected
-			</div>
-		)
-
-	return (
-		<div className={`${base} bg-orange-50 text-orange-600`}>
-			<FaRegClock size={14} className="text-orange-500" />
-			Pending
-		</div>
-	)
-}
 
 function MaskedBvn({ bvn }: { bvn: string }) {
 	const [visible, setVisible] = useState(false)

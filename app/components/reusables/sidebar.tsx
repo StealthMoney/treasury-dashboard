@@ -48,7 +48,7 @@ export default function Sidebar({
 		},
 		{
 			logo: <MdFormatListBulleted />,
-			text: user?.systemAdmin ? "Manage Transactions" : null,
+			text: user?.systemAdmin ? "Manage Transaction" : null,
 			href: user?.systemAdmin ? "/admin/manage-transactions" : null,
 		},
 		{
