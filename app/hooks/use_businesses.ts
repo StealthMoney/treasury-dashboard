@@ -46,6 +46,34 @@ export const useBusinessesDirectors = (params: string) => {
 	})
 }
 
+export const useBusinessesDocumentStats = () => {
+	return useQuery({
+		queryKey: ["document_stat"],
+		queryFn: async () => {
+			const res = await fetch(`/api/admin/business/documents/stats`)
+			const data = await res.json()
+
+			if (!res.ok) throw new Error(data.error)
+
+			return data
+		},
+	})
+}
+
+export const useBusinessesStatsMain = () => {
+	return useQuery({
+		queryKey: ["business_stat_main"],
+		queryFn: async () => {
+			const res = await fetch(`/api/admin/business/stats`)
+			const data = await res.json()
+
+			if (!res.ok) throw new Error(data.error)
+
+			return data
+		},
+	})
+}
+
 export const useBusinessesDocuments = (
 	params: Record<string, string>,
 	enabled: boolean
@@ -58,6 +86,20 @@ export const useBusinessesDocuments = (
 				? `?${new URLSearchParams(params).toString()}`
 				: ""
 			const res = await fetch(`/api/admin/business/documents${queryString}`)
+			const data = await res.json()
+
+			if (!res.ok) throw new Error(data.error)
+
+			return data
+		},
+	})
+}
+
+export const useBusinessesStats = (params: string) => {
+	return useQuery({
+		queryKey: [`${params}_stats`, params],
+		queryFn: async () => {
+			const res = await fetch(`/api/admin/business/stats/${params}`)
 			const data = await res.json()
 
 			if (!res.ok) throw new Error(data.error)

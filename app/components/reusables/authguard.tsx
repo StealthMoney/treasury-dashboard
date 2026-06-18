@@ -19,7 +19,12 @@ function resolveAuth(
 ): AuthDecision {
 	if (status === "loading") return { type: "loading" }
 
-	const PUBLIC_ROUTES = ["/", "/account/activate", "/reset-password"]
+	const PUBLIC_ROUTES = [
+		"/",
+		"/account/activate",
+		"/account/reset/finish",
+		"/api/*",
+	]
 
 	const USER_ROUTES: Record<string, string> = {
 		"/credit": "Credit",
@@ -36,6 +41,7 @@ function resolveAuth(
 		"/admin/manage-waitlist": "Manage Waitlist",
 		"/admin/manage-business": "Manage Business",
 		"/admin/manage-document": "Manage Document",
+		"/admin/manage-transactions": "Manage Transaction",
 	}
 	const ROUTE_MAP = { ...USER_ROUTES, ...ADMIN_ROUTES }
 

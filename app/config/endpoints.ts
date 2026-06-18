@@ -27,17 +27,26 @@ const endpoints = (params?: string | number, params2?: string | number) => {
 		"finish-repay": `${envURL}/repayments/paid`,
 		"get-admin-credit": `${envURL}/credit-lines/admin?${params}`,
 		"update-credit-status": `${envURL}/credit-lines/${params}/status`,
+		"credit-overview": `${envURL}/admin/credit-lines/stats`,
 	}
 
 	const businesses = {
 		list: `${envURL}/businesses?${params}`,
 		"business-details": `${envURL}/businesses/${params}`,
-		"activate-business": `${envURL}/businesses/${params}/activate`,
+		"business-stats": `${envURL}/admin/businesses/stats`,
+		"update-business-status": `${envURL}/businesses/${params}/status`,
 		"business-directors": `${envURL}/businesses/${params}/directors`,
 		"business-directors-details": `${envURL}/businesses/${params}/directors/${params2}`,
 		"update-business-directors": `${envURL}/businesses/${params}/directors/${params2}/status`,
 		"business-documents": `${envURL}/documents?${params}`,
+		"business-documents-stats": `${envURL}/admin/documents/stats`,
 		"update-business-document": `${envURL}/documents/${params}/status`,
+		"business-overview": `${envURL}/admin/businesses/${params}/overview`,
+		"view-document": `${envURL}/documents/${params}`,
+	}
+
+	const transactions = {
+		"view-transactions": `${envURL}/admin/transactions?${params}&sort=date,desc`,
 	}
 
 	const banks = {
@@ -57,6 +66,7 @@ const endpoints = (params?: string | number, params2?: string | number) => {
 		credit,
 		banks,
 		businesses,
+		transactions,
 	}
 }
 

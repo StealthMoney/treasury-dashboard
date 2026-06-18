@@ -16,11 +16,15 @@ import {
 import {
 	useBusinesses,
 	useBusinessesDocuments,
+	useBusinessesStatsMain,
 } from "@/app/hooks/use_businesses"
 import PageSkeleton from "@/app/components/reusables/page_skeleton"
 import ApprovalModal from "@/app/components/reusables/modals/approval_modal"
-import { activateBusiness } from "@/app/server/business"
+import { updateBusinessStatus } from "@/app/server/business"
 import { formatDateWithSuffix } from "@/app/functions/helpers/formatted_date"
+import { StatsSection } from "@/app/components/reusables/stats_section"
+import { IoMdCheckmarkCircle, IoMdCloseCircle } from "react-icons/io"
+import { FaRegClock } from "react-icons/fa6"
 
 const transformBusinessForDisplay = (business: Business): DisplayBusiness => ({
 	id: business.id.toString(),
@@ -104,6 +108,9 @@ export default function BusinessListPage() {
 		refetch: refetchBusiness,
 	} = useBusinesses(params)
 
+	const { data: businessStatsRaw, isLoading: isLoadingBusinessStats } =
+		useBusinessesStatsMain()
+
 	useEffect(() => {
 		const data = rawBusinesses?.content?.map(transformBusinessForDisplay) || []
 
@@ -130,9 +137,16 @@ export default function BusinessListPage() {
 	const handleApproveBusiness = async () => {
 		if (!selectedBusiness) return
 
+		const payload = {
+			status: "ACTIVE",
+		}
+
 		setLoading(true)
 		try {
-			const res = await activateBusiness(selectedBusiness.id)
+			const res = await updateBusinessStatus(
+				selectedBusiness.id,
+				JSON.stringify(payload)
+			)
 			if (res.success) {
 				setApprovalMessage({
 					type: "success",
@@ -167,8 +181,8 @@ export default function BusinessListPage() {
 
 		if (status === "Completed") {
 			return (
-				<div className={`${baseClass} bg-green-50 text-(--green-1)`}>
-					<span className="h-2 w-2 rounded-full bg-(--green-1)" />
+				<div className={`${baseClass} bg-(--grey-1) text-(--text-1)`}>
+					<IoMdCheckmarkCircle size={16} className="text-(--green-1)" />
 					{status}
 				</div>
 			)
@@ -176,8 +190,8 @@ export default function BusinessListPage() {
 
 		if (status === "Pending") {
 			return (
-				<div className={`${baseClass} bg-orange-50 text-orange-600`}>
-					<span className="h-2 w-2 rounded-full bg-orange-500" />
+				<div className={`${baseClass} bg-(--grey-1) text-(--text-1)`}>
+					<FaRegClock size={14} className="text-orange-500" />
 					{status}
 				</div>
 			)
@@ -185,8 +199,8 @@ export default function BusinessListPage() {
 
 		if (status === "Rejected") {
 			return (
-				<div className={`${baseClass} bg-red-50 text-(--red-1)`}>
-					<span className="h-2 w-2 rounded-full bg-(--red-1)" />
+				<div className={`${baseClass} bg-(--grey-1) text-(--text-1)`}>
+					<IoMdCloseCircle size={16} className="text-(--red-1)" />
 					{status}
 				</div>
 			)
@@ -268,35 +282,50 @@ export default function BusinessListPage() {
 		},
 	]
 
+	const businessStats = [
+		{
+			label: "Total Businesses",
+			value: businessStatsRaw?.totalBusinesses ?? 0,
+			// footer: "All registered businesses",
+		},
+		{
+			label: "Active Businesses",
+			value: businessStatsRaw?.activeBusinesses ?? 0,
+			// footer: "Currently active on platform",
+		},
+		{
+			label: "Inactive Businesses",
+			value: businessStatsRaw?.inactiveBusinesses ?? 0,
+			// footer: "Dormant or suspended accounts",
+		},
+	]
+
 	return (
 		<div className="bg-background min-h-screen w-full px-6">
 			<div className="w-full overflow-x-auto md:max-w-[80%]">
 				<div className="mx-auto px-4 py-8 sm:px-6 lg:px-6">
-					<div className="mb-8">
-						<h1 className="text-foreground mb-2 text-2xl font-bold sm:text-3xl">
-							Business List
-						</h1>
+					<div className="mb-8 flex items-center justify-between gap-4">
+						<div className="max-w-100">
+							<h1 className="text-foreground text-xl font-bold">Business List</h1>
+							<small className="text-[16px] text-(--text-1)">
+								Manage and review all businesses and keep track of their activities here
+							</small>
+						</div>
 
-						<p className="text-(--text-1)">
-							Manage and review all businesses and keep track of their activities here
-						</p>
-					</div>
-
-					<div className="mb-8 flex w-full flex-col items-stretch gap-4 md:flex-row md:items-end">
-						<div className="w-full md:flex-1">
+						<div className="flex items-center gap-2">
 							<TextField
 								id="business-search"
 								label="Search"
-								placeholder="Search by business name, website or email..."
+								placeholder="Search by business name"
 								value={searchValue}
 								onChange={(value) => {
 									setCurrentPage(1)
 									setSearchValue(value)
 								}}
+								compact
+								searchIcon
 							/>
-						</div>
 
-						<div className="w-full md:w-60">
 							<SelectField
 								id="business-status"
 								label="Status"
@@ -307,9 +336,14 @@ export default function BusinessListPage() {
 								}}
 								options={statusOptions}
 								placeholder="All Status"
+								compact
 							/>
 						</div>
 					</div>
+
+					{!isLoadingBusinessStats && businessStatsRaw && (
+						<StatsSection stats={businessStats} />
+					)}
 
 					{isLoading ? (
 						<div className="bg-background min-h-screen w-full">
@@ -347,16 +381,16 @@ export default function BusinessListPage() {
 				{selectedBusiness && (
 					<div className="flex h-full flex-col">
 						<div className="flex flex-1 flex-col gap-5">
-							<div className="flex flex-col gap-1 border-b border-(--grey-1) pb-5">
-								<p className="text-xs font-medium tracking-wide text-(--text-1) uppercase">
+							<div className="flex justify-between gap-1 border-b border-(--grey-1) pb-5">
+								<p className="text-sm font-medium tracking-wide text-(--text-1)">
 									Business
 								</p>
 
-								<p className="text-foreground text-base font-semibold">
-									{selectedBusiness.name}
-								</p>
-
-								<p className="text-xs text-(--text-1)">{selectedBusiness.rc}</p>
+								<div className="flex flex-col">
+									<p className="text-foreground text-base font-semibold">
+										{selectedBusiness.name}
+									</p>
+								</div>
 							</div>
 
 							<div className="flex items-center justify-between border-b border-(--grey-1) py-3">

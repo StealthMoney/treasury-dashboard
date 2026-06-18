@@ -72,7 +72,9 @@ function StatusBadge({ status }: { status: LoanStatus }) {
 		status.toLowerCase() === "repaid"
 
 	const isPending =
-		status.toLocaleLowerCase() === "review" || status.toLowerCase() === "overdue"
+		status.toLocaleLowerCase() === "review" ||
+		status.toLowerCase() === "overdue" ||
+		status.toLowerCase() === "reviewing_repayment"
 
 	const isFailed = status.toLowerCase() === "rejected"
 	return (
@@ -86,7 +88,7 @@ function StatusBadge({ status }: { status: LoanStatus }) {
 							? "text-background bg-red-500"
 							: ""
 			}`}>
-			{status}
+			{status?.split("_")?.join(" ")}
 		</span>
 	)
 }
@@ -368,6 +370,7 @@ export default function CreditsPage() {
 				loanStatus === "REVIEW" ||
 				loanStatus === "REPAID" ||
 				loanStatus === "REJECTED" ||
+				loanStatus === "REVIEWING_REPAYMENT" ||
 				loanStatus === "APPROVED"
 					? false
 					: true,
@@ -446,6 +449,7 @@ export default function CreditsPage() {
 			loanStatus !== "REPAID" &&
 			(loanStatus === "REVIEW" ||
 				loanStatus === "APPROVED" ||
+				loanStatus === "REVIEWING_REPAYMENT" ||
 				loanStatus === "DISBURSED")
 		) {
 			setIsBorrowOpen(true)
@@ -568,6 +572,7 @@ export default function CreditsPage() {
 		setIsKybVerified(user?.kybStatus === "ACTIVE" || false)
 		setShowKybScreens(false)
 		setKybStatus("PENDING_REVIEW")
+		window.location.reload()
 	}
 
 	useEffect(() => {

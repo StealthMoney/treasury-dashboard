@@ -19,6 +19,8 @@ export const useCreditStats = (creditHistoryData: LoanApplication[]) => {
 				return "Repaid Loan"
 			case "REVIEW":
 				return "Reviewing Loan"
+			case "REVIEWING_REPAYMENT":
+				return "Reviewing loan repayment"
 			default:
 				return "Loan"
 		}

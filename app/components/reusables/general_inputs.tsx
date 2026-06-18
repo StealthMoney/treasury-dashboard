@@ -6,6 +6,7 @@ import { HiX } from "react-icons/hi"
 import { InputFieldProps, TextFieldProps } from "@/app/types/inputs"
 import { getFileIcon } from "./review_generals"
 import { FaRegTrashAlt } from "react-icons/fa"
+import { FiSearch } from "react-icons/fi"
 
 type SelectOption = string | { label: string; value: string }
 
@@ -18,6 +19,7 @@ export function SelectField({
 	placeholder,
 	error,
 	disabled,
+	compact,
 }: {
 	label: string | React.ReactNode
 	id: string
@@ -27,20 +29,25 @@ export function SelectField({
 	placeholder: string
 	error?: string
 	disabled?: boolean
+	compact?: boolean
 }) {
 	return (
-		<div className="space-y-1.5">
-			<label htmlFor={id} className="block text-sm font-medium text-(--text-1)">
-				{label}
-			</label>
+		<div className={compact ? "" : "space-y-1.5"}>
+			{label && !compact && (
+				<label htmlFor={id} className="block text-sm font-medium text-(--text-1)">
+					{label}
+				</label>
+			)}
 			<div
-				className={`relative rounded-lg border bg-(--grey-4) transition-all ${error ? "border-(--red-1)" : "border-(--grey-1) focus-within:border-(--grey-1)"} ${disabled ? "opacity-50" : ""}`}>
+				className={`relative rounded-lg border ${compact ? "bg-background" : "bg-(--grey-4)"} transition-all ${error ? "border-(--red-1)" : "border-(--grey-1) focus-within:border-(--grey-1)"} ${disabled ? "opacity-50" : ""}`}>
 				<select
 					id={id}
 					value={value}
 					onChange={(e) => onChange(e.target.value)}
 					disabled={disabled}
-					className="w-full cursor-pointer appearance-none bg-transparent px-3 py-2.5 text-sm text-(--text-1) outline-none">
+					className={`w-full cursor-pointer appearance-none bg-transparent text-sm text-(--text-1) outline-none ${
+						compact ? "px-3 py-2 pr-7 text-xs" : "px-3 py-2.5"
+					}`}>
 					<option value="" disabled>
 						{placeholder}
 					</option>
@@ -56,8 +63,8 @@ export function SelectField({
 						)
 					)}
 				</select>
-				<div className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-(--text-1)">
-					<svg width="12" height="8" viewBox="0 0 12 8" fill="none">
+				<div className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 text-(--text-1)">
+					<svg width="10" height="6" viewBox="0 0 12 8" fill="none">
 						<path
 							d="M1 1L6 6L11 1"
 							stroke="currentColor"
@@ -146,15 +153,24 @@ export function TextField({
 	prefix,
 	type = "text",
 	disabled = false,
-}: TextFieldProps) {
+	compact,
+	searchIcon,
+}: TextFieldProps & { compact?: boolean; searchIcon?: boolean }) {
 	return (
-		<div className="space-y-1.5">
-			<label htmlFor={id} className="text-foreground block text-sm font-medium">
-				{label}
-			</label>
+		<div className={compact ? "" : "space-y-1.5"}>
+			{label && !compact && (
+				<label htmlFor={id} className="text-foreground block text-sm font-medium">
+					{label}
+				</label>
+			)}
 			<div
-				className={`flex items-center rounded-lg border bg-(--grey-4) transition-all ${error ? "border-(--red-1) focus-within:border-(--red-1)" : "border-(--grey-1) focus-within:border-(--grey-1)"}`}>
-				{prefix && (
+				className={`flex items-center rounded-lg border ${compact ? "bg-background" : "bg-(--grey-4)"} transition-all ${error ? "border-(--red-1) focus-within:border-(--red-1)" : "border-(--grey-1) focus-within:border-(--grey-1)"}`}>
+				{searchIcon && (
+					<span className="pl-3 text-(--text-1)">
+						<FiSearch size={14} />
+					</span>
+				)}
+				{prefix && !searchIcon && (
 					<span className="bg-background border border-(--grey-1) py-2.5 pr-2 pl-3 text-[14px] text-(--text-1) select-none">
 						{prefix}
 					</span>
@@ -166,7 +182,9 @@ export function TextField({
 					value={value}
 					onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
 					disabled={disabled}
-					className="text-foreground flex-1 bg-transparent px-3 py-2.5 text-[14px] placeholder-(--text-1) outline-none"
+					className={`text-foreground flex-1 bg-transparent text-[14px] placeholder-(--text-1) outline-none ${
+						compact ? "px-2 py-2 text-xs" : "px-3 py-2.5"
+					}`}
 				/>
 			</div>
 			{error && <p className="text-xs text-(--red-1)">{error}</p>}

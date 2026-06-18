@@ -1,6 +1,7 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { KYBStepWrapper } from "../reusables/kybstepwraper"
 import { SelectField, TextField } from "../reusables/general_inputs"
 import PageSkeleton from "../reusables/page_skeleton"
@@ -88,6 +89,15 @@ export function BankAccountDetailTab() {
 			[field]: value,
 		}))
 	}
+
+	useEffect(() => {
+		setBankDetails((prev) => ({
+			...prev,
+			bankName: user?.bankDetails?.bankName || "",
+			accountNumber: user?.bankDetails?.accountNumber || "",
+			accountName: user?.bankDetails?.accountName || "",
+		}))
+	}, [user])
 
 	if (loading) {
 		return (

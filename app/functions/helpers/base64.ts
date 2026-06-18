@@ -22,6 +22,16 @@ const mapDocType = (value: string): string => {
 			return "BANK_STATEMENT"
 		case "Invoice":
 			return "INVOICE"
+
+		case "PASSPORT":
+		case "DRIVER_LICENSE":
+		case "NATIONAL_ID":
+		case "PROOF_OF_ADDRESS":
+		case "BANK_STATEMENT":
+		case "INVOICE":
+		case "OTHER":
+			return value
+
 		default:
 			return "OTHER"
 	}

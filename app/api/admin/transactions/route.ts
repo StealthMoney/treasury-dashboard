@@ -1,11 +1,11 @@
-import { getBusinessesDocuments } from "@/app/server/business"
+import { getTransactionDetails } from "@/app/server/transactions"
 
 export async function GET(req: Request) {
 	const { searchParams } = new URL(req.url)
 
 	const query = searchParams.toString()
+	const res = await getTransactionDetails(query)
 
-	const res = await getBusinessesDocuments(query)
 	if (!res.success) {
 		return Response.json({ error: res.error }, { status: 400 })
 	}
