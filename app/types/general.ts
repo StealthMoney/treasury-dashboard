@@ -529,3 +529,12 @@ export interface TransactionPageData {
 		last: boolean
 	}
 }
+
+export interface payloadProps {
+	data: {
+		id_token: string
+	}
+}
+export interface TokenProp {
+	id_token: string
+}
