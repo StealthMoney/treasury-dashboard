@@ -16,7 +16,11 @@ export function resolveActivityIconType(
 	)
 		return "uploaded"
 
-	if (normalized.includes("approv") || normalized.includes("confirmed"))
+	if (
+		normalized.includes("approv") ||
+		normalized.includes("confirmed") ||
+		normalized.includes("verified")
+	)
 		return "approved"
 
 	return undefined
