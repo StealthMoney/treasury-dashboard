@@ -33,6 +33,11 @@ export default function Sidebar({
 	const navLinks = [
 		{
 			logo: <PiHandCoins />,
+			text: user?.systemAdmin ? "Overview" : null,
+			href: user?.systemAdmin ? "/admin/overview" : null,
+		},
+		{
+			logo: <PiHandCoins />,
 			text: user?.systemAdmin ? "Manage Credit" : "Credit",
 			href: user?.systemAdmin ? "/admin/manage-credit" : "/credit",
 		},

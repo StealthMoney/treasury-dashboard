@@ -8,6 +8,7 @@ import { returnUserInitials } from "@/app/functions/helpers/initials"
 import { AppuserProps } from "@/app/types/app_user"
 
 const TITLE_MAP: Record<string, string> = {
+	overview: "Admin Overview",
 	"manage-business": "Manage Business",
 	"manage-credit": "Manage Credit",
 	"manage-report": "Manage Report",

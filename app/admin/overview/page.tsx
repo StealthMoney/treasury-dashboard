@@ -1,19 +1,18 @@
 "use client"
 
 import { useState } from "react"
-import { IoMdCheckmarkCircle, IoMdCloseCircle } from "react-icons/io"
-import { FaRegClock } from "react-icons/fa6"
-import { BsUpload } from "react-icons/bs"
 import { Table, TableColumn } from "@/app/components/reusables/table"
 import { StatsSection } from "@/app/components/reusables/stats_section"
 import {
 	TextField,
 	SelectField,
 } from "@/app/components/reusables/general_inputs"
-import { formatDateWithSuffix } from "@/app/functions/helpers/formatted_date"
+import {
+	formatDateWithSuffix,
+	formatTimeFromISO,
+} from "@/app/functions/helpers/formatted_date"
 import { ActivityIcon } from "@/app/components/reusables/activity_icon"
 import { resolveActivityIconType } from "@/app/functions/helpers/activity_icon_resolver"
-import getKYBStatusBadge from "@/app/components/reusables/kyb_status_badge"
 import { useAdminStats } from "@/app/hooks/use_admin"
 import {
 	RecentActivity2,
@@ -21,61 +20,7 @@ import {
 	RecentBusiness,
 } from "@/app/types/general"
 import SectionSkeleton from "@/app/components/reusables/sectionSkeleton"
-import { StatusBadge } from "@/app/components/reusables/status_badge"
 import getAccountStatusTag from "@/app/components/reusables/status_tag"
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface DisplayBusiness {
-	id: string | number
-	name: string
-	rc: string
-	dateJoined: string
-	time: string
-	kybStatus: "Completed" | "Pending" | "Rejected"
-	status: "Active" | "Inactive" | "Suspended"
-}
-
-// ─── Mock Data ─────────────────────────────────────────────────────────────────
-
-const mockBusinesses: DisplayBusiness[] = [
-	{
-		id: "1",
-		name: "Moniwave",
-		rc: "RC: 1235687",
-		dateJoined: "2025-10-09T14:57:00",
-		time: "14:57 PM",
-		kybStatus: "Completed",
-		status: "Active",
-	},
-	{
-		id: "2",
-		name: "Moniwave",
-		rc: "RC: 1235687",
-		dateJoined: "2025-10-09T14:57:00",
-		time: "14:57 PM",
-		kybStatus: "Completed",
-		status: "Active",
-	},
-	{
-		id: "3",
-		name: "Moniwave",
-		rc: "RC: 1235687",
-		dateJoined: "2025-10-09T14:57:00",
-		time: "14:57 PM",
-		kybStatus: "Completed",
-		status: "Active",
-	},
-	{
-		id: "4",
-		name: "Moniwave",
-		rc: "RC: 1235687",
-		dateJoined: "2025-10-09T14:57:00",
-		time: "14:57 PM",
-		kybStatus: "Pending",
-		status: "Inactive",
-	},
-]
 
 export default function AdminOverviewPage() {
 	const [searchValue, setSearchValue] = useState("")
@@ -164,7 +109,9 @@ export default function AdminOverviewPage() {
 					<p className="text-foreground min-w-20 text-[13px]">
 						{formatDateWithSuffix(row.createdAt)}
 					</p>
-					{/* <p className="text-xs text-(--text-1)">{row.time}</p> */}
+					<p className="text-xs text-(--text-1)">
+						{formatTimeFromISO(row.createdAt)}
+					</p>
 				</div>
 			),
 		},
@@ -250,7 +197,7 @@ export default function AdminOverviewPage() {
 		<div className="bg-background min-h-screen w-full px-6">
 			{/* ── Top bar ── */}
 			<div className="w-full overflow-x-auto md:max-w-[80%]">
-				<div className="mx-auto px-4 py-8 sm:px-6 lg:px-1">
+				<div className="mx-auto px-4 sm:px-6 lg:px-1">
 					<div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 						{/* Title */}
 						<div className="max-w-full lg:max-w-100">
