@@ -14,6 +14,8 @@ import { StatusBadge } from "@/app/components/reusables/status_badge"
 import TransactionDetailContent from "@/app/components/reusables/modals/transaction_modal"
 import { useTransactions } from "@/app/hooks/use_transactions"
 import PageSkeleton from "@/app/components/reusables/page_skeleton"
+import { getTransactionDetails } from "@/app/server/transactions"
+import { showToast } from "@/app/functions/helpers/notify_user"
 
 function formatDateForInput(dateStr: string): string {
 	const d = new Date(dateStr)
@@ -146,49 +148,116 @@ export default function ManageTransactionsPage() {
 			...tx,
 		})) || []
 
-	function exportCSV() {
-		const headers = [
-			"Transaction ID",
-			"Date",
-			"Business",
-			"RC Number",
-			"Amount (NGN)",
-			"Initiated By",
-			"Status",
-			"Transaction Type",
-			"Bank",
-			"Account Name",
-			"Account Number",
-			"Notes",
-		]
-		const rows = filteredContent.map((tx: Transaction2) => [
-			tx.transactionId,
-			formatDateWithSuffix(tx.date),
-			tx.business.name,
-			tx.business.rcNumber,
-			tx.amount,
-			tx.initiatedBy,
-			tx.status,
-			tx.transactionType,
-			tx.bankAccount.bankName,
-			tx.bankAccount.accountName,
-			tx.bankAccount.accountNumber,
-			tx.notes,
-		])
-		const csv = [headers, ...rows]
-			.map((row) =>
-				row.map((v: Transaction2) => `"${String(v).replace(/"/g, '""')}"`).join(",")
-			)
-			.join("\n")
-		const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
-		const url = URL.createObjectURL(blob)
-		const a = document.createElement("a")
-		a.href = url
-		a.download = "transactions.csv"
-		a.click()
-		URL.revokeObjectURL(url)
-	}
+	const [isExporting, setIsExporting] = useState(false)
 
+	const exportTransactionsCSV = async () => {
+		try {
+			setIsExporting(true)
+
+			let page = 0
+			let totalPages = 1
+
+			const allTransactions: Transaction2[] = []
+
+			while (page < totalPages) {
+				const searchParams = new URLSearchParams({
+					page: String(page),
+				})
+
+				if (typeFilter) {
+					searchParams.append("transactionType", typeFilter)
+				}
+
+				if (searchTerm.trim()) {
+					searchParams.append("businessName", searchTerm.trim())
+				}
+
+				if (dateFilter) {
+					searchParams.append("dateFrom", `${dateFilter}T00:00:00Z`)
+				}
+
+				if (statusFilter) {
+					searchParams.append("status", statusFilter)
+				}
+
+				const response = await getTransactionDetails(searchParams.toString())
+
+				if (!response.success) {
+					showToast(response.error, "error", "das")
+					return
+				}
+
+				const transactionData = response.data.transactions
+
+				totalPages = transactionData.totalPages
+
+				allTransactions.push(...transactionData.content)
+
+				page++
+			}
+
+			const headers = [
+				"Transaction ID",
+				"Date",
+				"Business",
+				"RC Number",
+				"Amount",
+				"Initiated By",
+				"Status",
+				"Transaction Type",
+				"Bank",
+				"Account Name",
+				"Account Number",
+				"Notes",
+			]
+
+			const rows = allTransactions.map((tx) => [
+				tx.transactionId,
+				formatDateWithSuffix(tx.date),
+				tx.business.name,
+				tx.business.rcNumber,
+				tx.amount,
+				tx.initiatedBy,
+				tx.status,
+				tx.transactionType,
+				tx.bankAccount.bankName,
+				tx.bankAccount.accountName,
+				tx.bankAccount.accountNumber,
+				tx.notes,
+			])
+
+			const csv = [headers, ...rows]
+				.map((row) =>
+					row
+						.map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`)
+						.join(",")
+				)
+				.join("\n")
+
+			const blob = new Blob([csv], {
+				type: "text/csv;charset=utf-8;",
+			})
+
+			const url = URL.createObjectURL(blob)
+
+			const link = document.createElement("a")
+			link.href = url
+			link.download = `transactions-${new Date().toISOString().split("T")[0]}.csv`
+
+			document.body.appendChild(link)
+			link.click()
+			document.body.removeChild(link)
+
+			URL.revokeObjectURL(url)
+		} catch (error) {
+			console.error("Export failed:", error)
+			const newError =
+				error instanceof Error ? error.message : "An unknown error occurred"
+			showToast(newError, "error", "fd")
+		} finally {
+			setIsExporting(false)
+		}
+	}
 	const typeOptions = [
 		{ label: "All Types", value: "" },
 		{ label: "Disbursement", value: "DISBURSEMENT" },
@@ -335,9 +404,9 @@ export default function ManageTransactionsPage() {
 							</div>
 
 							<button
-								onClick={exportCSV}
-								className="inline-flex h-8.5 items-center gap-1.5 rounded-lg bg-black px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition hover:bg-neutral-800">
-								Export CSV
+								onClick={exportTransactionsCSV}
+								className="inline-flex h-8.5 cursor-pointer items-center gap-1.5 rounded-lg bg-black px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition hover:bg-neutral-800">
+								{isExporting ? "Exporting" : "Export"} CSV
 								<RiArrowDropDownLine size={20} />
 							</button>
 						</div>

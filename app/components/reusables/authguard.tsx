@@ -34,6 +34,7 @@ function resolveAuth(
 	}
 
 	const ADMIN_ROUTES: Record<string, string> = {
+		"/admin/overview": "Overview",
 		"/admin/manage-credit": "Manage Credit",
 		"/admin/manage-report": "Manage Report",
 		"/admin/manage-profile": "Profile",

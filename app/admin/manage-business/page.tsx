@@ -20,11 +20,14 @@ import {
 } from "@/app/hooks/use_businesses"
 import PageSkeleton from "@/app/components/reusables/page_skeleton"
 import ApprovalModal from "@/app/components/reusables/modals/approval_modal"
-import { updateBusinessStatus } from "@/app/server/business"
+import { getBusinesses, updateBusinessStatus } from "@/app/server/business"
 import { formatDateWithSuffix } from "@/app/functions/helpers/formatted_date"
 import { StatsSection } from "@/app/components/reusables/stats_section"
 import { IoMdCheckmarkCircle, IoMdCloseCircle } from "react-icons/io"
 import { FaRegClock } from "react-icons/fa6"
+import getKYBStatusBadge from "@/app/components/reusables/kyb_status_badge"
+import getAccountStatusTag from "@/app/components/reusables/status_tag"
+import { showToast } from "@/app/functions/helpers/notify_user"
 
 const transformBusinessForDisplay = (business: Business): DisplayBusiness => ({
 	id: business.id.toString(),
@@ -71,6 +74,7 @@ export default function BusinessListPage() {
 	} | null>(null)
 
 	const [approvalModalOpen, setApprovalModalOpen] = useState(false)
+	const [isExporting, setIsExporting] = useState(false)
 
 	const { data: documents } = useBusinessesDocuments(
 		selectedBusiness?.id ? { "ownerId.equals": selectedBusiness.id } : {},
@@ -100,6 +104,117 @@ export default function BusinessListPage() {
 		...(searchValue !== "" && {
 			"businessName.contains": searchValue,
 		}),
+	}
+
+	const exportBusinessesCSV = async () => {
+		try {
+			setIsExporting(true)
+
+			let page = 0
+			let totalPages = 1
+
+			const allBusinesses: DisplayBusiness[] = []
+
+			while (page < totalPages) {
+				const searchParams = new URLSearchParams({
+					page: String(page),
+				})
+
+				if (selectedStatus) {
+					searchParams.append(
+						"status.equals",
+						selectedStatus === "Completed"
+							? "ACTIVE"
+							: selectedStatus === "Rejected"
+								? "REJECTED"
+								: "PENDING_REVIEW"
+					)
+				}
+
+				if (searchValue) {
+					searchParams.append("businessName.contains", searchValue)
+				}
+
+				const response = await getBusinesses(searchParams.toString())
+
+				if (!response.success) {
+					showToast(response.error, "error", "1")
+					return
+				}
+
+				const data = response.data
+
+				totalPages = data.totalPages
+
+				allBusinesses.push(...data.content.map(transformBusinessForDisplay))
+
+				page++
+			}
+
+			const headers = [
+				"ID",
+				"Business Name",
+				"RC Number",
+				"Date Joined",
+				"Time",
+				"Joined Via",
+				"Browser",
+				"KYB Status",
+				"Status",
+				"Industry",
+				"Address",
+				"Contact Person",
+				"Contact Role",
+				"Email",
+				"Phone",
+			]
+
+			const rows = allBusinesses.map((business) => [
+				business.id,
+				business.name,
+				business.rc,
+				formatDateWithSuffix(business.dateJoined),
+				business.time,
+				business.joinedVia,
+				business.browser,
+				business.kybStatus,
+				business.status,
+				business.industry,
+				business.address,
+				business.contactPerson,
+				business.contactRole,
+				business.email,
+				business.phone,
+			])
+
+			const csv = [headers, ...rows]
+				.map((row) =>
+					row
+						.map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`)
+						.join(",")
+				)
+				.join("\n")
+
+			const blob = new Blob([csv], {
+				type: "text/csv;charset=utf-8;",
+			})
+
+			const url = URL.createObjectURL(blob)
+
+			const link = document.createElement("a")
+			link.href = url
+			link.download = "businesses.csv"
+			link.click()
+
+			URL.revokeObjectURL(url)
+		} catch (error) {
+			console.error(error)
+			const newError =
+				error instanceof Error ? error.message : "An unknown error occurred"
+			showToast(newError, "error", "fd1")
+		} finally {
+			setIsExporting(false)
+		}
 	}
 
 	const {
@@ -175,69 +290,6 @@ export default function BusinessListPage() {
 		}
 	}
 
-	const getKYBStatusBadge = (status: string) => {
-		const baseClass =
-			"inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium"
-
-		if (status === "Completed") {
-			return (
-				<div className={`${baseClass} bg-(--grey-1) text-(--text-1)`}>
-					<IoMdCheckmarkCircle size={16} className="text-(--green-1)" />
-					{status}
-				</div>
-			)
-		}
-
-		if (status === "Pending") {
-			return (
-				<div className={`${baseClass} bg-(--grey-1) text-(--text-1)`}>
-					<FaRegClock size={14} className="text-orange-500" />
-					{status}
-				</div>
-			)
-		}
-
-		if (status === "Rejected") {
-			return (
-				<div className={`${baseClass} bg-(--grey-1) text-(--text-1)`}>
-					<IoMdCloseCircle size={16} className="text-(--red-1)" />
-					{status}
-				</div>
-			)
-		}
-
-		return (
-			<div className={`${baseClass} bg-gray-50 text-(--text-1)`}>
-				<span className="h-2 w-2 rounded-full bg-(--text-1)" />
-				{status}
-			</div>
-		)
-	}
-
-	const getAccountStatusTag = (status: string) => {
-		if (status === "Active") {
-			return (
-				<div className="inline-block rounded-full bg-green-50 px-3 py-1.5 text-xs font-medium text-(--green-1)">
-					{status}
-				</div>
-			)
-		}
-
-		if (status === "Suspended") {
-			return (
-				<div className="inline-block rounded-full bg-yellow-50 px-3 py-1.5 text-xs font-medium text-yellow-600">
-					{status}
-				</div>
-			)
-		}
-
-		return (
-			<div className="inline-block rounded-full bg-gray-50 px-3 py-1.5 text-xs font-medium text-(--text-1)">
-				{status}
-			</div>
-		)
-	}
-
 	const columns: TableColumn<DisplayBusiness>[] = [
 		{
 			header: "Business",
@@ -304,7 +356,7 @@ export default function BusinessListPage() {
 		<div className="bg-background min-h-screen w-full px-6">
 			<div className="w-full overflow-x-auto md:max-w-[80%]">
 				<div className="mx-auto px-4 py-8 sm:px-6 lg:px-6">
-					<div className="mb-8 flex items-center justify-between gap-4">
+					<div className="mb-8 flex flex-col items-center justify-between gap-4 lg:flex-row">
 						<div className="max-w-100">
 							<h1 className="text-foreground text-xl font-bold">Business List</h1>
 							<small className="text-[16px] text-(--text-1)">
@@ -312,7 +364,7 @@ export default function BusinessListPage() {
 							</small>
 						</div>
 
-						<div className="flex items-center gap-2">
+						<div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center lg:flex-nowrap lg:justify-end">
 							<TextField
 								id="business-search"
 								label="Search"
@@ -338,6 +390,24 @@ export default function BusinessListPage() {
 								placeholder="All Status"
 								compact
 							/>
+
+							<button
+								onClick={exportBusinessesCSV}
+								className="bg-foreground text-background flex w-full cursor-pointer items-center justify-center gap-2 truncate rounded-lg px-4 py-2 text-sm font-medium transition hover:opacity-90 sm:w-auto">
+								<span>{isExporting ? "Exporting" : "Export"} CSV</span>
+								<svg
+									className="h-4 w-4"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24">
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										strokeWidth={2}
+										d="M19 9l-7 7-7-7"
+									/>
+								</svg>
+							</button>
 						</div>
 					</div>
 

@@ -20,6 +20,10 @@ const endpoints = (params?: string | number, params2?: string | number) => {
 		"refresh-token": `${envURL}/authenticate/refresh`,
 	}
 
+	const admin = {
+		overview: `${envURL}/admin/overview`,
+	}
+
 	const credit = {
 		requestnewcredit: `${envURL}/credit-lines`,
 		getcredithistory: `${envURL}/credit-lines?${params}`,
@@ -63,6 +67,7 @@ const endpoints = (params?: string | number, params2?: string | number) => {
 	return {
 		user,
 		auth,
+		admin,
 		account,
 		credit,
 		banks,

@@ -18,13 +18,14 @@ import {
 	PaginatedLoanApplicationResponse,
 	LoanApplication,
 } from "@/app/types/general"
-import { updatecreditStatus } from "@/app/server/credits"
+import { getCreditHistoryAdmin, updatecreditStatus } from "@/app/server/credits"
 import PageSkeleton from "@/app/components/reusables/page_skeleton"
 import { CSVLink } from "react-csv"
 import { useBusinessesDocuments } from "@/app/hooks/use_businesses"
 import { RiArrowDropDownLine } from "react-icons/ri"
 import { formatNaira } from "@/app/functions/helpers/formatNaira"
 import { StatusBadge } from "@/app/components/reusables/status_badge"
+import { showToast } from "@/app/functions/helpers/notify_user"
 
 const CREDIT_TABS = [
 	{ label: "Credit loan request", key: "request" },
@@ -103,6 +104,121 @@ export default function ManageCreditPage() {
 			id: index + 1,
 			...item,
 		})) ?? []
+
+	const [isExporting, setIsExporting] = useState(false)
+
+	const exportCreditCSV = async () => {
+		try {
+			setIsExporting(true)
+
+			let page = 0
+			let totalPages = 1
+
+			const allLoans: LoanApplication[] = []
+
+			while (page < totalPages) {
+				const query = new URLSearchParams({
+					page: String(page),
+				})
+
+				if (searchTerm) {
+					query.append("reference.contains", searchTerm)
+				}
+
+				if (activeTab === "request") {
+					query.append("creditLineStatus.equals", "REVIEW")
+				} else {
+					query.append("creditLineStatus.notEquals", "REVIEW")
+
+					if (statusFilter) {
+						query.append("creditLineStatus.equals", statusFilter)
+					}
+				}
+
+				const response = await getCreditHistoryAdmin(query.toString())
+
+				if (!response.success) {
+					showToast(response.error, "error", "dafs")
+					return
+				}
+
+				totalPages = response.data.totalPages
+
+				allLoans.push(...response.data.content)
+
+				page++
+			}
+
+			let headers: string[]
+			let rows: (string | number)[][]
+
+			if (activeTab === "request") {
+				headers = ["Date", "Business", "Loan Amount", "Duration", "Status"]
+
+				rows = allLoans.map((row) => [
+					formatDate(row.createdAt),
+					row.businessName,
+					`${row.currency} ${row.loanAmount.toLocaleString()}`,
+					`${row.durationInDays} days`,
+					row.loanStatus,
+				])
+			} else {
+				headers = [
+					"Business Name",
+					"Loan Amount",
+					"Interest",
+					"Duration",
+					"Start Date",
+					"Due Date",
+					"Status",
+				]
+
+				rows = allLoans.map((row) => [
+					row.businessName,
+					`${row.currency} ${row.loanAmount.toLocaleString()}`,
+					`${row.currency} ${Number(row.interest).toLocaleString()}`,
+					`${row.durationInDays} days`,
+					formatDate(row.loanStartDate),
+					formatDate(row.loanDueDate),
+					row.loanStatus,
+				])
+			}
+
+			const csv = [headers, ...rows]
+				.map((row) =>
+					row
+						.map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`)
+						.join(",")
+				)
+				.join("\n")
+
+			const blob = new Blob([csv], {
+				type: "text/csv;charset=utf-8;",
+			})
+
+			const url = URL.createObjectURL(blob)
+
+			const link = document.createElement("a")
+			link.href = url
+			link.download =
+				activeTab === "request"
+					? "credit-loan-requests.csv"
+					: "credit-loan-history.csv"
+
+			document.body.appendChild(link)
+			link.click()
+			document.body.removeChild(link)
+
+			URL.revokeObjectURL(url)
+		} catch (error) {
+			console.error("Export failed:", error)
+			const newError =
+				error instanceof Error ? error.message : "An unknown error occurred"
+			showToast(newError, "error", "fddd")
+		} finally {
+			setIsExporting(false)
+		}
+	}
 
 	useEffect(() => {
 		setCreditHistoryData(data)
@@ -303,22 +419,12 @@ export default function ManageCreditPage() {
 								/>
 							)}
 							{tableData.length > 0 && (
-								<CSVLink
-									data={tableData.map((row) => ({
-										Reference: row.reference,
-										"Loan Amount": row.loanAmount,
-										Currency: row.currency,
-										Interest: row.interest,
-										"Duration (days)": row.durationInDays,
-										"Start Date": formatDate(row.loanStartDate),
-										"Due Date": formatDate(row.loanDueDate),
-										Status: row.loanStatus,
-									}))}
-									filename="credit-requests.csv"
-									className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-black px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition hover:bg-neutral-800">
-									Export CSV
-									<RiArrowDropDownLine size={24} />
-								</CSVLink>
+								<button
+									onClick={exportCreditCSV}
+									className="inline-flex h-8.5 cursor-pointer items-center gap-1.5 rounded-lg bg-black px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition hover:bg-neutral-800">
+									{isExporting ? "Exporting" : "Export"} CSV
+									<RiArrowDropDownLine size={20} />
+								</button>
 							)}
 						</div>
 					</div>

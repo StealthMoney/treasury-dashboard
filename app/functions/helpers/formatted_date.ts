@@ -15,3 +15,11 @@ export function formatDateWithSuffix(dateStr: string) {
 
 	return `${day}${suffix} ${month}, ${year}`
 }
+
+export const formatTimeFromISO = (isoDate: string) => {
+	return new Date(isoDate).toLocaleTimeString("en-NG", {
+		hour: "2-digit",
+		minute: "2-digit",
+		hour12: true,
+	})
+}

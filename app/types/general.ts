@@ -538,3 +538,44 @@ export interface payloadProps {
 export interface TokenProp {
 	id_token: string
 }
+
+export interface OverviewStats {
+	totalBusinesses: number
+	pendingReviews: number
+	approvedCreditLines: number
+	flaggedBusinesses: number
+}
+
+export interface PendingAction {
+	title: string
+	description: string
+	time: ISODateString
+	publicId: string | null
+}
+
+export interface RecentActivity2 {
+	id: string | number
+	activities: string
+	performedBy: string
+	email: string
+	date: string
+}
+
+export interface RecentBusiness {
+	id: number
+	businessName: string
+	rcNumber: string
+	email: string
+	status: "ACTIVE" | "INACTIVE" | "PENDING"
+	annualRevenue: number
+	annualRevenueCurrency: string
+	createdAt: string
+	updatedAt: string
+}
+
+export interface AdminOverviewResponse {
+	stats: OverviewStats
+	pendingActions: PendingAction[]
+	recentActivities: RecentActivity2[]
+	recentBusinesses: RecentBusiness[]
+}
