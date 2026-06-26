@@ -41,7 +41,7 @@ export default function AdminOverviewPage() {
 			"Email",
 			"Status",
 			"Annual Revenue",
-			"Curency",
+			"Currency",
 			"Created At",
 			"Updated At",
 		]
