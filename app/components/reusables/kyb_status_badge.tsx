@@ -5,7 +5,7 @@ export default function getKYBStatusBadge(status: string) {
 	const baseClass =
 		"inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium"
 
-	if (status === "Completed") {
+	if (status.toLowerCase() === "completed") {
 		return (
 			<div className={`${baseClass} bg-(--grey-1) text-(--text-1)`}>
 				<IoMdCheckmarkCircle size={16} className="text-(--green-1)" />
@@ -14,7 +14,7 @@ export default function getKYBStatusBadge(status: string) {
 		)
 	}
 
-	if (status === "Pending") {
+	if (status.toLowerCase() === "pending") {
 		return (
 			<div className={`${baseClass} bg-(--grey-1) text-(--text-1)`}>
 				<FaRegClock size={14} className="text-orange-500" />
@@ -23,7 +23,10 @@ export default function getKYBStatusBadge(status: string) {
 		)
 	}
 
-	if (status === "Rejected") {
+	if (
+		status.toLowerCase() === "rejected" ||
+		status.toLowerCase() === "suspended"
+	) {
 		return (
 			<div className={`${baseClass} bg-(--grey-1) text-(--text-1)`}>
 				<IoMdCloseCircle size={16} className="text-(--red-1)" />

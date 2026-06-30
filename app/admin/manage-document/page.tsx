@@ -192,6 +192,7 @@ export default function ManageDocumentPage() {
 						<p className="text-foreground max-w-50 truncate text-[14px] font-semibold">
 							{row.fileName}
 						</p>
+						<p className="text-foreground text-xs mb-1">{row.businessName}</p>
 						<p className="text-xs tracking-wide text-(--text-1) uppercase">
 							{row.documentType.replace(/_/g, " ")}
 						</p>

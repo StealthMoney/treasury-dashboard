@@ -52,6 +52,7 @@ export const ProfileProvider = ({
 	}
 	useEffect(() => {
 		if (status !== "authenticated") {
+			setError(null)
 			if (status === "unauthenticated") {
 				setUser(null)
 				setLoading(false)
@@ -61,6 +62,7 @@ export const ProfileProvider = ({
 		let cancelled = false
 		;(async () => {
 			if (!user) setLoading(true)
+			setError(null)
 			try {
 				const res = await getProfile()
 				if (cancelled) return
@@ -84,6 +86,7 @@ export const ProfileProvider = ({
 	}, [status])
 	const retry = () => fetchProfile()
 	const logout = async () => {
+		setError(null)
 		setUser(null)
 		await signOut()
 	}
