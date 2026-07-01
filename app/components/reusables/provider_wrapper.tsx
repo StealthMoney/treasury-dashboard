@@ -11,7 +11,7 @@ export default function ProvideWrapper({
 	children: React.ReactNode
 }) {
 	return (
-		<SessionProvider>
+		<SessionProvider refetchInterval={30} refetchOnWindowFocus>
 			<ProfileProvider>
 				<AuthGuard>{children}</AuthGuard>
 			</ProfileProvider>
