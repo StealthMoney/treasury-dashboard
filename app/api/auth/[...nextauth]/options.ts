@@ -88,10 +88,21 @@ export const authOptions: NextAuthOptions = {
 				token.id_token = user.id_token
 			}
 
+			if (token.id_token) {
+				const decoded = jwtDecode<DecodedJwt>(token.id_token)
+
+				if (decoded.exp * 1000 < Date.now()) {
+					delete token.id_token
+				}
+			}
+
 			return token
 		},
 
 		async session({ session, token }: { session: Session; token: JWT }) {
+			if (!token.id_token) {
+				return null as any
+			}
 			session.accessToken = undefined
 
 			if (token.id_token) {

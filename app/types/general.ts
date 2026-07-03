@@ -264,7 +264,7 @@ export interface DisplayBusiness {
 	time: string
 	joinedVia: string
 	browser: string
-	kybStatus: "Completed" | "Pending" | "Rejected"
+	kybStatus: "Completed" | "Pending" | "Rejected" | "Suspended"
 	status: "Active" | "Inactive" | "Suspended"
 	industry: string
 	address: string
@@ -342,6 +342,7 @@ export interface BusinessDocument {
 	ownerId: number
 	documentType: DocumentType
 	fileName: string
+	businessName: string
 	contentType: string
 	status: DocumentStatus
 	documentIdentificationNumber: string
@@ -362,7 +363,11 @@ export interface BusinessDocumentPageResponse {
 	last: boolean
 }
 
-export type BusinessStatus = "ACTIVE" | "PENDING_REVIEW" | "REJECTED"
+export type BusinessStatus =
+	| "ACTIVE"
+	| "PENDING_REVIEW"
+	| "REJECTED"
+	| "SUSPENDED"
 
 export interface Business {
 	id: number
