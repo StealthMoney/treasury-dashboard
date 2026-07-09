@@ -1,3 +1,4 @@
+import { ISODateString } from "next-auth"
 import { ReactNode } from "react"
 export interface KYBFormData {
 	// Step 1
@@ -103,8 +104,10 @@ export type LoanStatus =
 	| "DISBURSED"
 	| "REPAID"
 	| "OVERDUE"
+	| "REVIEWING_REPAYMENT"
 
 export interface LoanApplication {
+	loanId: number
 	loanTypeId: number
 	loanStatus: LoanStatus
 	durationInDays: number
@@ -114,6 +117,8 @@ export interface LoanApplication {
 	loanDueDate: string
 	reference: string
 	interest: number
+	createdAt: ISODateString
+	businessName: string
 }
 
 export interface Pageable {
@@ -174,6 +179,7 @@ export type LoanStatusUI =
 	| "REJECTED"
 	| "DISBURSED"
 	| "REPAID"
+	| "REVIEWING_REPAYMENT"
 export interface LoanApplicationUI {
 	loanTypeId: number
 	loanStatus: LoanStatusUI
@@ -258,7 +264,7 @@ export interface DisplayBusiness {
 	time: string
 	joinedVia: string
 	browser: string
-	kybStatus: "Completed" | "Pending" | "Rejected"
+	kybStatus: "Completed" | "Pending" | "Rejected" | "Suspended"
 	status: "Active" | "Inactive" | "Suspended"
 	industry: string
 	address: string
@@ -317,12 +323,26 @@ export interface BusinessDirector {
 	rejectionReason: string | null
 }
 
+export interface DocumentStats {
+	totalDocuments: number
+	totalApproved: number
+	totalPending: number
+	totalRejected: number
+}
+
+export interface BusinessStats {
+	totalBusinesses: number
+	activeBusinesses: number
+	inactiveBusinesses: number
+}
+
 export interface BusinessDocument {
 	id: string // mapped from publicId for Table compatibility
 	publicId: string
 	ownerId: number
 	documentType: DocumentType
 	fileName: string
+	businessName: string
 	contentType: string
 	status: DocumentStatus
 	documentIdentificationNumber: string
@@ -332,7 +352,6 @@ export interface BusinessDocument {
 	verifiedAt: string | null
 	rejectedAt: string | null
 	createdAt: string
-	fileUrl: string
 }
 
 export interface BusinessDocumentPageResponse {
@@ -344,7 +363,11 @@ export interface BusinessDocumentPageResponse {
 	last: boolean
 }
 
-export type BusinessStatus = "ACTIVE" | "PENDING_REVIEW" | "REJECTED"
+export type BusinessStatus =
+	| "ACTIVE"
+	| "PENDING_REVIEW"
+	| "REJECTED"
+	| "SUSPENDED"
 
 export interface Business {
 	id: number
@@ -391,10 +414,6 @@ export interface BusinessResponse {
 	empty: boolean
 }
 
-// export interface BusinessDirector extends BusinessDocument {
-// 	role: "DIRECTOR"
-// }
-
 export interface PageableResponse<T> {
 	totalPages: number
 	totalElements: number
@@ -422,4 +441,146 @@ export interface PageableResponse<T> {
 	}
 	last: boolean
 	empty: boolean
+}
+
+export type TransactionType = "CREDIT_LINE" | "REPAYMENT"
+
+export interface BusinessOverviewStats {
+	annualRevenue: number
+	activeLoan: number
+	cashFlow: number
+	existingLiabilities: number
+}
+
+export interface RecentActivity {
+	title: string
+	description: string
+	performedBy: string
+	email: string | null
+	date: string
+}
+
+export interface ActivityLog extends RecentActivity {
+	id: number
+	iconType: "approved" | "rejected" | "uploaded" | "repaid"
+}
+
+export type TransactionStatus =
+	| "REJECTED"
+	| "REPAID"
+	| "APPROVED"
+	| "DISBURSED"
+	| "REVIEW"
+	| "REVIEWING_REPAYMENT"
+
+export interface Transaction {
+	date: string
+	amount: number
+	transactionType: TransactionType
+	status: TransactionStatus
+}
+
+export interface BusinessOverviewResponse {
+	stats: BusinessOverviewStats
+	recentActivities: RecentActivity[]
+	transactions: Transaction[]
+}
+
+export interface LoanStats {
+	totalDisbursed: number
+	totalRepaid: number
+	outstandingBalance: number
+	overdueLoans: number
+}
+
+export interface TransactionBusiness {
+	name: string
+	rcNumber: string
+}
+
+export interface TransactionBankAccount {
+	bankName: string
+	accountName: string
+	accountNumber: string
+}
+
+export interface Transaction2 {
+	transactionId: string
+	date: string
+	business: TransactionBusiness
+	amount: number
+	initiatedBy: string
+	status: TransactionStatus
+	notes: string
+	bankAccount: TransactionBankAccount
+	transactionType: string
+}
+
+export interface TransactionStats {
+	totalVolumeNgn: number
+	outstandingBalance: number
+	repayments: number
+	overdueAmount: number
+}
+
+export interface TransactionPageData {
+	stats: TransactionStats
+	transactions: {
+		content: Transaction2[]
+		pageNo: number
+		pageSize: number
+		totalElements: number
+		totalPages: number
+		last: boolean
+	}
+}
+
+export interface payloadProps {
+	data: {
+		id_token: string
+	}
+}
+export interface TokenProp {
+	id_token: string
+}
+
+export interface OverviewStats {
+	totalBusinesses: number
+	pendingReviews: number
+	approvedCreditLines: number
+	flaggedBusinesses: number
+}
+
+export interface PendingAction {
+	title: string
+	description: string
+	time: ISODateString
+	publicId: string | null
+}
+
+export interface RecentActivity2 {
+	id: string | number
+	activities: string
+	performedBy: string
+	email: string
+	date: string
+}
+
+export interface RecentBusiness {
+	id: number
+	businessName: string
+	rcNumber: string
+	email: string
+	status: "ACTIVE" | "INACTIVE" | "PENDING"
+	annualRevenue: number
+	annualRevenueCurrency: string
+	createdAt: string
+	updatedAt: string
+}
+
+export interface AdminOverviewResponse {
+	stats: OverviewStats
+	pendingActions: PendingAction[]
+	recentActivities: RecentActivity2[]
+	recentBusinesses: RecentBusiness[]
 }

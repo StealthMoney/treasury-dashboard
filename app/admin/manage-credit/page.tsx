@@ -10,13 +10,27 @@ import {
 	SelectField,
 	TextField,
 } from "@/app/components/reusables/general_inputs"
-import { useCreditAdmin } from "@/app/hooks/use_credit_history"
+import {
+	useCreditAdmin,
+	useCreditAdminStats,
+} from "@/app/hooks/use_credit_history"
 import {
 	PaginatedLoanApplicationResponse,
 	LoanApplication,
 } from "@/app/types/general"
-import { updatecreditStatus } from "@/app/server/credits"
+import { getCreditHistoryAdmin, updatecreditStatus } from "@/app/server/credits"
 import PageSkeleton from "@/app/components/reusables/page_skeleton"
+import { CSVLink } from "react-csv"
+import { useBusinessesDocuments } from "@/app/hooks/use_businesses"
+import { RiArrowDropDownLine } from "react-icons/ri"
+import { formatNaira } from "@/app/functions/helpers/formatNaira"
+import { StatusBadge } from "@/app/components/reusables/status_badge"
+import { showToast } from "@/app/functions/helpers/notify_user"
+
+const CREDIT_TABS = [
+	{ label: "Credit loan request", key: "request" },
+	{ label: "Credit loan history", key: "history" },
+]
 
 export default function ManageCreditPage() {
 	const [selectedRequest, setSelectedRequest] = useState<CreditRequest | null>(
@@ -33,8 +47,17 @@ export default function ManageCreditPage() {
 	const [currentPage, setCurrentPage] = useState(0)
 	const [searchTerm, setSearchTerm] = useState<string | null>(null)
 	const [statusFilter, setStatusFilter] = useState("")
+	const [activeTab, setActiveTab] = useState("request")
 	const [creditHistoryData, setCreditHistoryData] =
 		useState<PaginatedLoanApplicationResponse | null>(null)
+
+	const tabFilter =
+		activeTab === "request"
+			? { "creditLineStatus.equals": "REVIEW" }
+			: {
+					"creditLineStatus.notEquals": "REVIEW",
+					...(statusFilter ? { "creditLineStatus.equals": statusFilter } : {}),
+				}
 
 	const {
 		data,
@@ -43,42 +66,174 @@ export default function ManageCreditPage() {
 	} = useCreditAdmin({
 		page: String(currentPage),
 		...(searchTerm ? { "reference.contains": searchTerm } : {}),
-		...(statusFilter ? { "creditLineStatus.equals": statusFilter } : {}),
+		...tabFilter,
 	})
 
-	const tableData =
-		creditHistoryData?.content.map((item, index) => ({
+	const { data: documents, refetch: documentRefetch } = useBusinessesDocuments(
+		selectedRequest?.loanId
+			? { "ownerId.equals": String(selectedRequest.loanId) }
+			: {},
+		!!selectedRequest?.loanId
+	)
+
+	const { data: stats, isLoading: statsLoading } = useCreditAdminStats()
+
+	const statsData = [
+		{
+			label: "Total Disbursed",
+			value: formatNaira(stats?.totalDisbursed),
+		},
+		{
+			label: "Total Repaid",
+			value: formatNaira(stats?.totalRepaid),
+		},
+		{
+			label: "Outstanding Balance",
+			value: formatNaira(stats?.outstandingBalance),
+		},
+		{
+			label: "Overdue Loans",
+			valueRow: {
+				main: formatNaira(stats?.overdueLoans),
+			},
+		},
+	]
+
+	const tableData: (LoanApplication & { id: number })[] =
+		data?.content.map((item: LoanApplication, index: number) => ({
 			id: index + 1,
 			...item,
-		})) || []
+		})) ?? []
+
+	const [isExporting, setIsExporting] = useState(false)
+
+	const exportCreditCSV = async () => {
+		try {
+			setIsExporting(true)
+
+			let page = 0
+			let totalPages = 1
+
+			const allLoans: LoanApplication[] = []
+
+			while (page < totalPages) {
+				const query = new URLSearchParams({
+					page: String(page),
+				})
+
+				if (searchTerm) {
+					query.append("reference.contains", searchTerm)
+				}
+
+				if (activeTab === "request") {
+					query.append("creditLineStatus.equals", "REVIEW")
+				} else {
+					query.append("creditLineStatus.notEquals", "REVIEW")
+
+					if (statusFilter) {
+						query.append("creditLineStatus.equals", statusFilter)
+					}
+				}
+
+				const response = await getCreditHistoryAdmin(query.toString())
+
+				if (!response.success) {
+					showToast(response.error, "error", "dafs")
+					return
+				}
+
+				totalPages = response.data.totalPages
+
+				allLoans.push(...response.data.content)
+
+				page++
+			}
+
+			let headers: string[]
+			let rows: (string | number)[][]
+
+			if (activeTab === "request") {
+				headers = ["Date", "Business", "Loan Amount", "Duration", "Status"]
+
+				rows = allLoans.map((row) => [
+					formatDate(row.createdAt),
+					row.businessName,
+					`${row.currency} ${row.loanAmount.toLocaleString()}`,
+					`${row.durationInDays} days`,
+					row.loanStatus,
+				])
+			} else {
+				headers = [
+					"Business Name",
+					"Loan Amount",
+					"Interest",
+					"Duration",
+					"Start Date",
+					"Due Date",
+					"Status",
+				]
+
+				rows = allLoans.map((row) => [
+					row.businessName,
+					`${row.currency} ${row.loanAmount.toLocaleString()}`,
+					`${row.currency} ${Number(row.interest).toLocaleString()}`,
+					`${row.durationInDays} days`,
+					formatDate(row.loanStartDate),
+					formatDate(row.loanDueDate),
+					row.loanStatus,
+				])
+			}
+
+			const csv = [headers, ...rows]
+				.map((row) =>
+					row
+						.map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`)
+						.join(",")
+				)
+				.join("\n")
+
+			const blob = new Blob([csv], {
+				type: "text/csv;charset=utf-8;",
+			})
+
+			const url = URL.createObjectURL(blob)
+
+			const link = document.createElement("a")
+			link.href = url
+			link.download =
+				activeTab === "request"
+					? "credit-loan-requests.csv"
+					: "credit-loan-history.csv"
+
+			document.body.appendChild(link)
+			link.click()
+			document.body.removeChild(link)
+
+			URL.revokeObjectURL(url)
+		} catch (error) {
+			console.error("Export failed:", error)
+			const newError =
+				error instanceof Error ? error.message : "An unknown error occurred"
+			showToast(newError, "error", "fddd")
+		} finally {
+			setIsExporting(false)
+		}
+	}
 
 	useEffect(() => {
 		setCreditHistoryData(data)
 	}, [data])
 
-	const items: LoanApplication[] = creditHistoryData?.content ?? []
+	// Reset page and status filter when switching tabs
+	const handleTabChange = (key: string) => {
+		setActiveTab(key)
+		setCurrentPage(0)
+		setStatusFilter("")
+	}
 
-	// Stats derived from the current page
-	const totalRequests = creditHistoryData?.totalElements ?? items.length
-	const pendingRequests = items.filter((r) => r.loanStatus === "REVIEW").length
-	const disbursedRequests = items.filter(
-		(r) => r.loanStatus === "DISBURSED"
-	).length
-	const totalCreditAmount = items.reduce((sum, r) => sum + r.loanAmount, 0)
-
-	const statsData = [
-		{ label: "Total Credit Requests", value: totalRequests },
-		{ label: "Under Review", value: pendingRequests },
-		{ label: "Disbursed Credits", value: disbursedRequests },
-		{
-			label: "Total Credit Amount",
-			valueRow: { main: `${(totalCreditAmount / 1_000_000).toFixed(1)}M` },
-		},
-	]
-
+	// Status filter options — only relevant for the history tab
 	const statusOptions = [
 		{ label: "All", value: "" },
-		{ label: "Review", value: "REVIEW" },
 		{ label: "Approved", value: "APPROVED" },
 		{ label: "Disbursed", value: "DISBURSED" },
 		{ label: "Rejected", value: "REJECTED" },
@@ -104,7 +259,6 @@ export default function ManageCreditPage() {
 
 	const toModalRequest = (item: LoanApplication): CreditRequest => ({
 		id: item.reference,
-		organizationName: item.reference,
 		amount: item.loanAmount,
 		loanAmount: item.loanAmount,
 		loanStatus: item.loanStatus.toLowerCase() as CreditRequest["loanStatus"],
@@ -121,8 +275,10 @@ export default function ManageCreditPage() {
 		interest: Number(item.interest),
 		reference: item.reference,
 		loanTypeId: item.loanTypeId,
+		loanId: item.loanId,
+		businessName: item.businessName,
+		createdAt: item.createdAt,
 		durationInDays: item.durationInDays,
-		documents: [],
 	})
 
 	const handleRowClick = (item: LoanApplication) => {
@@ -135,7 +291,8 @@ export default function ManageCreditPage() {
 		pending: "REVIEW",
 		review: "APPROVED",
 		approved: "DISBURSED",
-		disbursed: "REPAID",
+		disbursed: "REVIEWING_REPAYMENT",
+		reviewing_repayment: "REPAID",
 	}
 
 	const handleApprove = async () => {
@@ -176,7 +333,7 @@ export default function ManageCreditPage() {
 		} finally {
 			setIsLoading(false)
 			setIsApprovalModalOpen(true)
-			refetch()
+			await refetch()
 		}
 	}
 
@@ -217,7 +374,7 @@ export default function ManageCreditPage() {
 			})
 		} finally {
 			setIsApprovalModalOpen(true)
-			refetch()
+			await refetch()
 		}
 	}
 
@@ -230,37 +387,51 @@ export default function ManageCreditPage() {
 	return (
 		<div className="bg-background min-h-screen w-full px-6">
 			<div className="w-full overflow-x-auto md:max-w-[80%]">
-				<div className="mx-auto px-4 py-8 sm:px-6 lg:px-6">
-					{/* Header */}
-					<div className="mb-8">
-						<h1 className="text-foreground text-3xl font-bold">Manage Credits</h1>
-						<p className="text-text-1 mt-2">
-							Review and manage credit requests from businesses on the platform
-						</p>
+				<div className="mx-auto">
+					<div className="mb-8 flex items-center justify-between gap-4">
+						<div>
+							<h1 className="text-foreground text-xl font-bold">Credit Line</h1>
+						</div>
+
+						<div className="flex items-center gap-2">
+							<TextField
+								label=""
+								id="search"
+								placeholder="Search by reference"
+								value={searchTerm || ""}
+								onChange={setSearchTerm}
+								compact
+								searchIcon
+							/>
+							{/* Status filter only shown on history tab */}
+							{activeTab === "history" && (
+								<SelectField
+									label=""
+									id="status-filter"
+									value={statusFilter}
+									onChange={(val) => {
+										setStatusFilter(val)
+										setCurrentPage(0)
+									}}
+									placeholder="All Statuses"
+									options={statusOptions}
+									compact
+								/>
+							)}
+							{tableData.length > 0 && (
+								<button
+									onClick={exportCreditCSV}
+									className="inline-flex h-8.5 cursor-pointer items-center gap-1.5 rounded-lg bg-black px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition hover:bg-neutral-800">
+									{isExporting ? "Exporting" : "Export"} CSV
+									<RiArrowDropDownLine size={20} />
+								</button>
+							)}
+						</div>
 					</div>
 
-					{/* <StatsSection stats={statsData} /> */}
+					{statsLoading ? null : <StatsSection stats={statsData} />}
 
-					{/* Filters */}
-					<div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-						<TextField
-							label="Search by Reference"
-							id="search"
-							placeholder="Enter reference ID"
-							value={searchTerm || ""}
-							onChange={setSearchTerm}
-						/>
-						<SelectField
-							label="Filter by Status"
-							id="status-filter"
-							value={statusFilter}
-							onChange={setStatusFilter}
-							placeholder="All Statuses"
-							options={statusOptions}
-						/>
-					</div>
-
-					{creditHistoryLoading ? (
+					{creditHistoryLoading || statsLoading ? (
 						<div className="bg-background min-h-screen w-full px-6">
 							<div className="w-full overflow-x-auto">
 								<PageSkeleton />
@@ -268,91 +439,145 @@ export default function ManageCreditPage() {
 						</div>
 					) : (
 						<Table
+							extraHeader="Recent activities"
 							data={tableData || []}
-							columns={[
-								{
-									header: "Reference",
-									accessor: (row) => (
-										<span className="text-foreground font-mono text-xs font-semibold">
-											{row.reference.split("-")[0]}…
-										</span>
-									),
-								},
-								{
-									header: "Loan Amount",
-									accessor: (row) => (
-										<span className="text-foreground font-medium">
-											{row.currency} {row.loanAmount.toLocaleString()}
-										</span>
-									),
-								},
-								{
-									header: "Interest",
-									accessor: (row) => (
-										<span className="text-foreground text-sm">
-											{row.currency} {row.interest.toLocaleString()}
-										</span>
-									),
-								},
-								{
-									header: "Duration",
-									accessor: (row) => (
-										<span className="text-foreground text-sm">
-											{row.durationInDays} days
-										</span>
-									),
-								},
-								{
-									header: "Start Date",
-									accessor: (row) => (
-										<span className="text-foreground text-sm">
-											{formatDate(row.loanStartDate)}
-										</span>
-									),
-								},
-								{
-									header: "Due Date",
-									accessor: (row) => (
-										<span className="text-foreground text-sm">
-											{formatDate(row.loanDueDate)}
-										</span>
-									),
-								},
-								{
-									header: "Status",
-									accessor: (row) => (
-										<span
-											className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
-												statusStyle[row.loanStatus] ?? "bg-gray-100 text-gray-700"
-											}`}>
-											{row.loanStatus.charAt(0) + row.loanStatus.slice(1).toLowerCase()}
-										</span>
-									),
-								},
-								{
-									header: "Action",
-									accessor: (row) => (
-										<button
-											onClick={() => handleRowClick(row)}
-											className="rounded-lg p-2 text-(--text-1) transition hover:bg-(--grey-4)"
-											title="View details">
-											<svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-												<circle cx="12" cy="5" r="2" />
-												<circle cx="12" cy="12" r="2" />
-												<circle cx="12" cy="19" r="2" />
-											</svg>
-										</button>
-									),
-								},
-							]}
+							tabs={CREDIT_TABS}
+							activeTab={activeTab}
+							onTabChange={handleTabChange}
+							columns={
+								activeTab === "request"
+									? [
+											{
+												header: "Date",
+												accessor: (row) => (
+													<span className="text-foreground text-sm">
+														{formatDate(row.createdAt)}
+													</span>
+												),
+											},
+											{
+												header: "Business",
+												accessor: (row) => (
+													<span className="text-foreground font-medium">
+														{row.businessName}
+													</span>
+												),
+											},
+											{
+												header: "Loan Amount",
+												accessor: (row) => (
+													<span className="text-foreground font-medium">
+														{row.currency} {row.loanAmount.toLocaleString()}
+													</span>
+												),
+											},
+											{
+												header: "Duration",
+												accessor: (row) => (
+													<span className="text-foreground text-sm">
+														{row.durationInDays} days
+													</span>
+												),
+											},
+											{
+												header: "Status",
+												accessor: (row) => <StatusBadge status={row.loanStatus} />,
+											},
+											{
+												header: "Action",
+												accessor: (row) => (
+													<button
+														onClick={() => handleRowClick(row)}
+														className="rounded-lg p-2 text-(--text-1) transition hover:bg-(--grey-4)"
+														title="View details">
+														<svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+															<circle cx="12" cy="5" r="2" />
+															<circle cx="12" cy="12" r="2" />
+															<circle cx="12" cy="19" r="2" />
+														</svg>
+													</button>
+												),
+											},
+										]
+									: [
+											{
+												header: "Business Name",
+												accessor: (row) => (
+													<span className="text-foreground font-medium">
+														{row.businessName}
+													</span>
+												),
+											},
+											{
+												header: "Loan Amount",
+												accessor: (row) => (
+													<span className="text-foreground font-medium">
+														{row.currency} {row.loanAmount.toLocaleString()}
+													</span>
+												),
+											},
+											{
+												header: "Interest",
+												accessor: (row) => (
+													<span className="text-foreground text-sm">
+														{row.currency} {row.interest.toLocaleString()}
+													</span>
+												),
+											},
+											{
+												header: "Duration",
+												accessor: (row) => (
+													<span className="text-foreground text-sm">
+														{row.durationInDays} days
+													</span>
+												),
+											},
+											{
+												header: "Start Date",
+												accessor: (row) => (
+													<span className="text-foreground text-sm">
+														{formatDate(row.loanStartDate)}
+													</span>
+												),
+											},
+											{
+												header: "Due Date",
+												accessor: (row) => (
+													<span className="text-foreground text-sm">
+														{formatDate(row.loanDueDate)}
+													</span>
+												),
+											},
+											{
+												header: "Status",
+												accessor: (row) => (
+													<div className="min-w-40">
+														<StatusBadge status={row.loanStatus} />
+													</div>
+												),
+											},
+											{
+												header: "Action",
+												accessor: (row) => (
+													<button
+														onClick={() => handleRowClick(row)}
+														className="rounded-lg p-2 text-(--text-1) transition hover:bg-(--grey-4)"
+														title="View details">
+														<svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+															<circle cx="12" cy="5" r="2" />
+															<circle cx="12" cy="12" r="2" />
+															<circle cx="12" cy="19" r="2" />
+														</svg>
+													</button>
+												),
+											},
+										]
+							}
 							pagination={{
 								currentPage: currentPage + 1,
-								totalItems:
-									(creditHistoryData?.totalPages ?? 1) * (creditHistoryData?.size ?? 10),
-								itemsPerPage: creditHistoryData?.size ?? 10,
-								onPageChange: (page) => {
-									setCurrentPage(page - 1)
-								},
+								totalItems: (data?.totalPages ?? 1) * (data?.size ?? 10),
+								itemsPerPage: data?.size ?? 10,
+								onPageChange: (page) => setCurrentPage(page - 1),
 							}}
 						/>
 					)}
@@ -361,9 +586,17 @@ export default function ManageCreditPage() {
 				<CreditRequestModal
 					isOpen={isModalOpen}
 					onClose={() => setIsModalOpen(false)}
-					data={selectedRequest}
+					data={
+						selectedRequest
+							? {
+									...selectedRequest,
+									documents: documents?.content ?? [],
+								}
+							: null
+					}
 					onApprove={handleApprove}
 					onReject={handleReject}
+					onRefetch={() => documentRefetch()}
 					isLoading={isLoading}
 				/>
 

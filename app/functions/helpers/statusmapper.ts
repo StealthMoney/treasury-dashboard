@@ -1,7 +1,13 @@
 import { LoanApplicationUI, StatusItem } from "@/app/types/general"
 import { formatDateWithSuffix } from "./formatted_date"
 
-type LoanStatus = "REVIEW" | "APPROVED" | "REJECTED" | "DISBURSED" | "REPAID"
+type LoanStatus =
+	| "REVIEW"
+	| "APPROVED"
+	| "REJECTED"
+	| "DISBURSED"
+	| "REPAID"
+	| "REVIEWING_REPAYMENT"
 
 export const buildLoanUI = (
 	creditHistoryData: LoanApplicationUI[],
@@ -24,6 +30,7 @@ export const buildLoanUI = (
 		APPROVED: "Loan Approved",
 		REJECTED: "Loan Failed",
 		DISBURSED: "Credit Disbursed",
+		REVIEWING_REPAYMENT: "Your loan repayment is being reviewed",
 		REPAID: "Credit Repaid",
 	}
 
@@ -32,6 +39,7 @@ export const buildLoanUI = (
 		APPROVED: "/images/success.svg",
 		REJECTED: "/images/failed.svg",
 		DISBURSED: "/images/success.svg",
+		REVIEWING_REPAYMENT: "/images/pending.svg",
 		REPAID: "/images/success.svg",
 	}
 
@@ -39,7 +47,9 @@ export const buildLoanUI = (
 		{ text: "Step 1: Submitted" },
 		{ text: "Step 2: Review" },
 		{ text: "Step 3: Approval" },
-		{ text: "Step 4: Repaid" },
+		{ text: "Step 4: Reviewing Repayment" },
+		{ text: "Step 5: Repaid" },
+		{ text: "Step 6: Repaid" },
 	]
 
 	let currentStep = 0
@@ -62,12 +72,18 @@ export const buildLoanUI = (
 				break
 
 			case "DISBURSED":
-				currentStep = 2
-				steps[2].text = "Step 3: Approved"
-				break
-			case "REPAID":
 				currentStep = 3
-				steps[2].text = "Step 4: Repaid"
+				steps[3].text = "Step 3: Approved"
+				break
+
+			case "REVIEWING_REPAYMENT":
+				currentStep = 4
+				steps[4].text = "Step 4: Reviewing Repayment"
+				break
+
+			case "REPAID":
+				currentStep = 5
+				steps[5].text = "Step 5: Repaid"
 				break
 
 			default:
@@ -96,6 +112,11 @@ export const buildLoanUI = (
 		DISBURSED: `Your loan of ${Number(loan.loanAmount).toLocaleString("en-NG", {
 			maximumFractionDigits: 2,
 		})} ${loan.currency} has been successfully disbursed. Kindly repay by ${formatDateWithSuffix(loan.loanDueDate)}`,
+		REVIEWING_REPAYMENT: `Your loan repayment of ${Number(
+			loan.loanAmount
+		).toLocaleString("en-NG", {
+			maximumFractionDigits: 2,
+		})} ${loan.currency} is being reviewed.`,
 		REPAID: `Your loan of ${Number(loan.loanAmount).toLocaleString("en-NG", {
 			maximumFractionDigits: 2,
 		})} ${loan.currency} has been successfully repaid.`,
@@ -121,15 +142,31 @@ export const buildLoanUI = (
 			{ text: "Step 1: Submitted", status: "completed" },
 			{ text: "Step 2: Review", status: "completed" },
 			{ text: "Step 3: Approval", status: "completed" },
+			{
+				text: "Step 4: Disbursed",
+				status: "current",
+				suffix: "(Awaiting Repayment)",
+			},
+			// { text: "Step 5: Repayment", status: "current" },
+		],
+		REVIEWING_REPAYMENT: [
+			{ text: "Step 1: Submitted", status: "completed" },
+			{ text: "Step 2: Review", status: "completed" },
+			{ text: "Step 3: Approval", status: "completed" },
 			{ text: "Step 4: Disbursed", status: "completed" },
-			{ text: "Step 5: Repayment", status: "current", suffix: "(Not Paid)" },
+			{
+				text: "Step 5: Repayment",
+				status: "current",
+				suffix: "(Reviewing Repayment)",
+			},
 		],
 		REPAID: [
 			{ text: "Step 1: Submitted", status: "completed" },
 			{ text: "Step 2: Review", status: "completed" },
 			{ text: "Step 3: Approval", status: "completed" },
 			{ text: "Step 4: Disbursed", status: "completed" },
-			{ text: "Step 4: Repaid", status: "completed" },
+			{ text: "Step 5: Reviewing Repayment", status: "completed" },
+			{ text: "Step 6: Repaid", status: "completed" },
 		],
 	}
 

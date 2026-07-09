@@ -47,5 +47,23 @@ export const useCreditAdmin = (params?: Record<string, string>) => {
 
 			return data
 		},
+		staleTime: 0,
+		gcTime: 0,
+		refetchOnMount: true,
+		refetchOnWindowFocus: true,
+	})
+}
+
+export const useCreditAdminStats = () => {
+	return useQuery({
+		queryKey: ["credit-history-admin-stats"],
+		queryFn: async () => {
+			const res = await fetch(`/api/admin/credit/stats`)
+			const data = await res.json()
+
+			if (!res.ok) throw new Error(data.error)
+
+			return data
+		},
 	})
 }

@@ -1,6 +1,14 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client"
 
-import { useState, useRef, ChangeEvent } from "react"
+import {
+	useState,
+	useRef,
+	ChangeEvent,
+	useEffect,
+	useMemo,
+	useCallback,
+} from "react"
 import { TextField } from "../components/reusables/general_inputs"
 import { KYBStepWrapper } from "../components/reusables/kybstepwraper"
 import Image from "next/image"
@@ -28,6 +36,16 @@ export function ProfileTab({ onSave }: ProfileTabProps) {
 		emailAddress: user?.email || "",
 		phoneNumber: "",
 	})
+
+	useEffect(() => {
+		if (!user) return
+		setData({
+			firstName: user?.firstName || "",
+			lastName: user?.lastName || "",
+			emailAddress: user?.email || "",
+			phoneNumber: "",
+		})
+	}, [user])
 
 	const [logoPreview, setLogoPreview] = useState<string | null>(null)
 	const [errors, setErrors] = useState<Record<string, string>>({})

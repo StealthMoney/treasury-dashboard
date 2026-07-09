@@ -24,6 +24,11 @@ import { useClientHeaders } from "../hooks/use_client_headers"
 import { useNetworkStatus } from "../hooks/network_detector"
 import { showToast } from "../functions/helpers/notify_user"
 import { KYBRequirementsChecklist } from "../components/reusables/kybrequirementchecklists"
+import { refreshToken } from "../server/get_token"
+import { signOut, useSession } from "next-auth/react"
+import { callRefresh } from "../functions/helpers/refresh_token_helper"
+import { FeedbackModal } from "../components/reusables/feedback_modal"
+import Image from "next/image"
 
 const initialFormData: KYBFormData = {
 	companyName: "",
@@ -189,6 +194,8 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 	const [reviewTrack, setReviewTrack] = useState(false)
 	const { user } = useProfile()
 	const { isSlow, isOnline } = useNetworkStatus()
+
+	const [showFeedback, setShowFeedBack] = useState<boolean>(false)
 
 	const { data: banklists } = useBanklists(enabledList)
 	const { data: verifyInfo, refetch } = useBankverify(
@@ -470,6 +477,7 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 	}
 
 	const headers = useClientHeaders()
+	const { update } = useSession()
 	const handleSubmit = async () => {
 		if (!validateStep(currentStep)) return
 
@@ -582,7 +590,13 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 				setCurrentStep(1)
 				setFormData(initialFormData)
 				localStorage.removeItem("profile_cache")
-				onComplete()
+				const res = await callRefresh(headers, refreshToken)
+				if (res.success && res.data?.id_token) {
+					await update(res.data.id_token)
+					onComplete()
+				} else {
+					setShowFeedBack(true)
+				}
 			} else {
 				setSubmitError(result.error || "Failed to submit KYB documents.")
 			}
@@ -1644,6 +1658,48 @@ export function KYBScreens({ onClose, onComplete }: KYBScreensProps) {
 				)}
 			</div>
 			<KYBRequirementsChecklist />
+
+			<FeedbackModal
+				isOpen={showFeedback}
+				onClose={() => {}}
+				icon={
+					<Image
+						src={"/images/failed.svg"}
+						className="h-24 w-24"
+						width={50}
+						height={50}
+						alt="icon"
+					/>
+				}
+				title={"Could not refresh values"}
+				description="We could  not refresh some values"
+				buttonCount={2}
+				buttons={[
+					{
+						label: "Logout",
+						variant: "primary",
+						onClick: async () => {
+							await signOut()
+							localStorage.clear()
+							setShowFeedBack(false)
+						},
+					},
+
+					{
+						label: "Retry",
+						variant: "outline",
+						onClick: async () => {
+							const res = await callRefresh(headers, refreshToken)
+							if (res.success && res.data?.id_token) {
+								await update(res.data.id_token)
+								onComplete()
+							} else {
+								setShowFeedBack(true)
+							}
+						},
+					},
+				]}
+			/>
 		</div>
 	)
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { StatsSection } from "../reusables/stats_section"
 import { KYBStepWrapper } from "../reusables/kybstepwraper"
@@ -10,12 +10,18 @@ import DocumentHistoryModal from "@/app/components/reusables/modals/history_moda
 import ApprovalModal from "@/app/components/reusables/modals/approval_modal"
 import RejectionModal from "@/app/components/reusables/modals/rejection_modal"
 import DirectorDetailModal from "@/app/components/reusables/modals/director_modal"
-import { getFileIconFromName } from "../reusables/file_icons"
-import { BusinessDocument, BusinessDirector } from "@/app/types/general"
+import { getFileBgClass, getFileIconFromName } from "../reusables/file_icons"
+import {
+	BusinessDocument,
+	BusinessDirector,
+	ActivityLog,
+	Transaction,
+} from "@/app/types/general"
 import {
 	useBusinessesDetails,
 	useBusinessesDirectors,
 	useBusinessesDocuments,
+	useBusinessesStats,
 } from "@/app/hooks/use_businesses"
 import PageSkeleton from "../reusables/page_skeleton"
 import SectionSkeleton from "../reusables/sectionSkeleton"
@@ -23,6 +29,14 @@ import {
 	updateBusinessDirectors,
 	updateBusinessDocuments,
 } from "@/app/server/business"
+import { IoMdCheckmarkCircle, IoMdCloseCircle } from "react-icons/io"
+import { ActivityIcon } from "../reusables/activity_icon"
+import { FilterDropdown } from "../reusables/filterdropdown"
+import { FaRegClock } from "react-icons/fa6"
+import { resolveActivityIconType } from "@/app/functions/helpers/activity_icon_resolver"
+import { AiOutlineDeliveredProcedure } from "react-icons/ai"
+import { formatNaira } from "@/app/functions/helpers/formatNaira"
+import { StatusBadge } from "../reusables/status_badge"
 
 export default function BusinessDetailPage({ id }: { id: string }) {
 	const [loading, setLoading] = useState<boolean>(false)
@@ -32,7 +46,61 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 		message: string
 	} | null>(null)
 
+	const [transactionFilter, setTransactionFilter] = useState("all")
+	const [activityFilter, setActivityFilter] = useState("all")
+	const [activityPage, setActivityPage] = useState(1)
+	const itemsPerPage = 10
+
+	const [transactionPage, setTransactionPage] = useState(1)
+
+	const tabs = [
+		{ id: "overview", label: "Overview" },
+		{ id: "documents", label: "Documents" },
+		{ id: "directors", label: "Directors" },
+		{ id: "activities", label: "Activities" },
+		{ id: "transactions", label: "Transactions" },
+	]
+
 	const { data: business, isLoading } = useBusinessesDetails(id)
+	const { data: businessStatsData, isLoading: businessStatsLoading } =
+		useBusinessesStats(id)
+
+	const activities = businessStatsData?.recentActivities
+
+	const transactions = businessStatsData?.transactions
+
+	const businessFinancialStats = businessStatsData?.stats
+		? [
+				{
+					label: "Annual Revenue",
+					valueRow: {
+						main: businessStatsData.stats.annualRevenue,
+						suffix: "₦",
+					},
+				},
+				{
+					label: "Active Loans",
+					valueRow: {
+						main: businessStatsData.stats.activeLoan,
+						suffix: "",
+					},
+				},
+				{
+					label: "Cash Flow",
+					valueRow: {
+						main: businessStatsData.stats.cashFlow,
+						suffix: "₦",
+					},
+				},
+				{
+					label: "Existing Liabilities",
+					valueRow: {
+						main: businessStatsData.stats.existingLiabilities,
+						suffix: "₦",
+					},
+				},
+			]
+		: []
 
 	const {
 		data: directors,
@@ -46,9 +114,16 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 		refetch: refetchDocuments,
 	} = useBusinessesDocuments({ "ownerId.equals": id }, !!id)
 
-	// const business = businesses.find((item) => item.id === id)
-
 	const [activeTab, setActiveTab] = useState("overview")
+
+	const actionFilterOptions = [
+		{
+			label: activeTab === "activities" ? "All Activities" : "All Transactions",
+			value: "all",
+		},
+		{ label: "Most Recent", value: "recent" },
+		{ label: "Oldest", value: "oldest" },
+	]
 
 	// Document modal state
 	const [reviewModalOpen, setReviewModalOpen] = useState(false)
@@ -63,7 +138,6 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 
 	// Shared approval / rejection modal state
 	const [approvalModalOpen, setApprovalModalOpen] = useState(false)
-	const [rejectionModalOpen, setRejectionModalOpen] = useState(false)
 	const [rejectionSubject, setRejectionSubject] = useState<
 		"document" | "director"
 	>("document")
@@ -129,16 +203,6 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 		}
 	}
 
-	const handleRejectDocument = () => {
-		setReviewModalOpen(false)
-		setRejectionSubject("document")
-		setRejectionModalOpen(true)
-	}
-
-	// const handleRejectDocument = async (reason: string) => {
-
-	// }
-
 	const handleViewDirector = (director: BusinessDirector) => {
 		setSelectedDirector(director)
 		setDirectorModalOpen(true)
@@ -196,9 +260,8 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 	}
 
 	const handleRejectDirector = () => {
-		setDirectorModalOpen(false)
+		setDirectorModalOpen(true)
 		setRejectionSubject("director")
-		setRejectionModalOpen(true)
 	}
 
 	const handleRejectionConfirm = async (reason: string) => {
@@ -214,6 +277,7 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 				)
 
 				if (req.success) {
+					setDirectorModalOpen(false)
 					setSelectedDirector((prev) =>
 						prev ? { ...prev, status: "REJECTED", rejectionReason: reason } : prev
 					)
@@ -223,6 +287,7 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 						message: "The director's status has been updated to rejected.",
 					})
 				} else {
+					setDirectorModalOpen(false)
 					setApprovalMessage({
 						type: "failed",
 						title: "Failed to reject director",
@@ -230,6 +295,7 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 					})
 				}
 			} catch (err) {
+				setDirectorModalOpen(false)
 				setApprovalMessage({
 					type: "failed",
 					title: "Failed to reject director",
@@ -237,9 +303,14 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 				})
 			} finally {
 				setLoading(false)
-				setRejectionModalOpen(false)
+				if (rejectionSubject === "director") {
+					setDirectorModalOpen(false)
+					await refetchDirectors()
+				} else {
+					setReviewModalOpen(false)
+					await refetchDocuments()
+				}
 				setApprovalModalOpen(true)
-				await refetchDirectors()
 			}
 		} else if (rejectionSubject === "document") {
 			if (!id || !setSelectedDocument) return
@@ -252,6 +323,7 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 				)
 
 				if (req.success) {
+					setReviewModalOpen(false)
 					setSelectedDocument((prev) =>
 						prev ? { ...prev, status: "REJECTED", rejectionReason: reason } : prev
 					)
@@ -261,6 +333,7 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 						message: "The document status has been updated to rejected.",
 					})
 				} else {
+					setReviewModalOpen(false)
 					setApprovalMessage({
 						type: "failed",
 						title: "Failed to reject document",
@@ -268,6 +341,7 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 					})
 				}
 			} catch (err) {
+				setReviewModalOpen(false)
 				setApprovalMessage({
 					type: "failed",
 					title: "Failed to reject document",
@@ -275,14 +349,87 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 				})
 			} finally {
 				setLoading(false)
-				setRejectionModalOpen(false)
 				setApprovalModalOpen(true)
 				await refetchDocuments()
 			}
 		}
-
-		setRejectionModalOpen(false)
 	}
+
+	const processedActivities = useMemo(() => {
+		const data = activities ? [...activities] : []
+
+		switch (activityFilter) {
+			case "recent":
+				return data.sort(
+					(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+				)
+
+			case "oldest":
+				return data.sort(
+					(a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+				)
+
+			case "all":
+			default:
+				return data
+		}
+	}, [activities, activityFilter])
+
+	const processedTransactions = useMemo(() => {
+		const data = transactions ? [...transactions] : []
+
+		switch (transactionFilter) {
+			case "recent":
+				return data.sort(
+					(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+				)
+
+			case "oldest":
+				return data.sort(
+					(a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+				)
+
+			case "all":
+			default:
+				return data
+		}
+	}, [transactions, transactionFilter])
+
+	const resetPage = () => {
+		setActivityPage(1)
+	}
+
+	const resetTransactionPage = () => {
+		setTransactionPage(1)
+	}
+
+	useEffect(() => {
+		resetTransactionPage()
+	}, [transactionFilter])
+
+	useEffect(() => {
+		resetPage()
+	}, [activityFilter])
+
+	// frontend pagination for activities
+	const paginatedActivities = useMemo(() => {
+		const start = (activityPage - 1) * itemsPerPage
+		const end = start + itemsPerPage
+
+		return processedActivities.slice(start, end)
+	}, [processedActivities, activityPage])
+
+	const totalActivityItems = processedActivities.length
+
+	// frontend pagination for transactions
+	const paginatedTransactions = useMemo(() => {
+		const start = (transactionPage - 1) * itemsPerPage
+		const end = start + itemsPerPage
+
+		return processedTransactions.slice(start, end)
+	}, [processedTransactions, transactionPage])
+
+	const totalTransactionItems = processedTransactions.length
 
 	// ── Document columns ───────────────────────────────────────────────────────
 	const documentColumns: TableColumn<BusinessDocument>[] = [
@@ -290,9 +437,12 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 			header: "Documents",
 			accessor: (row) => (
 				<div className="flex items-center gap-3">
-					<span className="shrink-0">{getFileIconFromName(row.fileName, true)}</span>
+					<span
+						className={`shrink-0 rounded-lg px-2 py-2 ${getFileBgClass(row.fileName)}`}>
+						{getFileIconFromName(row.fileName, true)}
+					</span>
 					<div className="flex flex-col">
-						<p className="text-foreground max-w-50 truncate font-semibold">
+						<p className="text-foreground max-w-50 truncate text-[14px] font-semibold">
 							{row.fileName}
 						</p>
 						<p className="text-xs tracking-wide text-(--text-1) uppercase">
@@ -307,7 +457,7 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 			accessor: (row) => (
 				<div>
 					<p className="text-foreground">
-						{new Date(row.uploadedAt).toLocaleDateString("en-GB")}
+						{new Date(row.uploadedAt).toLocaleDateString("en-GB").replace(/\//g, "-")}
 					</p>
 					<p className="text-xs text-(--text-1)">
 						{new Date(row.uploadedAt).toLocaleTimeString("en-GB", {
@@ -322,24 +472,17 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 			header: "Status",
 			accessor: (row) => (
 				<div
-					className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium ${
-						row.status === "VERIFIED"
-							? "bg-green-50 text-(--green-1)"
-							: row.status === "REJECTED"
-								? "bg-red-50 text-(--red-1)"
-								: "bg-orange-50 text-orange-600"
-					}`}>
-					<span
-						className={`h-2 w-2 rounded-full ${
-							row.status === "VERIFIED"
-								? "bg-(--green-1)"
-								: row.status === "REJECTED"
-									? "bg-(--red-1)"
-									: "bg-orange-500"
-						}`}
-					/>
+					className={`inline-flex items-center gap-2 rounded-full bg-(--grey-1) px-3 py-1.5 text-xs font-medium text-(--text-1)`}>
+					{row.status === "VERIFIED" ? (
+						<IoMdCheckmarkCircle size={16} className="text-(--green-1)" />
+					) : row.status === "REJECTED" ? (
+						<IoMdCloseCircle size={16} className="text-(--red-1)" />
+					) : (
+						<FaRegClock size={14} className="text-orange-500" />
+					)}
+
 					{row.status === "VERIFIED"
-						? "Verified"
+						? "Approved"
 						: row.status === "REJECTED"
 							? "Rejected"
 							: "Pending Review"}
@@ -352,7 +495,7 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 				<div className="flex items-center gap-4">
 					<button
 						onClick={() => handleReviewDocument(row)}
-						className="inline-flex items-center gap-2 text-sm font-medium text-(--green-1) transition">
+						className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-(--grey-1) px-2 py-2 text-sm text-[16px] font-medium text-(--text-1) transition">
 						<svg
 							className="h-4 w-4"
 							fill="none"
@@ -369,7 +512,7 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 					</button>
 					<button
 						onClick={() => handleViewHistory(row)}
-						className="inline-flex items-center gap-2 text-sm font-medium text-(--grey-3) transition hover:text-(--text-1)">
+						className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-(--grey-1) px-2 py-2 text-sm text-[16px] font-medium text-(--text-1) transition">
 						<svg
 							className="h-4 w-4"
 							fill="none"
@@ -432,24 +575,17 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 			header: "Status",
 			accessor: (row) => (
 				<div
-					className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium ${
-						row.status === "VERIFIED"
-							? "bg-green-50 text-(--green-1)"
-							: row.status === "REJECTED"
-								? "bg-red-50 text-(--red-1)"
-								: "bg-orange-50 text-orange-600"
-					}`}>
-					<span
-						className={`h-2 w-2 rounded-full ${
-							row.status === "VERIFIED"
-								? "bg-(--green-1)"
-								: row.status === "REJECTED"
-									? "bg-(--red-1)"
-									: "bg-orange-500"
-						}`}
-					/>
+					className={`inline-flex items-center gap-2 rounded-full bg-(--grey-1) px-3 py-1.5 text-xs font-medium text-(--text-1)`}>
+					{row.status === "VERIFIED" ? (
+						<IoMdCheckmarkCircle size={16} className="text-(--green-1)" />
+					) : row.status === "REJECTED" ? (
+						<IoMdCloseCircle size={16} className="text-(--red-1)" />
+					) : (
+						<FaRegClock size={14} className="text-orange-500" />
+					)}
+
 					{row.status === "VERIFIED"
-						? "Verified"
+						? "Approved"
 						: row.status === "REJECTED"
 							? "Rejected"
 							: "Pending"}
@@ -486,6 +622,93 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 		},
 	]
 
+	const activityColumns: TableColumn<ActivityLog>[] = [
+		{
+			header: "Activity:",
+			accessor: (row) => (
+				<div className="flex items-center gap-3">
+					<ActivityIcon type={resolveActivityIconType(row.title)} />
+					<div className="flex flex-col">
+						<p className="text-foreground text-[14px] font-semibold">{row.title}</p>
+						<p className="max-w-90 truncate text-xs text-(--text-1)">
+							{row.description}
+						</p>
+					</div>
+				</div>
+			),
+		},
+		{
+			header: "Action By:",
+			accessor: (row) => (
+				<div className="flex flex-col">
+					<p className="text-foreground text-[14px]">
+						By: <span className="font-semibold">{row.performedBy}</span>
+					</p>
+					<p className="text-xs text-(--text-1)">{row.email}</p>
+				</div>
+			),
+		},
+		{
+			header: "Date:",
+			accessor: (row) => (
+				<div className="flex flex-col">
+					<p className="text-foreground min-w-20 text-[14px] font-medium">
+						{new Date(row.date).toLocaleDateString("en-GB").replace(/\//g, "-")}
+					</p>
+					<p className="text-xs text-(--text-1)">
+						{new Date(row.date).toLocaleTimeString("en-GB", {
+							hour: "2-digit",
+							minute: "2-digit",
+						})}
+					</p>
+				</div>
+			),
+		},
+	]
+
+	const transactionColumns: TableColumn<Transaction>[] = [
+		{
+			header: "Date",
+			accessor: (row) => (
+				<div className="flex flex-col">
+					<p className="text-foreground text-[14px] font-medium">
+						{new Date(row.date).toLocaleDateString("en-GB").replace(/\//g, "-")}
+					</p>
+					<p className="text-xs text-(--text-1)">
+						{new Date(row.date).toLocaleTimeString("en-GB", {
+							hour: "2-digit",
+							minute: "2-digit",
+						})}
+					</p>
+				</div>
+			),
+		},
+		{
+			header: "Amount",
+			accessor: (row) => (
+				<div className="flex flex-col">
+					<p className="text-foreground text-[14px] font-semibold">
+						{formatNaira(row.amount)}
+					</p>
+				</div>
+			),
+		},
+		{
+			header: "Transaction Type",
+			accessor: (row) => (
+				<div className="flex flex-col">
+					<p className="text-foreground text-[14px] font-semibold">
+						{row.transactionType?.split("_")?.join(" ")}
+					</p>
+				</div>
+			),
+		},
+		{
+			header: "Status",
+			accessor: (row) => <StatusBadge status={row.status} />,
+		},
+	]
+
 	return (
 		<div className="bg-background min-h-screen w-full px-6">
 			<div className="w-full overflow-x-auto md:max-w-[80%]">
@@ -517,42 +740,37 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 					) : business ? (
 						<div className="mb-8 flex items-start justify-between">
 							<div>
-								<h1 className="text-foreground mb-2 text-2xl font-bold">
-									{business?.businessName}
-								</h1>
-								<p className="text-(--text-1)">
-									Business Reg No: {business?.cacNumber}
-								</p>
-								<div
-									className={`mt-2 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium ${
-										business?.status === "ACTIVE"
-											? "bg-green-50 text-(--green-1)"
-											: "bg-orange-50 text-orange-600"
-									}`}>
-									<span
-										className={`h-2 w-2 rounded-full ${
-											business?.status === "ACTIVE" ? "bg-(--green-1)" : "bg-orange-500"
-										}`}
-									/>
-									{business?.status}
+								<div className="flex flex-row items-center justify-start gap-x-2">
+									<h1 className="text-foreground mb-2 text-2xl font-bold">
+										{business?.businessName}
+									</h1>
+
+									<div
+										className={`inline-flex items-center justify-center gap-2 gap-x-1 rounded-full bg-(--grey-1) px-2 py-1.5 text-xs font-medium text-(--text-1)`}>
+										{business?.status === "ACTIVE" ? (
+											<IoMdCheckmarkCircle size={16} className="text-(--green-1)" />
+										) : business?.status === "PENDING_REVIEW" ? (
+											<FaRegClock size={14} className="text-orange-500" />
+										) : (
+											<IoMdCloseCircle size={16} className="text-(--red-1)" />
+										)}
+										{business?.status === "ACTIVE" ? "COMPLETED" : business?.status}
+									</div>
 								</div>
+								<p className="text-(--text-1)">{business?.cacNumber}</p>
 							</div>
 						</div>
 					) : null}
 
 					{/* Tabs */}
-					<div className="mb-8 flex gap-8 border-b border-(--grey-1)">
-						{[
-							{ id: "overview", label: "Overview" },
-							{ id: "documents", label: "Documents" },
-							{ id: "directors", label: "Directors" },
-						].map((tab) => (
+					<div className="mb-8 flex h-14 w-full items-center gap-2 overflow-x-auto rounded-lg bg-[#F5F5F5] p-1">
+						{tabs.map((tab) => (
 							<button
 								key={tab.id}
 								onClick={() => setActiveTab(tab.id)}
-								className={`pb-4 font-medium transition ${
+								className={`shrink-0 cursor-pointer rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap transition-all ${
 									activeTab === tab.id
-										? "text-foreground border-b-2 border-(--green-1)"
+										? "bg-background text-foreground shadow-sm"
 										: "hover:text-foreground text-(--text-1)"
 								}`}>
 								{tab.label}
@@ -568,90 +786,116 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 							</div>
 						) : (
 							<div className="space-y-6">
-								{/* <StatsSection stats={business?.financialStats} /> add later */}
-								<KYBStepWrapper title="Business Information">
+								{businessStatsData?.stats && (
+									<KYBStepWrapper title="Financial Summary">
+										<div className="grid grid-cols-1 gap-4 gap-y-0 rounded-lg px-4 sm:grid-cols-2 lg:flex lg:flex-nowrap lg:gap-x-6 lg:overflow-x-auto">
+											{businessFinancialStats.map((stat, index) => (
+												<div key={index} className="flex px-4 py-2 lg:items-start">
+													<div className="flex-1">
+														<div className="bg-background rounded-lg">
+															<p className="mb-2 text-[16px] text-(--text-1)">{stat.label}</p>
+
+															<div className="text-foreground mb-2 flex items-baseline gap-2">
+																{stat.valueRow?.suffix && (
+																	<span className="text-[24px] font-medium">
+																		{stat.valueRow.suffix}
+																	</span>
+																)}
+																<h2 className="text-[24px] font-bold">
+																	{typeof stat.valueRow?.main === "number"
+																		? stat.valueRow.main.toLocaleString()
+																		: stat.valueRow?.main}
+																</h2>
+															</div>
+														</div>
+													</div>
+												</div>
+											))}
+										</div>
+									</KYBStepWrapper>
+								)}
+
+								<KYBStepWrapper title="Business Information" NoHorizontalPad>
 									<div className="space-y-6">
-										<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-											<div>
-												<p className="mb-1 text-sm text-(--text-1)">Business ID:</p>
-												<p className="text-foreground font-medium">{business?.id}</p>
-											</div>
-											<div className="sm:text-right">
-												<p className="mb-1 text-sm text-(--text-1)">Industry:</p>
-												<p className="text-foreground font-medium">
-													{business?.industry || "N/A"}
-												</p>
-											</div>
+										<div className="flex flex-col gap-4 border-b border-(--grey-1) px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
+											<p className="mb-1 text-sm text-(--text-1)">Industry:</p>
+											<p className="text-foreground font-medium">
+												{business?.industry || "N/A"}
+											</p>
 										</div>
-										<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-											<div>
-												<p className="mb-1 text-sm text-(--text-1)">Address:</p>
-												<p className="text-foreground max-w-lg font-medium">
-													{business?.addressLine1 || "N/A"}
-												</p>
-											</div>
+
+										<div className="flex flex-col gap-4 border-b border-(--grey-1) px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
+											<p className="mb-1 text-sm text-(--text-1)">Business ID:</p>
+											<p className="text-foreground font-medium">{business?.id}</p>
 										</div>
-										<div className="flex flex-col gap-4 border-t border-(--grey-1) pt-6 sm:flex-row sm:items-center sm:justify-between">
-											<div>
-												<p className="mb-1 text-sm text-(--text-1)">Business Type:</p>
-												<p className="text-foreground font-medium">
-													{business?.businessType || "N/A"}
-												</p>
-											</div>
-											<div className="sm:text-right">
-												<p className="mb-1 text-sm text-(--text-1)">Website:</p>
-												{business?.website && business?.website !== "" && (
-													<Link
-														href={toAbsoluteUrl(business?.website || "")}
-														target="_blank"
-														className="font-medium text-(--green-1) hover:underline">
-														{business?.website || "N/A"}
-													</Link>
-												)}
-											</div>
+
+										<div className="flex flex-col gap-4 border-b border-(--grey-1) px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
+											<p className="mb-1 text-sm text-(--text-1)">Address:</p>
+											<p className="text-foreground max-w-lg font-medium">
+												{business?.addressLine1 || "N/A"}
+											</p>
 										</div>
-										<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-											<div>
-												<p className="mb-1 text-sm text-(--text-1)">Email Address:</p>
-												{business?.email && business?.email !== "" && (
-													<Link
-														href={`mailto:${business.email}`}
-														target="_blank"
-														className="font-medium text-(--green-1) hover:underline">
-														{business?.email || "N/A"}
-													</Link>
-												)}
-											</div>
-											<div className="sm:text-right">
-												<p className="mb-1 text-sm text-(--text-1)">Phone Number:</p>
-												<p className="text-foreground font-medium">
-													{business?.phoneNumber || "N/A"}
-												</p>
-											</div>
+
+										<div className="flex flex-col gap-4 border-b border-(--grey-1) px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
+											<p className="mb-1 text-sm text-(--text-1)">Business Type:</p>
+											<p className="text-foreground font-medium">
+												{business?.businessType || "N/A"}
+											</p>
 										</div>
-										<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-											<div>
-												<p className="mb-1 text-sm text-(--text-1)">Linkedin:</p>
-												{business?.linkedIn && business?.linkedIn !== "" && (
-													<Link
-														href={toAbsoluteUrl(business?.linkedIn || "")}
-														target="_blank"
-														className="font-medium text-(--green-1) hover:underline">
-														{business?.linkedIn || "N/A"}
-													</Link>
-												)}
-											</div>
-											<div className="sm:text-right">
-												<p className="mb-1 text-sm text-(--text-1)">Support Email:</p>
-												{business?.supportEmail && business?.supportEmail !== "" && (
-													<Link
-														href={`mailto:${business.supportEmail}`}
-														target="_blank"
-														className="font-medium text-(--green-1) hover:underline">
-														{business?.supportEmail || "N/A"}
-													</Link>
-												)}
-											</div>
+
+										<div className="flex flex-col gap-4 border-b border-(--grey-1) px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
+											<p className="mb-1 text-sm text-(--text-1)">Website:</p>
+											{business?.website && business?.website !== "" && (
+												<Link
+													href={toAbsoluteUrl(business?.website || "")}
+													target="_blank"
+													className="font-medium text-(--green-1) hover:underline">
+													{business?.website || "N/A"}
+												</Link>
+											)}
+										</div>
+
+										<div className="flex flex-col gap-4 border-b border-(--grey-1) px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
+											<p className="mb-1 text-sm text-(--text-1)">Email Address:</p>
+											{business?.email && business?.email !== "" && (
+												<Link
+													href={`mailto:${business.email}`}
+													target="_blank"
+													className="font-medium text-(--green-1) hover:underline">
+													{business?.email || "N/A"}
+												</Link>
+											)}
+										</div>
+
+										<div className="flex flex-col gap-4 border-b border-(--grey-1) px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
+											<p className="mb-1 text-sm text-(--text-1)">Phone Number:</p>
+											<p className="text-foreground font-medium">
+												{business?.phoneNumber || "N/A"}
+											</p>
+										</div>
+
+										<div className="flex flex-col gap-4 border-b border-(--grey-1) px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
+											<p className="mb-1 text-sm text-(--text-1)">Linkedin:</p>
+											{business?.linkedIn && business?.linkedIn !== "" && (
+												<Link
+													href={toAbsoluteUrl(business?.linkedIn || "")}
+													target="_blank"
+													className="font-medium text-(--green-1) hover:underline">
+													{business?.linkedIn || "N/A"}
+												</Link>
+											)}
+										</div>
+
+										<div className="flex flex-col gap-4 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
+											<p className="mb-1 text-sm text-(--text-1)">Support Email:</p>
+											{business?.supportEmail && business?.supportEmail !== "" && (
+												<Link
+													href={`mailto:${business.supportEmail}`}
+													target="_blank"
+													className="font-medium text-(--green-1) hover:underline">
+													{business?.supportEmail || "N/A"}
+												</Link>
+											)}
 										</div>
 									</div>
 								</KYBStepWrapper>
@@ -668,8 +912,11 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 							</div>
 						) : (
 							<div className="space-y-6">
-								<h2 className="text-foreground text-lg font-semibold">Documents</h2>
-								<Table data={documents?.content || []} columns={documentColumns} />
+								<Table
+									extraHeader="Documents"
+									data={documents?.content || []}
+									columns={documentColumns}
+								/>
 							</div>
 						))}
 
@@ -683,11 +930,66 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 							</div>
 						) : (
 							<div className="space-y-6">
-								<h2 className="text-foreground text-lg font-semibold">Directors</h2>
-								<Table data={directors ?? []} columns={directorColumns} />
+								<Table
+									extraHeader="Directors"
+									data={directors ?? []}
+									columns={directorColumns}
+								/>
 							</div>
 						))}
 				</div>
+
+				{/* Activities */}
+				{activeTab === "activities" && (
+					<div className="space-y-6">
+						<Table
+							extraHeader="Activities"
+							data={paginatedActivities || []}
+							columns={activityColumns}
+							pagination={{
+								currentPage: activityPage,
+								totalItems: totalActivityItems,
+								itemsPerPage: itemsPerPage,
+								onPageChange: () => {},
+							}}
+							extraHeaderActions={
+								<FilterDropdown
+									options={actionFilterOptions}
+									selected={activityFilter}
+									onChange={(val) => {
+										setActivityFilter(val)
+									}}
+								/>
+							}
+						/>
+					</div>
+				)}
+
+				{/* Transactions */}
+				{activeTab === "transactions" && (
+					<div className="space-y-6">
+						<Table
+							extraHeader="Transactions"
+							data={paginatedTransactions || []}
+							columns={transactionColumns}
+							extraHeaderActions={
+								<FilterDropdown
+									options={actionFilterOptions}
+									selected={transactionFilter}
+									onChange={(val) => {
+										setTransactionFilter(val)
+									}}
+								/>
+							}
+							pagination={{
+								currentPage: transactionPage,
+								totalItems: totalTransactionItems,
+								itemsPerPage: itemsPerPage,
+								onPageChange: () => {},
+							}}
+						/>
+					</div>
+				)}
 
 				{/* ── Document modals ── */}
 				<DocumentReviewModal
@@ -696,7 +998,7 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 					document={selectedDocument}
 					onClose={() => setReviewModalOpen(false)}
 					onApprove={handleApproveDocument}
-					onReject={handleRejectDocument}
+					onReject={(reason) => handleRejectionConfirm(reason)}
 				/>
 				<DocumentHistoryModal
 					isOpen={historyModalOpen}
@@ -711,7 +1013,8 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 					director={selectedDirector}
 					onClose={() => setDirectorModalOpen(false)}
 					onApprove={handleApproveDirector}
-					onReject={handleRejectDirector}
+					onReject={(reason) => handleRejectionConfirm(reason)}
+					onRejectInitiate={handleRejectDirector}
 				/>
 
 				{/* ── Shared approval / rejection modals ── */}
@@ -719,13 +1022,6 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 					approvalMessage={approvalMessage}
 					isOpen={approvalModalOpen}
 					onClose={() => setApprovalModalOpen(false)}
-				/>
-				<RejectionModal
-					loading={loading}
-					isOpen={rejectionModalOpen}
-					subject={rejectionSubject}
-					onClose={() => setRejectionModalOpen(false)}
-					onConfirm={handleRejectionConfirm}
 				/>
 			</div>
 		</div>
