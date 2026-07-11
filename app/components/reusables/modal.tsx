@@ -119,7 +119,7 @@ export const StepModal: React.FC<StepModalProps> = ({
 										<p className="text-center text-[14px] text-(--text-1)">
 											Your credit payment of{" "}
 											<span className="text-foreground font-semibold">₦{amount}</span> has
-											been completed successfully
+											been sent
 										</p>
 									</div>
 								)}

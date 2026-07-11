@@ -382,7 +382,13 @@ export default function AuthPage() {
 				callbackUrl,
 			})
 
-			if (res && !res.ok) {
+			if (res?.error) {
+				if (res.error.startsWith("OTP_REQUIRED|")) {
+					const [, challengeId] = res.error.split("|")
+					router.push(`/otp?otp_challenge_id=${challengeId}`)
+					return
+				}
+
 				setModal({
 					open: true,
 					type: "error",
@@ -392,7 +398,7 @@ export default function AuthPage() {
 				return
 			}
 
-			router.push("/credit")
+			router.push("/")
 		} catch (err) {
 			setModal({
 				open: true,

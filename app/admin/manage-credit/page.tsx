@@ -238,6 +238,8 @@ export default function ManageCreditPage() {
 		{ label: "Disbursed", value: "DISBURSED" },
 		{ label: "Rejected", value: "REJECTED" },
 		{ label: "Repaid", value: "REPAID" },
+		{ label: "Overdue", value: "OVERDUE" },
+		{ label: "Reviewing Repayment", value: "REVIEWING_REPAYMENT" },
 	]
 
 	const formatDate = (dateStr: string | null) => {

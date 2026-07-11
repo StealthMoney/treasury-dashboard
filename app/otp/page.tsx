@@ -7,6 +7,7 @@ import Image from "next/image"
 import { Spinner } from "../components/reusables/spinner"
 import { FeedbackModal } from "../components/reusables/feedback_modal"
 import LeftPanel from "../components/reusables/left_panel"
+import { signIn } from "next-auth/react"
 
 const CODE_LENGTH = 6
 const RESEND_SECONDS = 60
@@ -124,7 +125,8 @@ function OtpInputGroup({
 export default function VerifyOtpPage() {
 	const router = useRouter()
 	const searchParams = useSearchParams()
-	const email = searchParams.get("email") ?? ""
+	const otpChallengeId = searchParams.get("otp_challenge_id")
+	const callbackUrl = searchParams.get("callbackUrl") ?? "/credit"
 
 	const [values, setValues] = useState<string[]>(Array(CODE_LENGTH).fill(""))
 	const [error, setError] = useState("")
@@ -145,6 +147,18 @@ export default function VerifyOtpPage() {
 	})
 
 	useEffect(() => {
+		if (!otpChallengeId) {
+			setModal({
+				open: true,
+				type: "error",
+				title: "Session Expired",
+				description:
+					"We couldn't find your verification session. Please log in again.",
+			})
+		}
+	}, [otpChallengeId])
+
+	useEffect(() => {
 		if (secondsLeft <= 0) return
 		const timer = setInterval(() => {
 			setSecondsLeft((s) => s - 1)
@@ -157,6 +171,8 @@ export default function VerifyOtpPage() {
 	const handleSubmit = async (e: React.SyntheticEvent) => {
 		e.preventDefault()
 
+		if (!otpChallengeId) return
+
 		if (code.length < CODE_LENGTH) {
 			setError("Please enter the complete code")
 			return
@@ -166,28 +182,19 @@ export default function VerifyOtpPage() {
 			setLoading(true)
 			setError("")
 
-            // demo request
-			const res = await fetch("/api/verify_otp", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({ email, code }),
+			const res = await signIn("credentials", {
+				otp_code: code,
+				otp_challenge_id: otpChallengeId,
+				redirect: false,
+				callbackUrl,
 			})
 
-			const result = await res.json()
-
-			if (!res.ok) {
-				setError(result.message || "Invalid or expired code")
+			if (res?.error) {
+				setError(res.error || "Invalid or expired code")
 				return
 			}
 
-			setModal({
-				open: true,
-				type: "success",
-				title: "Verified",
-				description: "Your account has been verified successfully.",
-			})
+			router.push("/")
 		} catch (err) {
 			setModal({
 				open: true,
@@ -207,13 +214,12 @@ export default function VerifyOtpPage() {
 		try {
 			setResending(true)
 
-            // Demo requst
 			const res = await fetch("/api/resend_otp", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
 				},
-				body: JSON.stringify({ email }),
+				body: JSON.stringify({ otp_challenge_id: otpChallengeId }),
 			})
 
 			const result = await res.json()
@@ -281,11 +287,13 @@ export default function VerifyOtpPage() {
 					buttonCount={1}
 					buttons={[
 						{
-							label: "Continue",
+							label: !otpChallengeId ? "Continue" : "Close",
 							variant: "primary",
 							onClick: () => {
 								setModal((m) => ({ ...m, open: false }))
-								router.push("/")
+								if (!otpChallengeId) {
+									router.push("/")
+								}
 							},
 						},
 					]}
@@ -313,11 +321,7 @@ export default function VerifyOtpPage() {
 									Verify Your Email
 								</h1>
 								<p className="mt-1 text-[16px] text-(--text-1)">
-									Enter the 6-digit code we sent to{" "}
-									<span className="text-foreground font-medium">
-										{email || "your email"}
-									</span>
-									.
+									Enter the 6-digit code we sent to your email.
 								</p>
 							</div>
 

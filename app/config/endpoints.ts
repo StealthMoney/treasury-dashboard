@@ -18,6 +18,8 @@ const endpoints = (params?: string | number, params2?: string | number) => {
 		"reset-password": `${envURL}/account/reset-password/finish`,
 		"change-password": `${envURL}/account/change-password`,
 		"refresh-token": `${envURL}/authenticate/refresh`,
+		"verify-otp": `${envURL}/authenticate/otp/verify`,
+		"resend-otp": `${envURL}/authenticate/otp/resend`,
 	}
 
 	const admin = {

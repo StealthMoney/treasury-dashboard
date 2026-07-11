@@ -2,6 +2,7 @@
 import { IoMdCheckmarkCircle, IoMdCloseCircle } from "react-icons/io"
 import { FaRegClock } from "react-icons/fa"
 import { AiOutlineDeliveredProcedure } from "react-icons/ai"
+import { TbCalendarDue } from "react-icons/tb"
 
 export function StatusBadge({ status }: { status: string }) {
 	const label =
@@ -19,7 +20,9 @@ export function StatusBadge({ status }: { status: string }) {
 								? "Pending"
 								: status.toUpperCase() === "VERIFIED"
 									? "Verified"
-									: status
+									: status.toUpperCase() === "OVERDUE"
+										? "Overdue"
+										: status
 
 	return (
 		<div className="inline-flex items-center gap-2 rounded-full bg-(--grey-1) px-3 py-1.5 text-xs font-medium text-(--text-1)">
@@ -37,6 +40,8 @@ export function StatusBadge({ status }: { status: string }) {
 				<FaRegClock size={14} className="text-orange-500" />
 			) : status.toUpperCase() === "DISBURSED" ? (
 				<AiOutlineDeliveredProcedure size={14} className="text-blue-700" />
+			) : status.toUpperCase() === "OVERDUE" ? (
+				<TbCalendarDue size={14} className="text-blue-700" />
 			) : (
 				<span className="h-2 w-2 rounded-full bg-gray-600" />
 			)}

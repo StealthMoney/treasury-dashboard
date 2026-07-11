@@ -1337,7 +1337,7 @@ export default function CreditsPage() {
 						})}
 						isError={repayError}
 						repaySuccess={repaySuccess}
-						successTitle="Repayment successful"
+						successTitle="Repayment sent"
 						successMessage=""
 						successButtonLabel="View Credit Details"
 						successtable={
