@@ -23,6 +23,7 @@ function resolveAuth(
 		"/",
 		"/account/activate",
 		"/account/reset/finish",
+		"/otp",
 		"/api/*",
 	]
 

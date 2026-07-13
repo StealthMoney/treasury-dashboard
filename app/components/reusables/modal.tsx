@@ -119,7 +119,7 @@ export const StepModal: React.FC<StepModalProps> = ({
 										<p className="text-center text-[14px] text-(--text-1)">
 											Your credit payment of{" "}
 											<span className="text-foreground font-semibold">₦{amount}</span> has
-											been completed successfully
+											been sent
 										</p>
 									</div>
 								)}
@@ -164,11 +164,11 @@ export const StepModal: React.FC<StepModalProps> = ({
 						</button>
 					)}
 					<button
-						disabled={loading || amountValue > 1000000}
+						disabled={loading || amountValue > 2000000}
 						onClick={
 							isSuccess ? onClose : isLastStep ? onSubmit || onNextStep : onNextStep
 						}
-						className={`bg-foreground text-background hover:bg-foreground/85 flex flex-1 ${loading || amountValue > 1000000 ? "cursor-not-allowed" : "cursor-pointer"} items-center justify-center gap-x-3 rounded-lg px-4 py-3 transition`}>
+						className={`bg-foreground text-background hover:bg-foreground/85 flex flex-1 ${loading || amountValue > 2000000 ? "cursor-not-allowed" : "cursor-pointer"} items-center justify-center gap-x-3 rounded-lg px-4 py-3 transition`}>
 						{isSuccess
 							? successButtonLabel || "Close"
 							: pathname.match("/report")

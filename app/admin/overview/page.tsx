@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Table, TableColumn } from "@/app/components/reusables/table"
 import { StatsSection } from "@/app/components/reusables/stats_section"
 import {
@@ -12,6 +12,7 @@ import {
 	formatTimeFromISO,
 } from "@/app/functions/helpers/formatted_date"
 import { ActivityIcon } from "@/app/components/reusables/activity_icon"
+import { HiCalendar } from "react-icons/hi"
 import { resolveActivityIconType } from "@/app/functions/helpers/activity_icon_resolver"
 import { useAdminStats } from "@/app/hooks/use_admin"
 import {
@@ -21,12 +22,51 @@ import {
 } from "@/app/types/general"
 import SectionSkeleton from "@/app/components/reusables/sectionSkeleton"
 import getAccountStatusTag from "@/app/components/reusables/status_tag"
+import { formatDateForInput } from "@/app/functions/helpers/format_date_for_input"
+
+function DatePickerButton({
+	value,
+	onChange,
+}: {
+	value: string
+	onChange: (v: string) => void
+}) {
+	const inputRef = useRef<HTMLInputElement>(null)
+
+	return (
+		<div className="relative inline-flex">
+			<button
+				type="button"
+				onClick={() =>
+					inputRef.current?.showPicker?.() ?? inputRef.current?.click()
+				}
+				className="bg-background inline-flex h-8.5 items-center gap-1 rounded-lg border border-(--grey-1) px-3 text-xs whitespace-nowrap text-(--text-1) transition hover:border-gray-400">
+				<span>{value ? formatDateWithSuffix(value) : "Date"}</span>
+				<HiCalendar className="text-foreground h-4 w-4 shrink-0" />
+			</button>
+
+			<input
+				ref={inputRef}
+				type="date"
+				value={value}
+				onChange={(e) => onChange(e.target.value)}
+				className="pointer-events-none absolute inset-0 h-0 w-0 opacity-0"
+				tabIndex={-1}
+			/>
+		</div>
+	)
+}
 
 export default function AdminOverviewPage() {
 	const [searchValue, setSearchValue] = useState("")
 	const [timeFilter, setTimeFilter] = useState("")
+	const [dateFilter, setDateFilter] = useState("")
 
-	const { data: adminStats, isLoading } = useAdminStats()
+	const params = new URLSearchParams({
+		date: dateFilter,
+	})
+
+	const { data: adminStats, isLoading } = useAdminStats(params.toString())
 
 	const stats = adminStats?.stats
 	const pendingActions = adminStats?.pendingActions ?? []
@@ -86,6 +126,10 @@ export default function AdminOverviewPage() {
 		{
 			label: "Approved Credit Lines",
 			value: `${(stats?.approvedCreditLines ?? 0).toLocaleString("en-US")}`,
+		},
+		{
+			label: "Disbursed Credit Lines",
+			value: `${(stats?.disbursedCreditLines ?? 0).toLocaleString("en-US")}`,
 		},
 		{
 			label: "Flagged Businesses",
@@ -209,6 +253,7 @@ export default function AdminOverviewPage() {
 
 						{/* Controls */}
 						<div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center lg:flex-nowrap lg:justify-end">
+							<DatePickerButton value={dateFilter} onChange={setDateFilter} />
 							{/* <TextField
 								id="overview-search"
 								label="Search"
