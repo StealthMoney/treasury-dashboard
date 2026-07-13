@@ -16,14 +16,7 @@ import { useTransactions } from "@/app/hooks/use_transactions"
 import PageSkeleton from "@/app/components/reusables/page_skeleton"
 import { getTransactionDetails } from "@/app/server/transactions"
 import { showToast } from "@/app/functions/helpers/notify_user"
-
-function formatDateForInput(dateStr: string): string {
-	const d = new Date(dateStr)
-	const year = d.getFullYear()
-	const month = String(d.getMonth() + 1).padStart(2, "0")
-	const day = String(d.getDate()).padStart(2, "0")
-	return `${year}-${month}-${day}`
-}
+import { formatDateForInput } from "@/app/functions/helpers/format_date_for_input"
 
 function DatePickerButton({
 	value,

@@ -726,17 +726,6 @@ export default function CreditRequestModal({
 					</div>
 				)}
 
-				{data.loanStatus === "disbursed" && (
-					<div className="pt-1">
-						<button
-							onClick={onApprove}
-							disabled={isLoadingState}
-							className="w-full rounded-xl bg-purple-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:cursor-pointer hover:brightness-90 disabled:cursor-not-allowed disabled:opacity-50">
-							{isLoadingState ? "Processing…" : "Mark as Pending Repayment"}
-						</button>
-					</div>
-				)}
-
 				{data.loanStatus === "reviewing_repayment" && (
 					<div className="pt-1">
 						<button

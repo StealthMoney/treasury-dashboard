@@ -5,9 +5,9 @@ import endpoints from "../config/endpoints"
 import { AdminOverviewResponse } from "../types/general"
 import { Result } from "../types/general"
 
-export const getAdminStats = async (): Promise<
-	Result<AdminOverviewResponse>
-> => {
+export const getAdminStats = async (
+	param?: string
+): Promise<Result<AdminOverviewResponse>> => {
 	try {
 		const session = await getAuthHeaders(false)
 
@@ -15,7 +15,7 @@ export const getAdminStats = async (): Promise<
 			return { success: false, error: "No session found" }
 		}
 
-		const url = endpoints().admin.overview
+		const url = endpoints(param).admin.overview
 
 		const res = await fetch(url, {
 			method: "GET",

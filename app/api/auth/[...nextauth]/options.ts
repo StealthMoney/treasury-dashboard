@@ -40,11 +40,9 @@ export const authOptions: NextAuthOptions = {
 					type: "text",
 					placeholder: "extheo@stealth.money",
 				},
-				password: {
-					label: "Password",
-					type: "password",
-					placeholder: "********",
-				},
+				password: { label: "Password", type: "password", placeholder: "********" },
+				otp_code: { label: "otp_code", type: "text" },
+				otp_challenge_id: { label: "otp_challenge_id", type: "text" },
 			},
 			async authorize(credentials, req) {
 				let baseUrl = process.env.NEXTAUTH_URL
@@ -52,6 +50,28 @@ export const authOptions: NextAuthOptions = {
 					const protocol = process.env.NODE_ENV === "development" ? "http" : "https"
 					baseUrl = `${protocol}:${req?.headers?.host}`
 				}
+
+				// Step 2: OTP verification
+				if (credentials?.otp_challenge_id && credentials?.otp_code) {
+					const res = await fetch(`${baseUrl}/api/verify_otp`, {
+						method: "POST",
+						body: JSON.stringify({
+							otp_challenge_id: credentials.otp_challenge_id,
+							code: credentials.otp_code,
+						}),
+						headers: { "Content-Type": "application/json" },
+					})
+
+					const data = await res.json()
+
+					if (!res.ok || !data.id_token) {
+						throw new Error(data.message || "Invalid or expired code")
+					}
+
+					return { ...data, id: data.id_token }
+				}
+
+				// Step 1: username/password login
 				const res = await fetch(`${baseUrl}/api/login`, {
 					method: "POST",
 					body: JSON.stringify({
@@ -61,11 +81,21 @@ export const authOptions: NextAuthOptions = {
 					headers: { "Content-Type": "application/json" },
 				})
 
-				const user = await res.json()
-				return {
-					...user,
-					id: user.id_token,
+				const data = await res.json()
+
+				if (data.otp_required) {
+					// Encoded as a delimited string — NextAuth passes thrown
+					// error messages straight through to `res.error` client-side.
+					throw new Error(
+						`OTP_REQUIRED|${data.otp_challenge_id}|${credentials?.username}`
+					)
 				}
+
+				if (!res.ok || !data.id_token) {
+					throw new Error(data.message || "Invalid credentials")
+				}
+
+				return { ...data, id: data.id_token }
 			},
 		}),
 	],
