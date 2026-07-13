@@ -23,7 +23,7 @@ const endpoints = (params?: string | number, params2?: string | number) => {
 	}
 
 	const admin = {
-		overview: `${envURL}/admin/overview`,
+		overview: `${envURL}/admin/overview?${params}`,
 	}
 
 	const credit = {

@@ -548,6 +548,7 @@ export interface OverviewStats {
 	totalBusinesses: number
 	pendingReviews: number
 	approvedCreditLines: number
+	disbursedCreditLines: number
 	flaggedBusinesses: number
 }
 

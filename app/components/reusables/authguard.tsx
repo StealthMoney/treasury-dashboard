@@ -107,7 +107,6 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 			return { type: "loading", to: "/" }
 		}
 
-		console.log(user, "iss")
 		return resolveAuth(status, session, user, pathname)
 	}, [status, session, user, pathname])
 
