@@ -22,7 +22,6 @@ import {
 } from "@/app/types/general"
 import SectionSkeleton from "@/app/components/reusables/sectionSkeleton"
 import getAccountStatusTag from "@/app/components/reusables/status_tag"
-import { formatDateForInput } from "@/app/functions/helpers/format_date_for_input"
 
 function DatePickerButton({
 	value,
@@ -60,11 +59,17 @@ function DatePickerButton({
 export default function AdminOverviewPage() {
 	const [searchValue, setSearchValue] = useState("")
 	const [timeFilter, setTimeFilter] = useState("")
-	const [dateFilter, setDateFilter] = useState("")
+	const [dateFrom, setDateFrom] = useState("")
+	const [dateTo, setDateTo] = useState("")
 
-	const params = new URLSearchParams({
-		date: dateFilter,
-	})
+	const params = new URLSearchParams()
+
+	if (dateFrom && dateTo) {
+		params.append("dateFrom", dateFrom)
+		params.append("dateTo", dateTo)
+	} else if (dateFrom) {
+		params.append("date", dateFrom)
+	}
 
 	const { data: adminStats, isLoading } = useAdminStats(params.toString())
 
@@ -253,7 +258,13 @@ export default function AdminOverviewPage() {
 
 						{/* Controls */}
 						<div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center lg:flex-nowrap lg:justify-end">
-							<DatePickerButton value={dateFilter} onChange={setDateFilter} />
+							<div className="flex items-center gap-2">
+								<DatePickerButton value={dateFrom} onChange={setDateFrom} />
+
+								<span className="text-xs text-(--text-1)">to</span>
+
+								<DatePickerButton value={dateTo} onChange={setDateTo} />
+							</div>
 							{/* <TextField
 								id="overview-search"
 								label="Search"
