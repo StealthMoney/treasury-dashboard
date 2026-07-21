@@ -58,6 +58,8 @@ const transformBusinessForDisplay = (business: Business): DisplayBusiness => ({
 	phone: business.phoneNumber,
 	financialStats: [],
 	documents: [],
+	creditLineLimit: business.creditLineLimit,
+	creditLineLimitCurrency: business.creditLineLimitCurrency,
 })
 
 export default function BusinessListPage() {

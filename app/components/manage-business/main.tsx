@@ -28,6 +28,7 @@ import SectionSkeleton from "../reusables/sectionSkeleton"
 import {
 	updateBusinessDirectors,
 	updateBusinessDocuments,
+	updateBusinessesLimit,
 } from "@/app/server/business"
 import { IoMdCheckmarkCircle, IoMdCloseCircle } from "react-icons/io"
 import { ActivityIcon } from "../reusables/activity_icon"
@@ -37,6 +38,8 @@ import { resolveActivityIconType } from "@/app/functions/helpers/activity_icon_r
 import { AiOutlineDeliveredProcedure } from "react-icons/ai"
 import { formatNaira } from "@/app/functions/helpers/formatNaira"
 import { StatusBadge } from "../reusables/status_badge"
+import { InputField, SelectField } from "../reusables/general_inputs"
+import { FeedbackModal } from "../reusables/feedback_modal"
 
 export default function BusinessDetailPage({ id }: { id: string }) {
 	const [loading, setLoading] = useState<boolean>(false)
@@ -53,15 +56,26 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 
 	const [transactionPage, setTransactionPage] = useState(1)
 
+	const [creditLimit, setCreditLimit] = useState("")
+	const [creditCurrency, setCreditCurrency] = useState("NGN")
+	const [updatingLimit, setUpdatingLimit] = useState(false)
+
+	const [feedbackModal, setFeedbackModal] = useState<{
+		type: "success" | "error"
+		title: string
+		description: string
+	} | null>(null)
+
 	const tabs = [
 		{ id: "overview", label: "Overview" },
 		{ id: "documents", label: "Documents" },
 		{ id: "directors", label: "Directors" },
 		{ id: "activities", label: "Activities" },
 		{ id: "transactions", label: "Transactions" },
+		{ id: "business-limit", label: "Business Limit" },
 	]
 
-	const { data: business, isLoading } = useBusinessesDetails(id)
+	const { data: business, isLoading, refetch } = useBusinessesDetails(id)
 	const { data: businessStatsData, isLoading: businessStatsLoading } =
 		useBusinessesStats(id)
 
@@ -123,6 +137,13 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 		},
 		{ label: "Most Recent", value: "recent" },
 		{ label: "Oldest", value: "oldest" },
+	]
+
+	const currencyOptions = [
+		{
+			label: "NGN",
+			value: "NGN",
+		},
 	]
 
 	// Document modal state
@@ -402,6 +423,64 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 	const resetTransactionPage = () => {
 		setTransactionPage(1)
 	}
+
+	const handleCreditLimitChange = (value: string) => {
+		const raw = value.replace(/[^\d]/g, "")
+
+		setCreditLimit(raw)
+	}
+
+	const formatNumber = (raw: string) => {
+		const digits = raw.replace(/\D/g, "")
+		if (!digits) return ""
+		return Number(digits).toLocaleString("en-US")
+	}
+
+	const handleUpdateBusinessLimit = async () => {
+		if (!id) return
+
+		setUpdatingLimit(true)
+
+		const payload = {
+			creditLineLimit: Number(creditLimit),
+			creditLineLimitCurrency: creditCurrency,
+		}
+
+		const req = await updateBusinessesLimit(JSON.stringify(payload), id)
+
+		setUpdatingLimit(false)
+
+		if (req.success) {
+			await refetch()
+			setFeedbackModal({
+				type: "success",
+				title: "Business Limit Updated",
+				description:
+					"The business credit line limit has been updated successfully.",
+			})
+
+			return
+		}
+
+		setFeedbackModal({
+			type: "error",
+			title: "Unable to Update Business Limit",
+			description:
+				req.error || "We couldn't update the business limit. Please try again.",
+		})
+	}
+
+	useEffect(() => {
+		if (!business) return
+
+		setCreditLimit(
+			business.creditLineLimit != null ? String(business.creditLineLimit) : ""
+		)
+
+		setCreditCurrency(business.creditLineLimitCurrency || "NGN")
+	}, [business])
+
+	console.log(creditLimit, typeof creditLimit, "kkk")
 
 	useEffect(() => {
 		resetTransactionPage()
@@ -991,6 +1070,42 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 					</div>
 				)}
 
+				{/* Business limit */}
+				{activeTab === "business-limit" && (
+					<KYBStepWrapper title="Business Limit">
+						<div className="space-y-8 px-4 py-6 sm:px-6">
+							<div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+								<InputField
+									id="creditLineLimit"
+									label="Credit Line Limit"
+									type="text"
+									placeholder="Enter credit limit"
+									value={formatNumber(creditLimit)}
+									onChange={handleCreditLimitChange}
+								/>
+
+								<SelectField
+									id="creditLineLimitCurrency"
+									label="Limit Currency"
+									value={creditCurrency}
+									onChange={setCreditCurrency}
+									placeholder="Select currency"
+									options={currencyOptions}
+								/>
+							</div>
+
+							<div className="flex justify-end">
+								<button
+									type="button"
+									onClick={handleUpdateBusinessLimit}
+									disabled={updatingLimit || !creditLimit || creditLimit === ""}
+									className={`bg-foreground text-background w-full ${updatingLimit || !creditLimit || creditLimit === "" ? "cursor-not-allowed" : "cursor-pointer"} rounded-lg border-(--grey-1) px-6 py-2.5 text-sm font-medium transition hover:opacity-90 disabled:opacity-60 sm:w-auto`}>
+									{updatingLimit ? "Saving..." : "Save Changes"}
+								</button>
+							</div>
+						</div>
+					</KYBStepWrapper>
+				)}
 				{/* ── Document modals ── */}
 				<DocumentReviewModal
 					loading={loading}
@@ -1022,6 +1137,35 @@ export default function BusinessDetailPage({ id }: { id: string }) {
 					approvalMessage={approvalMessage}
 					isOpen={approvalModalOpen}
 					onClose={() => setApprovalModalOpen(false)}
+				/>
+
+				<FeedbackModal
+					isOpen={!!feedbackModal}
+					onClose={() => setFeedbackModal(null)}
+					title={feedbackModal?.title ?? ""}
+					description={feedbackModal?.description ?? ""}
+					buttons={
+						feedbackModal?.type === "success"
+							? [
+									{
+										label: "Done",
+										onClick: () => setFeedbackModal(null),
+									},
+								]
+							: [
+									{
+										label: "Retry",
+										onClick: handleUpdateBusinessLimit,
+										loading: updatingLimit,
+									},
+									{
+										label: "Cancel",
+										variant: "outline",
+										onClick: () => setFeedbackModal(null),
+									},
+								]
+					}
+					buttonCount={feedbackModal?.type === "success" ? 1 : 2}
 				/>
 			</div>
 		</div>

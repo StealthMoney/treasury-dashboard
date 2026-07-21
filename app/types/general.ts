@@ -273,6 +273,8 @@ export interface DisplayBusiness {
 	email: string
 	phone: string
 	financialStats: any[]
+	creditLineLimit: null | number
+	creditLineLimitCurrency: null | number
 	documents: any[]
 }
 
@@ -386,6 +388,8 @@ export interface Business {
 	disputeEmail: string
 	supportEmail: string
 	businessType: string
+	creditLineLimit: null | number
+	creditLineLimitCurrency: null | number
 	cacNumber: string
 	addressLine1: string
 	addressLine2: string
