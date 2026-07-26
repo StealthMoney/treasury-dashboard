@@ -9,6 +9,8 @@ export interface BusinessDetails {
 	businessType: string
 	email: string
 	website: string
+	creditLineLimit: number | null
+	creditLineLimitCurrency: string
 }
 
 export interface AppuserProps {
