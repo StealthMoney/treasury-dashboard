@@ -522,6 +522,7 @@ export default function CreditsPage() {
 				setRepayLoading(false)
 				setFinalRepayResponse(finalRepay.data)
 				setRepaySuccess(true)
+				refetch()
 			}
 		} catch (err) {
 			console.error(err)
