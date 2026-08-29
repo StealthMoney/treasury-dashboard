@@ -13,7 +13,7 @@
 		"check-code": "yarn prettier:check && yarn lint"
 	},
 	"dependencies": {
-		"@tanstack/react-query": "^5.96.1",
+		"@tanstack/react-query": "^5.96.2",
 		"@types/jsonwebtoken": "^9.0.10",
 		"jwt-decode": "^4.0.0",
 		"next": "16.1.6",
